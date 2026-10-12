@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install toolchain
+        uses: CompeyDev/setup-rokit@v0.1.2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check formatting
+        run: stylua --check src tests
+
+      - name: Lint
+        run: selene src
+
+      - name: Unit tests (pure game logic)
+        run: lune run tests/run
+
+      - name: Smoke test (island + every dino and egg model)
+        run: lune run tests/smoke
+
+      - name: Server integration test (full play session)
+        run: lune run tests/integration
+
+      - name: Client UI smoke test
+        run: lune run tests/client_smoke
+
+      - name: Build place file
+        run: rojo build default.project.json -o RaiseADino.rbxlx

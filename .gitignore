@@ -1,0 +1,21 @@
+# Roblox build artifacts (the release place file in build/ is committed on purpose)
+*.rbxl
+*.rbxlx
+!build/RaiseADino.rbxlx
+*.rbxl.lock
+*.rbxlx.lock
+
+# Wally
+Packages/
+ServerPackages/
+DevPackages/
+wally.lock
+
+# Toolchain
+sourcemap.json
+roblox.yml
+roblox.toml
+
+# OS
+.DS_Store
+Thumbs.db
