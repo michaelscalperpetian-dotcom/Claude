@@ -33,7 +33,9 @@ local function safe(instance, property)
 	local ok, value = pcall(function()
 		return instance[property]
 	end)
-	if ok then
+	-- Indexing falls back to children by name (a Frame has no Text property,
+	-- but may have a child called "Text"), so ignore Instances.
+	if ok and typeof(value) ~= "Instance" then
 		return value
 	end
 	return nil

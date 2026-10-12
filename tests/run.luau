@@ -469,6 +469,57 @@ describe("Frames (robust orientation)", function()
 	end)
 end)
 
+describe("QuestData (daily quests)", function()
+	local QuestData = Loader.load("src/shared/Data/QuestData")
+	it("picks three different quests, the same for everyone on a day", function()
+		for day = 20000, 20030 do
+			local a = QuestData.forDay(day)
+			local b = QuestData.forDay(day)
+			eq(#a, 3)
+			local seen = {}
+			for i, quest in a do
+				eq(quest.id, b[i].id)
+				ok(not seen[quest.id], "no repeats")
+				seen[quest.id] = true
+				ok(quest.goal >= 1, "goal")
+				ok(quest.reward and quest.reward.kind, "reward")
+			end
+		end
+	end)
+	it("changes from day to day", function()
+		local different = false
+		local first = QuestData.forDay(20000)
+		for day = 20001, 20010 do
+			for i, quest in QuestData.forDay(day) do
+				if quest.id ~= first[i].id then
+					different = true
+				end
+			end
+		end
+		ok(different, "quests vary")
+	end)
+end)
+
+describe("DexRewards", function()
+	local DexRewards = Loader.load("src/shared/Data/DexRewards")
+	local DinoData = Loader.load("src/shared/Data/DinoData")
+	it("counts known species and ends with the full Dex", function()
+		eq(
+			DexRewards.discovered({
+				Raptor = { Normal = true },
+				TRex = {},
+				Fake = { Normal = true },
+			}),
+			2
+		)
+		local last = DexRewards.MILESTONES[#DexRewards.MILESTONES]
+		eq(last.count, #DinoData.LIST)
+		for i = 2, #DexRewards.MILESTONES do
+			ok(DexRewards.MILESTONES[i].count > DexRewards.MILESTONES[i - 1].count, "increasing")
+		end
+	end)
+end)
+
 describe("Format", function()
 	it("abbreviates big numbers", function()
 		eq(Format.number(950), "950")

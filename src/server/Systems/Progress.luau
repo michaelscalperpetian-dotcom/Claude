@@ -7,6 +7,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Clock = require(ReplicatedStorage.Shared.Util.Clock)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Cycle = require(ReplicatedStorage.Shared.Util.Cycle)
+local DexRewards = require(ReplicatedStorage.Shared.Data.DexRewards)
 local DinoData = require(ReplicatedStorage.Shared.Data.DinoData)
 local Economy = require(ReplicatedStorage.Shared.Util.Economy)
 local Net = require(ReplicatedStorage.Shared.Net)
@@ -17,6 +18,7 @@ local Analytics = require(script.Parent.Analytics)
 local Coins = require(script.Parent.Coins)
 local Data = require(script.Parent.Data)
 local Nest = require(script.Parent.Nest)
+local Rewards = require(script.Parent.Rewards)
 local Sessions = require(script.Parent.Sessions)
 local State = require(script.Parent.State)
 local Notify = require(script.Parent.Parent.Lib.Notify)
@@ -142,37 +144,33 @@ local function recordDex(player: Player, dino: Types.DinoRecord)
 	end
 end
 
--- ===== Streak + club =====
-
-local function grantStreakReward(
-	player: Player,
-	profile: Types.Profile,
-	reward: Streak.Reward
-): string
-	local session = Sessions.get(player)
-	local now = Clock.now()
-	if reward.kind == "coins" and session then
-		local income = Stats.incomePerSecond(profile, session, now)
-		local amount = Economy.incomeReward(income, reward.minutes or 10, reward.minimum or 100)
-		Coins.add(player, amount, "TimedReward", "Streak")
-		return `💰 {amount} coins`
-	elseif reward.kind == "luck" then
-		profile.boosts.luckUntil = math.max(profile.boosts.luckUntil, now) + (reward.seconds or 900)
-		return "🍀 Luck boost"
-	elseif reward.kind == "coinBoost" then
-		profile.boosts.coinsUntil = math.max(profile.boosts.coinsUntil, now)
-			+ (reward.seconds or 1800)
-		return "⚡ 2x Coins boost"
-	elseif reward.kind == "dino" and reward.species then
-		local dino = Nest.addDino(player, reward.species)
-		if dino then
-			return "🦕 A new baby dino"
-		end
-		Coins.add(player, 25000, "TimedReward", "StreakFallback")
-		return "💰 25000 coins (your nest was full)"
+-- Claim a Dex milestone prize (`count` = how many species it needs).
+local function claimDex(player: Player, count: unknown)
+	local profile = Data.get(player)
+	if not profile or typeof(count) ~= "number" then
+		return
 	end
-	return "a reward"
+	local key = tostring(count)
+	if profile.dexClaimed[key] then
+		return
+	end
+	for _, milestone in DexRewards.MILESTONES do
+		if milestone.count == count then
+			if DexRewards.discovered(profile.dex) < count then
+				return
+			end
+			profile.dexClaimed[key] = true
+			local what = Rewards.grant(player, milestone.reward, "Gameplay", "Dex" .. key)
+			Notify.send(player, `📖 Dex prize for {count} dinos: {what}!`, "rare")
+			Notify.effect(player, "Reward", {})
+			Analytics.event(player, "DexPrize" .. key)
+			State.markDirty(player)
+			return
+		end
+	end
 end
+
+-- ===== Streak + club =====
 
 local function claimStreak(player: Player)
 	local profile = Data.get(player)
@@ -186,7 +184,7 @@ local function claimStreak(player: Player)
 	end
 	local reward = Streak.REWARDS[day]
 	profile.streak = { count = day, lastDay = today }
-	local what = grantStreakReward(player, profile, reward)
+	local what = Rewards.grant(player, reward, "TimedReward", "Streak")
 	Analytics.event(player, "StreakDay" .. day)
 	Notify.send(player, `Day {day} reward: {what}!`, "good")
 	Notify.effect(player, "Reward", { day = day })
@@ -242,6 +240,7 @@ end
 
 function Progress.init()
 	Nest.DinoChanged:connect(recordDex)
+	Net.on("ClaimDex", 2, 4, claimDex)
 	Net.on("ClaimStreak", 1, 2, function(player: Player)
 		claimStreak(player)
 	end)

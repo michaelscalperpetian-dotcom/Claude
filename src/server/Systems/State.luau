@@ -67,6 +67,10 @@ function State.snapshot(player: Player): Types.Snapshot?
 		raidsEnabled = Stats.raidsEnabled(),
 		riding = session.riding,
 		carrying = session.carry ~= nil,
+		quests = profile.quests,
+		dexClaimed = profile.dexClaimed,
+		settings = profile.settings,
+		buddy = profile.buddy,
 	}
 end
 

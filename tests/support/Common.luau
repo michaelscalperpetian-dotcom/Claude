@@ -46,6 +46,10 @@ function Common.implementEngine(getNow: () -> number)
 	end
 	engineInstalled = true
 
+	-- Nothing to hit in the fake world (callers fall back to defaults).
+	roblox.implementMethod("Workspace", "Raycast", function()
+		return nil
+	end)
 	roblox.implementMethod("Workspace", "GetServerTimeNow", function()
 		return getNow()
 	end)
@@ -169,6 +173,11 @@ function Common.installGlobals(Loader, game, workspaceService)
 		Loader.globals[name] = (roblox :: any)[name]
 	end
 	Loader.globals.CFrame = Common.CFrame
+	Loader.globals.RaycastParams = {
+		new = function()
+			return { FilterDescendantsInstances = {} }
+		end,
+	}
 	Loader.globals.TweenInfo = {
 		new = function(...)
 			return { ... }

@@ -21,7 +21,8 @@ local Tutorial = {}
 
 local banner: Frame
 local bannerText: TextLabel
-local gotIt: TextButton
+local stepChip: UI.Chip
+local gotIt: UI.Button
 local currentStep = -1
 
 local targetPart: Part
@@ -134,6 +135,7 @@ local function spawnNpc()
 		text = "😈 Sneaky Raptor!",
 		size = UDim2.fromScale(1, 1),
 		color = UI.Theme.orange,
+		outlineThickness = 3,
 		parent = gui,
 	})
 	gui.Parent = root
@@ -182,9 +184,10 @@ local function setStep(step: number)
 	currentStep = step
 	local info = TutorialData.STEPS[step]
 	banner.Visible = info ~= nil
-	gotIt.Visible = step == #TutorialData.STEPS
+	gotIt.root.Visible = step == #TutorialData.STEPS
 	if info then
 		bannerText.Text = info.text
+		stepChip.label.Text = `STEP {step} / {#TutorialData.STEPS}`
 		UI.pop(banner)
 	end
 	if step == 5 then
@@ -214,31 +217,40 @@ function Tutorial.init()
 	banner = UI.new("Frame", {
 		Name = "Banner",
 		AnchorPoint = Vector2.new(0.5, 0),
-		Position = UDim2.new(0.5, 0, 0, 162),
-		Size = UDim2.fromOffset(640, 76),
-		BackgroundColor3 = Color3.fromRGB(255, 225, 90),
+		Position = UDim2.new(0.5, 0, 0, 170),
+		Size = UDim2.fromOffset(620, 84),
+		BackgroundColor3 = Color3.fromRGB(255, 226, 102),
 		Visible = false,
 		Parent = screen,
-	}, { UI.corner(18), UI.stroke(UI.Theme.ink, 4) }) :: Frame
-	bannerText = UI.text({
+	}, { UI.corner(22), UI.stroke(UI.Theme.ink, 4), UI.shade(0.9) }) :: Frame
+	bannerText = UI.body({
 		text = "",
-		size = UDim2.new(1, -24, 1, -12),
-		position = UDim2.fromOffset(12, 6),
-		color = UI.Theme.ink,
-		stroke = false,
+		size = UDim2.new(1, -40, 1, -22),
+		position = UDim2.fromOffset(20, 14),
+		font = UI.Font,
 		maxTextSize = 28,
 		parent = banner,
 	})
+	stepChip = UI.chip({
+		name = "Step",
+		text = "",
+		size = UDim2.fromOffset(130, 30),
+		position = UDim2.new(0, 18, 0, -16),
+		color = UI.Theme.purple,
+		maxTextSize = 17,
+		parent = banner,
+	})
 	gotIt = UI.button({
+		name = "GotIt",
 		text = "Got it! 👍",
-		size = UDim2.fromOffset(180, 54),
-		position = UDim2.new(0.5, 0, 1, 10),
+		size = UDim2.fromOffset(190, 56),
+		position = UDim2.new(0.5, 0, 1, 12),
 		anchor = Vector2.new(0.5, 0),
 		color = UI.Theme.green,
 		parent = banner,
 		onClick = finish,
 	})
-	gotIt.Visible = false
+	gotIt.root.Visible = false
 
 	targetPart = Instance.new("Part")
 	targetPart.Name = "TutorialTarget"
@@ -261,6 +273,7 @@ function Tutorial.init()
 		size = UDim2.fromScale(1, 1),
 		color = UI.Theme.gold,
 		maxTextSize = 70,
+		outlineThickness = 4,
 		parent = arrow,
 	})
 	arrow.Parent = targetPart
@@ -319,7 +332,7 @@ function Tutorial.start()
 		if currentStep == #TutorialData.STEPS and pulse % 8 == 0 then
 			local lock = Hud.buttons.Lock
 			if lock then
-				UI.pop(lock)
+				UI.pop(lock.root)
 			end
 		end
 	end

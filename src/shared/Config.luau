@@ -136,6 +136,12 @@ local Config = {
 	-- Subscription ID from the Creator Hub, e.g. "EXP-1234567890". Empty = disabled.
 	SUBSCRIPTION_ID = "",
 
+	-- Background music: audio asset IDs (numbers) played as a shuffled
+	-- playlist. Pick tracks you're allowed to use from the Creator Store
+	-- (Audio, e.g. ones uploaded by Roblox) and paste their IDs here. Empty =
+	-- no music, and the Music switch is hidden in Settings.
+	MUSIC_TRACKS = {} :: { number },
+
 	-- Suggested Robux prices to enter in the Creator Hub (the store shows the live price).
 	SUGGESTED_PRICES = {
 		RideDinos = 249,

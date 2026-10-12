@@ -330,6 +330,17 @@ def measure_size(node: dict, pw: float, ph: float, cs: float) -> tuple[float, fl
     s = node.get("size", [0, 0, 0, 0])
     w = pw * s[0] + s[1] * cs
     h = ph * s[2] + s[3] * cs
+    auto = node.get("automaticSize") or "None"
+    if auto != "None" and node.get("class") in TEXT_CLASSES and not node.get("TextScaled"):
+        # AutomaticSize on text grows the box to fit the text at TextSize.
+        size = float(node.get("TextSize", 14)) * cs
+        main = font_path(node.get("font", "SourceSans"))
+        text = plain_text(node)
+        if "X" in auto:
+            w = max(w, max(measure(line, main, size) for line in text.split("\n")) + 2)
+        if "Y" in auto:
+            lines = wrap_lines(text, main, size, None if "X" in auto else max(w, 1))
+            h = max(h, len(lines) * size * float(node.get("LineHeight", 1) or 1))
     mods = node.get("modifiers", {})
     sc = mods.get("UISizeConstraint")
     if sc:

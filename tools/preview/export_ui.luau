@@ -14,7 +14,7 @@ local Export = require("./Export")
 local outDir = process.args[1] or "tools/preview/out"
 fs.writeDir(outDir)
 
-local env = ClientEnv.new()
+local env = ClientEnv.new({ start = true })
 local Panels = env.Panels
 local C = env.C
 
@@ -25,6 +25,15 @@ local VIEWPORTS = {
 }
 
 local function capture(name: string)
+	local function check(value, path)
+		if type(value) == "userdata" then
+			error(`userdata at {path}: {typeof(value)} {tostring(value)}`)
+		elseif type(value) == "table" then
+			for k, v in value do
+				check(v, path .. "." .. tostring(k))
+			end
+		end
+	end
 	for viewportName, vp in VIEWPORTS do
 		env.setViewport(vp[1], vp[2])
 		taskLib.wait(0.03)
@@ -33,20 +42,33 @@ local function capture(name: string)
 			touch = vp[3],
 			screens = Export.screens(env.playerGui),
 		}
+		check(data, name)
 		fs.writeFile(`{outDir}/ui_{name}_{viewportName}.json`, serde.encode("json", data))
 	end
 	print("captured " .. name)
 end
 
--- Scenes
-env.pushState({ tutorial = 99 })
+-- Scenes (a mid-game player with a quest ready to claim)
+local QuestData = require("../../tests/loader").load("src/shared/Data/QuestData")
+local day = env.snapshot().quests.day
+local first = QuestData.forDay(day)[1]
+local base = {
+	tutorial = 99,
+	quests = {
+		day = day,
+		progress = { [first.id] = first.goal },
+		claimed = {},
+		bonusClaimed = false,
+	},
+}
+env.pushState(base)
 taskLib.wait(0.1)
 capture("hud")
 
-env.pushState({ tutorial = 1 })
+env.pushState({ tutorial = 2 })
 taskLib.wait(0.1)
 capture("tutorial")
-env.pushState({ tutorial = 99 })
+env.pushState(base)
 taskLib.wait(0.05)
 
 Panels.open("Shop")
@@ -88,12 +110,10 @@ C.Toasts.show("Not enough coins yet!", "bad")
 taskLib.wait(0.05)
 capture("toasts")
 
--- Hatch reveal, captured mid-reveal.
-task = taskLib
-taskLib.spawn(function()
-	env.listeners.Effect("Hatch", { species = "TRex", mutation = "Cosmic" })
-end)
-taskLib.wait(1.3)
+-- Hatch reveal, captured once the dino has popped out.
+C.Effects.reveal("TRex", "Cosmic", true)
+taskLib.wait(1.9)
 capture("reveal")
-taskLib.wait(4)
+taskLib.wait(4.5)
 print("done")
+process.exit(0)

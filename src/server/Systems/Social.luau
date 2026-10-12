@@ -11,6 +11,7 @@ local Data = require(script.Parent.Data)
 local Monetization = require(script.Parent.Monetization)
 local Plots = require(script.Parent.Plots)
 local Prompts = require(script.Parent.Prompts)
+local Quests = require(script.Parent.Quests)
 local Sessions = require(script.Parent.Sessions)
 local State = require(script.Parent.State)
 local World = require(script.Parent.World)
@@ -134,6 +135,7 @@ local function roar(player: Player)
 		userId = player.UserId,
 		big = session ~= nil and session.riding ~= nil,
 	})
+	Quests.track(player, "roar")
 end
 
 function Social.init()

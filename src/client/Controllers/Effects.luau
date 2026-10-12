@@ -1,6 +1,7 @@
 --!strict
--- One-shot moments: the hatch reveal (anticipation shake, flash, big reveal),
--- roars with screen shake, coin pops, mutation sparkles and confetti.
+-- One-shot moments: the hatch reveal (egg wobble and cracks, flash, spinning
+-- rays, big reveal), coins flying into the counter, roars with screen shake,
+-- mutation sparkles and confetti.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -20,31 +21,40 @@ local UI = require(script.Parent.Parent.Lib.UI)
 
 local Effects = {}
 
+-- Sound hooks (set by the audio controller).
+Effects.onReveal = function(_rarity: string) end
+Effects.onCrack = function() end
+Effects.onCoins = function() end
+
+type Reveal = { species: string, mutation: string?, new: boolean }
+
 local screen: ScreenGui
-local revealQueue: { { species: string, mutation: string? } } = {}
+local revealQueue: { Reveal } = {}
 local revealing = false
 
 -- ===== Confetti =====
 
 local CONFETTI_COLORS = {
-	Color3.fromRGB(255, 90, 90),
-	Color3.fromRGB(255, 210, 60),
-	Color3.fromRGB(90, 220, 120),
-	Color3.fromRGB(80, 170, 255),
-	Color3.fromRGB(200, 120, 255),
+	Color3.fromRGB(255, 90, 95),
+	Color3.fromRGB(255, 201, 60),
+	Color3.fromRGB(85, 209, 110),
+	Color3.fromRGB(74, 168, 255),
+	Color3.fromRGB(155, 107, 255),
+	Color3.fromRGB(255, 120, 190),
 }
 
 local function confetti(amount: number)
 	local rng = Random.new()
 	for _ = 1, amount do
 		local piece = UI.new("Frame", {
-			Size = UDim2.fromOffset(rng:NextInteger(8, 16), rng:NextInteger(10, 20)),
+			Name = "Confetti",
+			Size = UDim2.fromOffset(rng:NextInteger(8, 16), rng:NextInteger(10, 22)),
 			Position = UDim2.new(rng:NextNumber(0, 1), 0, -0.05, 0),
 			BackgroundColor3 = CONFETTI_COLORS[rng:NextInteger(1, #CONFETTI_COLORS)],
 			Rotation = rng:NextInteger(0, 360),
 			ZIndex = 20,
 			Parent = screen,
-		}) :: Frame
+		}, { UI.corner(3) }) :: Frame
 		local duration = rng:NextNumber(1.6, 2.8)
 		TweenService
 			:Create(
@@ -92,87 +102,245 @@ end
 
 -- ===== Hatch reveal =====
 
-local function reveal(species: string, mutation: string?)
-	local data = DinoData.get(species)
+local RAYS = 8
+
+-- Soft light beams behind the reveal: long bars through the centre whose
+-- sides fade out, spun slowly, over a layered glow.
+local function rays(parent: Instance, color: Color3): { Frame }
+	for i, size in { 420, 300, 190 } do
+		UI.new("Frame", {
+			Name = "Glow",
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			Position = UDim2.fromScale(0.5, 0.44),
+			Size = UDim2.fromOffset(size, size),
+			BackgroundColor3 = UI.lighten(color, 0.2 + i * 0.15),
+			BackgroundTransparency = 0.82 - i * 0.08,
+			ZIndex = 11,
+			Parent = parent,
+		}, { UI.round() })
+	end
+	local list = {}
+	for i = 0, RAYS - 1 do
+		local ray = UI.new("Frame", {
+			Name = "Ray",
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			Position = UDim2.fromScale(0.5, 0.44),
+			Size = UDim2.fromOffset(110, 1800),
+			BackgroundColor3 = UI.lighten(color, 0.25),
+			BackgroundTransparency = if i % 2 == 0 then 0.45 else 0.62,
+			Rotation = i * (180 / RAYS),
+			ZIndex = 11,
+			Parent = parent,
+		}, {
+			UI.new("UIGradient", {
+				Transparency = NumberSequence.new({
+					NumberSequenceKeypoint.new(0, 1),
+					NumberSequenceKeypoint.new(0.5, 0),
+					NumberSequenceKeypoint.new(1, 1),
+				}),
+			}),
+		}) :: Frame
+		table.insert(list, ray)
+	end
+	return list
+end
+
+-- Zig-zag crack drawn over the egg, revealed one segment at a time.
+local CRACK = {
+	{ 0.24, 0.5, 0.36, 0.43 },
+	{ 0.36, 0.43, 0.46, 0.53 },
+	{ 0.46, 0.53, 0.57, 0.44 },
+	{ 0.57, 0.44, 0.67, 0.53 },
+	{ 0.67, 0.53, 0.77, 0.46 },
+}
+
+local function crackSegment(parent: Instance, segment: { number }): Frame
+	local x0, y0, x1, y1 = segment[1], segment[2], segment[3], segment[4]
+	local size = 260
+	local dx, dy = (x1 - x0) * size, (y1 - y0) * size
+	return UI.new("Frame", {
+		Name = "Crack",
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale((x0 + x1) / 2, (y0 + y1) / 2),
+		Size = UDim2.fromOffset(math.sqrt(dx * dx + dy * dy) + 4, 6),
+		Rotation = math.deg(math.atan2(dy, dx)),
+		BackgroundColor3 = UI.Theme.ink,
+		ZIndex = 14,
+		Parent = parent,
+	}, { UI.round() }) :: Frame
+end
+
+local function reveal(item: Reveal)
+	local data = DinoData.get(item.species)
 	if not data then
 		return
 	end
 	local rarity = DinoData.rarityInfo(data.rarity)
+	local rarityColor = UI.rgb(rarity.color)
+	local m = MutationData.get(item.mutation)
+
 	local overlay = UI.new("Frame", {
+		Name = "Overlay",
 		Size = UDim2.fromScale(4, 4),
 		Position = UDim2.fromScale(-1.5, -1.5),
-		BackgroundColor3 = Color3.new(0, 0, 0),
-		BackgroundTransparency = 0.35,
+		BackgroundColor3 = Color3.fromRGB(20, 14, 34),
+		BackgroundTransparency = 1,
 		ZIndex = 10,
 		Parent = screen,
 	}) :: Frame
+	TweenService:Create(overlay, TweenInfo.new(0.25), { BackgroundTransparency = 0.3 }):Play()
 	local stage = UI.new("Frame", {
+		Name = "Reveal",
 		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.fromScale(0.5, 0.48),
-		Size = UDim2.fromOffset(420, 420),
+		Position = UDim2.fromScale(0.5, 0.46),
+		Size = UDim2.fromOffset(460, 460),
 		BackgroundTransparency = 1,
 		ZIndex = 11,
 		Parent = screen,
 	}) :: Frame
 
-	-- 1. Anticipation: the egg shakes harder and harder
-	local eggViewport =
-		UI.viewport(EggModel.build(EggModel.giftLook(), 3, true), UDim2.fromOffset(260, 260), stage)
-	eggViewport.AnchorPoint = Vector2.new(0.5, 0.5)
-	eggViewport.Position = UDim2.fromScale(0.5, 0.5)
+	-- 1. The egg drops in and wobbles harder and harder, then cracks
+	local eggHolder = UI.new("Frame", {
+		Name = "Egg",
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.5),
+		Size = UDim2.fromOffset(260, 260),
+		BackgroundTransparency = 1,
+		ZIndex = 12,
+		Parent = stage,
+	}) :: Frame
+	local eggViewport = UI.viewport(
+		EggModel.build(EggModel.giftLook(), 3, true),
+		UDim2.fromScale(1, 1),
+		eggHolder,
+		0
+	)
 	eggViewport.ZIndex = 12
-	for i = 1, 10 do
-		eggViewport.Rotation = (if i % 2 == 0 then 1 else -1) * (4 + i * 1.5)
-		task.wait(0.07)
+	UI.pop(eggHolder, 0.4)
+	local cracks = 0
+	for i = 1, 14 do
+		eggHolder.Rotation = (if i % 2 == 0 then 1 else -1) * (3 + i * 1.3)
+		if i % 3 == 0 and cracks < #CRACK then
+			cracks += 1
+			crackSegment(eggHolder, CRACK[cracks])
+			Effects.onCrack()
+		end
+		task.wait(0.075)
 	end
-	eggViewport:Destroy()
+	for k = cracks + 1, #CRACK do
+		crackSegment(eggHolder, CRACK[k])
+	end
+	task.wait(0.12)
+	eggHolder:Destroy()
 
-	-- 2. Flash
+	-- 2. Flash + rays
 	local flash = UI.new("Frame", {
+		Name = "Flash",
 		Size = UDim2.fromScale(4, 4),
 		Position = UDim2.fromScale(-1.5, -1.5),
 		BackgroundColor3 = Color3.new(1, 1, 1),
-		BackgroundTransparency = 0,
-		ZIndex = 15,
+		ZIndex = 18,
 		Parent = screen,
 	}) :: Frame
-	TweenService:Create(flash, TweenInfo.new(0.5), { BackgroundTransparency = 1 }):Play()
-	task.delay(0.5, function()
+	TweenService:Create(flash, TweenInfo.new(0.45), { BackgroundTransparency = 1 }):Play()
+	task.delay(0.45, function()
 		flash:Destroy()
 	end)
+	local rayList = rays(stage, if m then UI.rgb(m.color) else rarityColor)
 
-	-- 3. Reveal
+	-- 3. The dino pops out
 	local dinoViewport = UI.viewport(
-		DinoModel.build(species, 3, mutation, "Static"),
-		UDim2.fromOffset(320, 320),
+		DinoModel.build(item.species, 3, item.mutation, "Static"),
+		UDim2.fromOffset(340, 340),
 		stage,
 		25
 	)
 	dinoViewport.AnchorPoint = Vector2.new(0.5, 0.5)
-	dinoViewport.Position = UDim2.fromScale(0.5, 0.42)
-	dinoViewport.ZIndex = 12
-	UI.pop(dinoViewport)
-	local m = MutationData.get(mutation)
-	local title = UI.text({
+	dinoViewport.Position = UDim2.fromScale(0.5, 0.44)
+	dinoViewport.ZIndex = 13
+	UI.pop(dinoViewport, 0.3)
+	Effects.onReveal(data.rarity)
+
+	local ribbon = UI.new("Frame", {
+		Name = "Ribbon",
+		AnchorPoint = Vector2.new(0.5, 0),
+		Position = UDim2.new(0.5, 0, 1, -64),
+		Size = UDim2.fromOffset(500, 72),
+		BackgroundColor3 = rarityColor,
+		ZIndex = 14,
+		Parent = stage,
+	}, { UI.corner(20), UI.stroke(UI.darken(rarityColor, 0.5), 4), UI.shade(0.82) }) :: Frame
+	UI.text({
+		name = "Title",
 		text = (if m then m.emoji .. " " .. m.name .. " " else "") .. data.name .. "!",
-		size = UDim2.fromOffset(520, 56),
-		position = UDim2.new(0.5, 0, 1, -40),
-		anchor = Vector2.new(0.5, 0),
-		maxTextSize = 48,
-		parent = stage,
+		size = UDim2.new(1, -30, 1, -14),
+		position = UDim2.fromOffset(15, 7),
+		maxTextSize = 46,
+		outlineThickness = 3,
+		zIndex = 15,
+		parent = ribbon,
 	})
-	title.ZIndex = 13
-	local rarityLabel = UI.text({
+	local tags = UI.new("Frame", {
+		Name = "Tags",
+		BackgroundTransparency = 1,
+		AnchorPoint = Vector2.new(0.5, 0),
+		Position = UDim2.new(0.5, 0, 1, 16),
+		Size = UDim2.fromOffset(500, 36),
+		ZIndex = 14,
+		Parent = stage,
+	}, { UI.list(Enum.FillDirection.Horizontal, 10, Enum.HorizontalAlignment.Center) }) :: Frame
+	local rarityChip = UI.chip({
 		text = data.rarity:upper(),
-		size = UDim2.fromOffset(320, 40),
-		position = UDim2.new(0.5, 0, 1, 18),
+		size = UDim2.fromOffset(170, 36),
+		color = UI.darken(rarityColor, 0.1),
+		order = 1,
+		maxTextSize = 22,
+		parent = tags,
+	})
+	rarityChip.root.ZIndex = 15
+	if m then
+		local chip = UI.chip({
+			text = `x{m.multiplier} coins`,
+			size = UDim2.fromOffset(150, 36),
+			color = UI.rgb(m.color),
+			order = 2,
+			maxTextSize = 22,
+			parent = tags,
+		})
+		chip.root.ZIndex = 15
+	end
+	if item.new then
+		local newBadge = UI.chip({
+			name = "New",
+			text = "NEW!",
+			size = UDim2.fromOffset(110, 44),
+			position = UDim2.new(1, -40, 0, 30),
+			anchor = Vector2.new(1, 0),
+			color = UI.Theme.red,
+			maxTextSize = 30,
+			parent = stage,
+		})
+		newBadge.root.ZIndex = 16
+		newBadge.root.Rotation = 12
+		UI.pop(newBadge.root, 0.2)
+	end
+	UI.pop(ribbon, 0.5)
+	local hint = UI.text({
+		name = "Hint",
+		text = "Tap to continue",
+		size = UDim2.fromOffset(300, 30),
+		position = UDim2.new(0.5, 0, 1, 64),
 		anchor = Vector2.new(0.5, 0),
-		color = UI.rgb(rarity.color),
-		maxTextSize = 36,
+		maxTextSize = 22,
+		zIndex = 15,
 		parent = stage,
 	})
-	rarityLabel.ZIndex = 13
-	UI.pop(title)
+	hint.TextTransparency = 1
+	TweenService:Create(
+		hint,
+		TweenInfo.new(0.6, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true, 0.8),
+		{ TextTransparency = 0.2 }
+	):Play()
 
 	if rarity.order >= DinoData.rarityInfo("Rare").order or m then
 		confetti(if rarity.order >= DinoData.rarityInfo("Legendary").order then 120 else 60)
@@ -181,22 +349,26 @@ local function reveal(species: string, mutation: string?)
 		shake(0.6, 0.6)
 	end
 
-	-- spin the preview a little while it's on screen
+	-- spin the rays and the dino while the reveal is on screen
 	local started = os.clock()
-	local spin = RunService.RenderStepped:Connect(function()
+	local spin = RunService.RenderStepped:Connect(function(dt: number)
+		for i, ray in rayList do
+			ray.Rotation = (i - 1) * (180 / RAYS) + (os.clock() - started) * 18
+		end
 		local model = dinoViewport:FindFirstChildOfClass("Model")
 		if model then
-			model:PivotTo(model:GetPivot() * CFrame.Angles(0, math.rad(0.6), 0))
+			model:PivotTo(model:GetPivot() * CFrame.Angles(0, dt * 0.6, 0))
 		end
 	end)
 
 	local done = false
 	local closeButton = UI.new("TextButton", {
+		Name = "Continue",
 		Size = UDim2.fromScale(4, 4),
 		Position = UDim2.fromScale(-1.5, -1.5),
 		BackgroundTransparency = 1,
 		Text = "",
-		ZIndex = 16,
+		ZIndex = 19,
 		Parent = screen,
 	}) :: TextButton
 	closeButton.Activated:Connect(function()
@@ -204,7 +376,7 @@ local function reveal(species: string, mutation: string?)
 			done = true
 		end
 	end)
-	while not done and os.clock() - started < 3.5 do
+	while not done and os.clock() - started < 4 do
 		task.wait(0.1)
 	end
 	spin:Disconnect()
@@ -219,8 +391,7 @@ local function processQueue()
 	end
 	revealing = true
 	while #revealQueue > 0 do
-		local item = table.remove(revealQueue, 1) :: { species: string, mutation: string? }
-		reveal(item.species, item.mutation)
+		reveal(table.remove(revealQueue, 1) :: Reveal)
 	end
 	revealing = false
 end
@@ -248,6 +419,7 @@ local function worldText(position: Vector3, text: string, color: Color3, size: n
 		size = UDim2.fromScale(1, 1),
 		color = color,
 		maxTextSize = size,
+		outlineThickness = 3,
 		parent = gui,
 	})
 	TweenService:Create(gui, TweenInfo.new(1.4), { StudsOffsetWorldSpace = Vector3.new(0, 10, 0) })
@@ -255,7 +427,6 @@ local function worldText(position: Vector3, text: string, color: Color3, size: n
 	TweenService
 		:Create(label, TweenInfo.new(1.4, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
 			TextTransparency = 1,
-			TextStrokeTransparency = 1,
 		})
 		:Play()
 	task.delay(1.5, function()
@@ -288,26 +459,76 @@ local function burst(position: Vector3, color: Color3)
 	end)
 end
 
-local function coinPop(amount: number)
-	-- Offsets inside a UIScale'd screen are in unscaled pixels.
+-- ===== Coins flying into the counter =====
+
+local function designScale(): number
 	local uiScale = screen:FindFirstChildOfClass("UIScale")
-	local target = Hud.coinTarget() / (if uiScale then uiScale.Scale else 1)
+	return if uiScale then uiScale.Scale else 1
+end
+
+local function coinsFly(amount: number, from: Vector3?)
+	local scale = designScale()
+	local target = Hud.coinTarget() / scale
+	local start = target + Vector2.new(0, 260)
+	local camera = Workspace.CurrentCamera
+	if from and camera then
+		local point, onScreen = camera:WorldToViewportPoint(from)
+		if onScreen then
+			start = Vector2.new(point.X, point.Y - UI.topInset()) / scale
+		end
+	end
+	local rng = Random.new()
+	local count = math.clamp(math.floor(math.log10(math.max(amount, 1)) * 2) + 3, 4, 12)
+	for i = 1, count do
+		local coin = UI.coin(34, screen)
+		coin.AnchorPoint = Vector2.new(0.5, 0.5)
+		coin.ZIndex = 6
+		local spread = Vector2.new(rng:NextNumber(-60, 60), rng:NextNumber(-40, 40))
+		coin.Position = UDim2.fromOffset(start.X, start.Y)
+		local delayTime = (i - 1) * 0.04
+		task.delay(delayTime, function()
+			local burstTween = TweenService:Create(
+				coin,
+				TweenInfo.new(0.22, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+				{
+					Position = UDim2.fromOffset(start.X + spread.X, start.Y + spread.Y),
+				}
+			)
+			burstTween:Play()
+			burstTween.Completed:Wait()
+			local fly = TweenService:Create(
+				coin,
+				TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
+				{
+					Position = UDim2.fromOffset(target.X, target.Y),
+					Size = UDim2.fromOffset(22, 22),
+				}
+			)
+			fly:Play()
+			fly.Completed:Wait()
+			coin:Destroy()
+		end)
+	end
+	task.delay(0.75 + count * 0.04, function()
+		Effects.onCoins()
+		UI.pop(Hud.coinPill(), 1.12)
+	end)
 	local label = UI.text({
-		text = "+💰 " .. Format.number(amount),
-		size = UDim2.fromOffset(240, 50),
-		position = UDim2.fromOffset(target.X, target.Y + 80),
+		text = "+" .. Format.number(amount),
+		size = UDim2.fromOffset(240, 46),
+		position = UDim2.fromOffset(target.X, target.Y + 64),
 		anchor = Vector2.new(0.5, 0.5),
-		color = UI.Theme.gold,
-		maxTextSize = 40,
+		color = UI.Theme.coin,
+		maxTextSize = 38,
+		outlineThickness = 3,
+		zIndex = 7,
 		parent = screen,
 	})
-	label.ZIndex = 5
-	TweenService:Create(label, TweenInfo.new(0.9, Enum.EasingStyle.Quad), {
-		Position = UDim2.fromOffset(target.X, target.Y + 20),
+	TweenService:Create(label, TweenInfo.new(1.2, Enum.EasingStyle.Quad), {
+		Position = UDim2.fromOffset(target.X, target.Y + 40),
 		TextTransparency = 1,
-		TextStrokeTransparency = 1,
 	}):Play()
-	task.delay(1, function()
+	task.delay(1.3, function()
 		label:Destroy()
 	end)
 end
@@ -315,26 +536,29 @@ end
 local function onEffect(kind: string, data: { [string]: any })
 	if kind == "Hatch" then
 		if typeof(data.species) == "string" then
-			table.insert(revealQueue, { species = data.species, mutation = data.mutation })
+			table.insert(revealQueue, {
+				species = data.species,
+				mutation = if typeof(data.mutation) == "string" then data.mutation else nil,
+				new = data.new == true,
+			})
 			task.spawn(processQueue)
 		end
 	elseif kind == "Roar" then
 		if typeof(data.position) == "Vector3" then
-			worldText(
-				data.position,
-				"ROAR!",
-				Color3.fromRGB(255, 120, 60),
-				if data.big then 48 else 34
-			)
+			worldText(data.position, "ROAR!", UI.Theme.orange, if data.big then 48 else 34)
 			local character = Players.LocalPlayer.Character
 			local root = character and character:FindFirstChild("HumanoidRootPart")
-			if root and root:IsA("BasePart") and (root.Position - data.position).Magnitude < 45 then
+			if
+				root
+				and root:IsA("BasePart")
+				and (root.CFrame.Position - data.position).Magnitude < 45
+			then
 				shake(if data.big then 0.5 else 0.25, 0.4)
 			end
 		end
 	elseif kind == "Collect" then
 		if typeof(data.amount) == "number" then
-			coinPop(data.amount)
+			coinsFly(data.amount, if typeof(data.position) == "Vector3" then data.position else nil)
 		end
 	elseif kind == "Mutate" then
 		if typeof(data.position) == "Vector3" then
@@ -353,6 +577,12 @@ local function onEffect(kind: string, data: { [string]: any })
 			confetti(40)
 		end
 	end
+end
+
+-- Plays a reveal directly (used by previews and tests).
+function Effects.reveal(species: string, mutation: string?, new: boolean?)
+	table.insert(revealQueue, { species = species, mutation = mutation, new = new == true })
+	task.spawn(processQueue)
 end
 
 function Effects.init()

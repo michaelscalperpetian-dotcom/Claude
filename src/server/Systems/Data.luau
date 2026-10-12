@@ -59,6 +59,10 @@ local function defaultProfile(now: number): Profile
 		receipts = {},
 		firstJoin = now,
 		lastSeen = now,
+		quests = { day = 0, progress = {}, claimed = {}, bonusClaimed = false },
+		dexClaimed = {},
+		codes = {},
+		settings = { music = true, sfx = true },
 	}
 end
 

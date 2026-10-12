@@ -25,6 +25,11 @@ export type ClientEvent =
 	| "TutorialAction"
 	| "WatchAd"
 	| "Cheat"
+	| "ClaimQuest"
+	| "ClaimDex"
+	| "RedeemCode"
+	| "SetSetting"
+	| "SetBuddy"
 
 export type ServerEvent = "State" | "Notify" | "Effect"
 
@@ -46,6 +51,11 @@ local CLIENT_EVENTS: { ClientEvent } = {
 	"TutorialAction",
 	"WatchAd",
 	"Cheat",
+	"ClaimQuest",
+	"ClaimDex",
+	"RedeemCode",
+	"SetSetting",
+	"SetBuddy",
 }
 
 local SERVER_EVENTS: { ServerEvent } = { "State", "Notify", "Effect" }

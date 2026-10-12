@@ -19,6 +19,7 @@ local Data = require(script.Parent.Data)
 local Nest = require(script.Parent.Nest)
 local Plots = require(script.Parent.Plots)
 local Progress = require(script.Parent.Progress)
+local Quests = require(script.Parent.Quests)
 local Sessions = require(script.Parent.Sessions)
 local State = require(script.Parent.State)
 local World = require(script.Parent.World)
@@ -233,7 +234,12 @@ local function hookCoinPads()
 			local amount = Coins.collect(player)
 			if amount > 0 then
 				Plots.updatePad(player, 0)
-				Notify.effect(player, "Collect", { amount = amount })
+				Notify.effect(
+					player,
+					"Collect",
+					{ amount = amount, position = plot.pad.CFrame.Position }
+				)
+				Quests.track(player, "collect")
 			end
 			-- Advance the tutorial even if the pad was nearly empty.
 			Progress.event(player, "collect")

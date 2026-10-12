@@ -5,6 +5,7 @@
 
 local fs = require("@lune/fs")
 local roblox = require("@lune/roblox")
+local taskLib = require("@lune/task")
 local Loader = require("../loader")
 local Common = require("./Common")
 
@@ -37,7 +38,7 @@ local function eventFor(instance, eventName)
 	return s
 end
 
-export type Options = { now: number? }
+export type Options = { now: number?, start: boolean? }
 
 function ClientEnv.new(options: Options?)
 	local env = {}
@@ -108,9 +109,20 @@ function ClientEnv.new(options: Options?)
 	roblox.implementMethod("Player", "WaitForChild", function(self, name)
 		return self:FindFirstChild(name)
 	end)
-	roblox.implementMethod("Player", "GetAttributeChangedSignal", function()
-		return Common.signal()
+	-- Lune can't hook SetAttribute, so tests fire attribute changes with
+	-- env.attributeChanged(instance, name) after setting the attribute.
+	local attributeSignals = {}
+	roblox.implementMethod("Player", "GetAttributeChangedSignal", function(self, name)
+		attributeSignals[self] = attributeSignals[self] or {}
+		attributeSignals[self][name] = attributeSignals[self][name] or Common.signal()
+		return attributeSignals[self][name]
 	end)
+	function env.attributeChanged(instance, name)
+		local signal = attributeSignals[instance] and attributeSignals[instance][name]
+		if signal then
+			signal:Fire()
+		end
+	end
 
 	local localPlayer = Instance.new("Player")
 	localPlayer.Name = "Tester"
@@ -301,6 +313,15 @@ function ClientEnv.new(options: Options?)
 	end
 	env.C = C
 	env.Panels = Loader.load("src/client/Lib/Panels")
+	-- Run the controllers' start loops too (they never return, so the caller
+	-- must end with process.exit).
+	if options and options.start then
+		for _, name in names do
+			if C[name].start then
+				taskLib.spawn(C[name].start)
+			end
+		end
+	end
 
 	-- A realistic state snapshot; override fields per test.
 	function env.snapshot(overrides)
@@ -370,6 +391,15 @@ function ClientEnv.new(options: Options?)
 			raidsEnabled = true,
 			riding = nil,
 			carrying = false,
+			quests = {
+				day = math.floor(now / 86400),
+				progress = {},
+				claimed = {},
+				bonusClaimed = false,
+			},
+			dexClaimed = {},
+			settings = { music = true, sfx = true },
+			buddy = nil,
 		}
 		for k, v in overrides or {} do
 			base[k] = v

@@ -13,7 +13,9 @@ local Data = require(script.Parent.Data)
 local Dinos = require(script.Parent.Dinos)
 local Monetization = require(script.Parent.Monetization)
 local Plots = require(script.Parent.Plots)
+local Preferences = require(script.Parent.Preferences)
 local Progress = require(script.Parent.Progress)
+local Quests = require(script.Parent.Quests)
 local Raids = require(script.Parent.Raids)
 local Sessions = require(script.Parent.Sessions)
 local Social = require(script.Parent.Social)
@@ -87,6 +89,8 @@ local function onJoin(player: Player)
 	session.ready = true
 	Sessions.Ready:fire(player)
 	Progress.onJoin(player)
+	Quests.refresh(player)
+	Preferences.syncBuddy(player)
 	State.markDirty(player)
 end
 

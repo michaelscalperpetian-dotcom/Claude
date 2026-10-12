@@ -1,6 +1,6 @@
 --!strict
 -- Info card for one of your dinos (opened from its "View" prompt): growth
--- progress, income, mutation, and Sell / Ride buttons.
+-- progress, income, mutation, and Sell / Ride / Buddy buttons.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -22,15 +22,19 @@ local DinoPanel = {}
 
 local currentId: string? = nil
 local shownKey = ""
+local showcase: Frame
 local previewHolder: Frame
 local nameLabel: TextLabel
-local rarityLabel: TextLabel
+local rarityChip: UI.Chip
+local stageChip: UI.Chip
+local mutationChip: UI.Chip
 local growthLabel: TextLabel
-local barFill: Frame
+local growthBar: UI.Bar
 local incomeLabel: TextLabel
 local extraLabel: TextLabel
-local sellButton: TextButton
-local rideButton: TextButton
+local sellButton: UI.Button
+local rideButton: UI.Button
+local buddyButton: UI.Button
 local sellArmedUntil = 0
 
 local function findDino(snapshot: Types.Snapshot, id: string): Types.DinoRecord?
@@ -57,6 +61,7 @@ local function refresh()
 	local now = Clock.now()
 	local stage, fraction, secondsLeft = Growth.progress(now - dino.bornAt, species.growth)
 	local mutation = MutationData.get(dino.mutation)
+	local rarityColor = UI.rgb(DinoData.rarityInfo(species.rarity).color)
 
 	local key = `{dino.id}:{stage}:{dino.mutation or ""}`
 	if key ~= shownKey then
@@ -70,49 +75,63 @@ local function refresh()
 			previewHolder,
 			30
 		)
+		showcase.BackgroundColor3 =
+			UI.lighten(if mutation then UI.rgb(mutation.color) else rarityColor, 0.65)
 	end
 
-	nameLabel.Text = (if mutation then mutation.emoji .. " " .. mutation.name .. " " else "")
-		.. species.name
-	rarityLabel.Text = `{species.rarity} • {Growth.stageName(stage)}`
-	rarityLabel.TextColor3 = UI.rgb(DinoData.rarityInfo(species.rarity).color)
+	nameLabel.Text = species.name
+	rarityChip.label.Text = species.rarity
+	UI.setChipColor(rarityChip, rarityColor)
+	stageChip.label.Text = Growth.stageName(stage)
+	mutationChip.root.Visible = mutation ~= nil
+	if mutation then
+		mutationChip.label.Text = `{mutation.emoji} {mutation.name} x{mutation.multiplier}`
+		UI.setChipColor(mutationChip, UI.rgb(mutation.color))
+	end
 	if stage >= Growth.GIANT then
 		growthLabel.Text = "Fully grown GIANT! 🏆"
-		barFill.Size = UDim2.fromScale(1, 1)
+		UI.setBar(growthBar, 1, "MAX")
 	else
-		growthLabel.Text = `Grows into {Growth.stageName(stage + 1)} in {Format.time(secondsLeft)}`
-		barFill.Size = UDim2.fromScale(math.clamp(fraction, 0.02, 1), 1)
+		growthLabel.Text =
+			`Grows into a {Growth.stageName(stage + 1)} in {Format.time(secondsLeft)}`
+		UI.setBar(growthBar, fraction, `{math.floor(fraction * 100)}%`)
 	end
 	local income = Growth.income(species.income, stage, MutationData.multiplier(dino.mutation))
 		* snapshot.multiplier
-	incomeLabel.Text = `💰 +{Format.number(income)} coins/sec`
+	incomeLabel.Text = `+{Format.number(income)} / sec`
 	local lays = Growth.layInterval(stage, Config.LAY_INTERVAL_ADULT, Config.LAY_INTERVAL_GIANT)
 	extraLabel.Text = if lays
-		then `🥚 Lays an egg every {Format.duration(lays)} • guards your nest at night`
+		then `🥚 Lays an egg every {Format.duration(lays)}\n🛡 Guards your nest at night`
 		else "🍼 Too young to lay eggs or guard the nest yet"
 
 	local value = Economy.dinoValue(species.income, stage, MutationData.multiplier(dino.mutation))
 	if now < sellArmedUntil then
-		sellButton.Text = "Tap again to sell!"
-		sellButton.BackgroundColor3 = UI.Theme.red
+		UI.setButton(sellButton, { text = "Sure? Tap again!", color = UI.Theme.red })
 	else
-		sellButton.Text = "Sell 💰 " .. Format.number(value)
-		sellButton.BackgroundColor3 = UI.Theme.orange
+		UI.setButton(
+			sellButton,
+			{ text = "Sell 💰" .. Format.number(value), color = UI.Theme.orange }
+		)
 	end
 
 	if snapshot.riding == dino.id then
-		rideButton.Text = "⬇ Get off"
-		UI.setEnabled(rideButton, true, UI.Theme.grey)
+		UI.setButton(rideButton, { text = "⬇ Get off", color = UI.Theme.grey, enabled = true })
 	elseif not snapshot.passes.RideDinos then
-		rideButton.Text = "🦖 Ride (pass)"
-		UI.setEnabled(rideButton, true, UI.Theme.blue)
+		UI.setButton(
+			rideButton,
+			{ text = "🦖 Ride (pass)", color = UI.Theme.blue, enabled = true }
+		)
 	elseif stage < Growth.JUVENILE then
-		rideButton.Text = "Too small to ride"
-		UI.setEnabled(rideButton, false, UI.Theme.blue)
+		UI.setButton(rideButton, { text = "Too small", color = UI.Theme.blue, enabled = false })
 	else
-		rideButton.Text = "🦖 Ride!"
-		UI.setEnabled(rideButton, true, UI.Theme.blue)
+		UI.setButton(rideButton, { text = "🦖 Ride!", color = UI.Theme.blue, enabled = true })
 	end
+
+	local isBuddy = snapshot.buddy == dino.id
+	UI.setButton(
+		buddyButton,
+		{ text = if isBuddy then "💗 Buddy ✓" else "💗 Buddy", enabled = true }
+	)
 end
 
 function DinoPanel.open(dinoId: string)
@@ -125,84 +144,126 @@ end
 
 function DinoPanel.init()
 	local _, content =
-		Panels.window("Dino", "🦖 Your Dino", Vector2.new(720, 420), UI.Theme.green)
-	previewHolder = UI.new("Frame", {
+		Panels.window("Dino", "🦖 Your Dino", Vector2.new(820, 470), UI.Theme.green)
+	showcase = UI.new("Frame", {
+		Name = "Showcase",
+		Size = UDim2.fromOffset(300, 362),
 		BackgroundColor3 = UI.Theme.panelDark,
-		Size = UDim2.fromOffset(260, 260),
 		Parent = content,
-	}, { UI.corner(16) }) :: Frame
-	local right = UI.new("Frame", {
+	}, { UI.corner(22), UI.stroke(UI.Theme.cardEdge, 3), UI.shade(0.86) }) :: Frame
+	previewHolder = UI.new("Frame", {
+		Name = "Preview",
 		BackgroundTransparency = 1,
-		Position = UDim2.fromOffset(276, 0),
-		Size = UDim2.new(1, -276, 1, 0),
+		Size = UDim2.new(1, -16, 1, -16),
+		Position = UDim2.fromOffset(8, 8),
+		Parent = showcase,
+	}) :: Frame
+
+	local right = UI.new("Frame", {
+		Name = "Info",
+		BackgroundTransparency = 1,
+		Position = UDim2.fromOffset(320, 0),
+		Size = UDim2.new(1, -320, 1, 0),
 		Parent = content,
 	}) :: Frame
-	nameLabel = UI.text({
+	nameLabel = UI.body({
 		text = "",
 		size = UDim2.new(1, 0, 0, 44),
-		color = UI.Theme.ink,
-		stroke = false,
+		font = UI.Font,
 		align = Enum.TextXAlignment.Left,
-		maxTextSize = 34,
+		maxTextSize = 38,
 		parent = right,
 	})
-	rarityLabel = UI.text({
-		text = "",
-		size = UDim2.new(1, 0, 0, 30),
-		position = UDim2.fromOffset(0, 46),
-		align = Enum.TextXAlignment.Left,
-		maxTextSize = 24,
-		parent = right,
-	})
-	growthLabel = UI.text({
-		text = "",
-		size = UDim2.new(1, 0, 0, 26),
-		position = UDim2.fromOffset(0, 84),
-		color = UI.Theme.ink,
-		stroke = false,
-		font = UI.BodyFont,
-		align = Enum.TextXAlignment.Left,
-		maxTextSize = 20,
-		parent = right,
-	})
-	local bar = UI.new("Frame", {
-		BackgroundColor3 = UI.Theme.panelDark,
-		Size = UDim2.new(1, -10, 0, 22),
-		Position = UDim2.fromOffset(0, 114),
+	local tags = UI.new("Frame", {
+		Name = "Tags",
+		BackgroundTransparency = 1,
+		Size = UDim2.new(1, 0, 0, 32),
+		Position = UDim2.fromOffset(0, 50),
 		Parent = right,
-	}, { UI.corner(11), UI.stroke(UI.Theme.ink, 2) }) :: Frame
-	barFill = UI.new("Frame", {
-		BackgroundColor3 = UI.Theme.green,
-		Size = UDim2.fromScale(0.1, 1),
-		Parent = bar,
-	}, { UI.corner(11) }) :: Frame
-	incomeLabel = UI.text({
+	}, { UI.list(Enum.FillDirection.Horizontal, 8, Enum.HorizontalAlignment.Left) }) :: Frame
+	rarityChip = UI.chip({
 		text = "",
-		size = UDim2.new(1, 0, 0, 30),
-		position = UDim2.fromOffset(0, 146),
-		color = Color3.fromRGB(190, 130, 0),
-		stroke = false,
-		align = Enum.TextXAlignment.Left,
-		maxTextSize = 24,
-		parent = right,
-	})
-	extraLabel = UI.text({
-		text = "",
-		size = UDim2.new(1, 0, 0, 44),
-		position = UDim2.fromOffset(0, 180),
-		color = UI.Theme.ink,
-		stroke = false,
-		font = UI.BodyFont,
-		align = Enum.TextXAlignment.Left,
+		size = UDim2.fromOffset(120, 32),
+		order = 1,
 		maxTextSize = 18,
+		parent = tags,
+	})
+	stageChip = UI.chip({
+		text = "",
+		size = UDim2.fromOffset(110, 32),
+		color = UI.Theme.teal,
+		order = 2,
+		maxTextSize = 18,
+		parent = tags,
+	})
+	mutationChip = UI.chip({
+		text = "",
+		size = UDim2.fromOffset(170, 32),
+		order = 3,
+		maxTextSize = 18,
+		parent = tags,
+	})
+
+	growthLabel = UI.body({
+		text = "",
+		size = UDim2.new(1, 0, 0, 24),
+		position = UDim2.fromOffset(0, 96),
+		align = Enum.TextXAlignment.Left,
+		maxTextSize = 19,
 		parent = right,
 	})
-	sellButton = UI.button({
-		text = "Sell",
-		size = UDim2.new(0.48, 0, 0, 58),
-		position = UDim2.fromOffset(0, 250),
-		color = UI.Theme.orange,
+	growthBar = UI.bar({
+		size = UDim2.new(1, -6, 0, 28),
+		position = UDim2.fromOffset(0, 124),
+		color = UI.Theme.green,
 		parent = right,
+	})
+
+	local stats = UI.card({
+		name = "Stats",
+		size = UDim2.new(1, -6, 0, 118),
+		position = UDim2.fromOffset(0, 166),
+		radius = 16,
+		parent = right,
+	})
+	local coin = UI.coin(44, stats)
+	coin.Position = UDim2.fromOffset(14, 12)
+	incomeLabel = UI.body({
+		text = "",
+		size = UDim2.new(1, -80, 0, 40),
+		position = UDim2.fromOffset(68, 14),
+		color = UI.Theme.money,
+		font = UI.Font,
+		align = Enum.TextXAlignment.Left,
+		maxTextSize = 32,
+		parent = stats,
+	})
+	extraLabel = UI.body({
+		text = "",
+		size = UDim2.new(1, -28, 0, 50),
+		position = UDim2.fromOffset(14, 62),
+		color = UI.Theme.inkSoft,
+		align = Enum.TextXAlignment.Left,
+		valign = Enum.TextYAlignment.Top,
+		maxTextSize = 17,
+		parent = stats,
+	})
+
+	local buttons = UI.new("Frame", {
+		Name = "Buttons",
+		BackgroundTransparency = 1,
+		Size = UDim2.new(1, -6, 0, 60),
+		Position = UDim2.new(0, 0, 1, -66),
+		Parent = right,
+	}, { UI.list(Enum.FillDirection.Horizontal, 10, Enum.HorizontalAlignment.Left) }) :: Frame
+	sellButton = UI.button({
+		name = "Sell",
+		text = "Sell",
+		size = UDim2.new(0.36, -7, 0, 58),
+		color = UI.Theme.orange,
+		order = 1,
+		maxTextSize = 22,
+		parent = buttons,
 		onClick = function()
 			local id = currentId
 			if not id then
@@ -218,12 +279,13 @@ function DinoPanel.init()
 		end,
 	})
 	rideButton = UI.button({
+		name = "Ride",
 		text = "Ride",
-		size = UDim2.new(0.48, 0, 0, 58),
-		position = UDim2.new(1, -10, 0, 250),
-		anchor = Vector2.new(1, 0),
+		size = UDim2.new(0.34, -7, 0, 58),
 		color = UI.Theme.blue,
-		parent = right,
+		order = 2,
+		maxTextSize = 22,
+		parent = buttons,
 		onClick = function()
 			local id = currentId
 			local snapshot = ClientState.get()
@@ -238,6 +300,23 @@ function DinoPanel.init()
 				Net.send("Ride", id)
 				Panels.close()
 			end
+		end,
+	})
+	buddyButton = UI.button({
+		name = "Buddy",
+		text = "💗 Buddy",
+		size = UDim2.new(0.3, -6, 0, 58),
+		color = UI.Theme.pink,
+		order = 3,
+		maxTextSize = 22,
+		parent = buttons,
+		onClick = function()
+			local id = currentId
+			local snapshot = ClientState.get()
+			if not id or not snapshot then
+				return
+			end
+			Net.send("SetBuddy", if snapshot.buddy == id then nil else id)
 		end,
 	})
 

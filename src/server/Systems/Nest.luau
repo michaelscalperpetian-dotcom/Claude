@@ -22,6 +22,7 @@ local Nest = {}
 -- (player, dino) fired whenever a dino is added or changes mutation; Progress
 -- uses it to fill in the Dino-Dex.
 Nest.DinoChanged = Signal.new() :: Signal.Signal<Player, Types.DinoRecord>
+Nest.DinoRemoved = Signal.new() :: Signal.Signal<Player, Types.DinoRecord>
 
 function Nest.newId(profile: Types.Profile): string
 	local id = tostring(profile.nextId)
@@ -84,8 +85,12 @@ function Nest.removeDino(player: Player, id: string): Types.DinoRecord?
 		return nil
 	end
 	table.remove(profile.dinos, index)
+	if profile.buddy == id then
+		profile.buddy = nil
+	end
 	Plots.syncDinos(player)
 	State.markDirty(player)
+	Nest.DinoRemoved:fire(player, dino)
 	return dino
 end
 

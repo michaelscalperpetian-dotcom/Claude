@@ -427,6 +427,108 @@ step("storms mutate dinos", function()
 	assert(profile.dex.Raptor.Lava, "dex records mutation")
 end)
 
+step("daily quests track play and pay out once each", function()
+	local profile = profileOf(alice)
+	local QuestData = require("./loader").load("src/shared/Data/QuestData")
+	local day = Cycle.dayNumber(Clock.now())
+	local quests = QuestData.forDay(day)
+	eq(#quests, 3, "three quests a day")
+	local first = quests[1]
+	handlers.ClaimQuest(alice, first.id)
+	eq(profile.quests.claimed[first.id], nil, "can't claim before it's done")
+	for _ = 1, first.goal + 2 do
+		S.Quests.track(alice, first.event)
+	end
+	eq(profile.quests.progress[first.id], first.goal, "progress capped at the goal")
+	local coins, luck, boost = profile.coins, profile.boosts.luckUntil, profile.boosts.coinsUntil
+	handlers.ClaimQuest(alice, first.id)
+	assert(profile.quests.claimed[first.id], "claimed")
+	assert(
+		profile.coins > coins
+			or profile.boosts.luckUntil > luck
+			or profile.boosts.coinsUntil > boost,
+		"rewarded"
+	)
+	local after = profile.coins
+	handlers.ClaimQuest(alice, first.id)
+	eq(profile.coins, after, "only once")
+	handlers.ClaimQuest(alice, "bonus")
+	eq(profile.quests.bonusClaimed, false, "bonus needs every quest")
+	for _, quest in quests do
+		for _ = 1, quest.goal do
+			S.Quests.track(alice, quest.event)
+		end
+		handlers.ClaimQuest(alice, quest.id)
+	end
+	handlers.ClaimQuest(alice, "bonus")
+	eq(profile.quests.bonusClaimed, true, "bonus after all quests")
+	handlers.ClaimQuest(alice, 42)
+	handlers.ClaimQuest(alice, "nope")
+	advance(86400)
+	S.Quests.track(alice, "roar")
+	eq(profile.quests.day, Cycle.dayNumber(Clock.now()), "new day resets quests")
+	eq(profile.quests.bonusClaimed, false, "bonus resets")
+end)
+
+step("promo codes work once per player", function()
+	local profile = profileOf(alice)
+	local coins = profile.coins
+	handlers.RedeemCode(alice, " dino ")
+	assert(profile.codes.DINO, "code recorded")
+	assert(profile.coins > coins, "code paid coins")
+	local after = profile.coins
+	handlers.RedeemCode(alice, "DINO")
+	eq(profile.coins, after, "can't use a code twice")
+	handlers.RedeemCode(alice, "NOTACODE")
+	handlers.RedeemCode(alice, string.rep("A", 500))
+	handlers.RedeemCode(alice, { "DINO" })
+	eq(profile.coins, after, "bad codes do nothing")
+end)
+
+step("Dex milestones pay out when enough species are found", function()
+	local profile = profileOf(alice)
+	local DexRewards = require("./loader").load("src/shared/Data/DexRewards")
+	S.Nest.addDino(alice, "Stegosaurus")
+	S.Nest.addDino(alice, "Triceratops")
+	local found = DexRewards.discovered(profile.dex)
+	assert(found >= 3, "alice has found at least 3 species")
+	handlers.ClaimDex(alice, 3)
+	assert(profile.dexClaimed["3"], "3-species prize claimed")
+	handlers.ClaimDex(alice, 13)
+	eq(profile.dexClaimed["13"], nil, "can't claim the all-species prize early")
+	handlers.ClaimDex(alice, 5)
+	eq(profile.dexClaimed["5"], nil, "not a milestone")
+	handlers.ClaimDex(alice, "3")
+end)
+
+step("settings save and ignore junk", function()
+	local profile = profileOf(alice)
+	handlers.SetSetting(alice, "music", false)
+	eq(profile.settings.music, false, "music off")
+	handlers.SetSetting(alice, "sfx", "yes")
+	eq(profile.settings.sfx, true, "non-boolean ignored")
+	handlers.SetSetting(alice, "coins", true)
+	eq(profile.settings.coins, nil, "unknown setting ignored")
+	eq(S.State.snapshot(alice).settings.music, false, "snapshot has settings")
+end)
+
+step("a buddy dino follows its owner and leaves when sold", function()
+	local profile = profileOf(alice)
+	local dino = profile.dinos[1]
+	handlers.SetBuddy(alice, dino.id)
+	eq(profile.buddy, dino.id, "buddy chosen")
+	local look = alice:GetAttribute("Buddy")
+	assert(
+		typeof(look) == "string" and string.find(look, dino.species, 1, true),
+		"buddy look replicated"
+	)
+	handlers.SetBuddy(alice, "not-mine")
+	eq(profile.buddy, dino.id, "can't pick someone else's dino")
+	handlers.SellDino(alice, dino.id)
+	eq(profile.buddy, nil, "selling the buddy clears it")
+	eq(alice:GetAttribute("Buddy"), nil, "follower removed")
+end)
+
 step("snapshot has everything the HUD needs", function()
 	local snapshot = S.State.snapshot(alice)
 	for _, key in

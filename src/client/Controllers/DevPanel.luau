@@ -13,7 +13,7 @@ local UI = require(script.Parent.Parent.Lib.UI)
 
 local DevPanel = {}
 
-local toggle: TextButton
+local toggle: UI.Button
 
 local COMMANDS = {
 	{ "coins", "+1M coins" },
@@ -34,20 +34,19 @@ local COMMANDS = {
 
 function DevPanel.init()
 	local _, content =
-		Panels.window("Dev", "🛠 Test Tools (Studio only)", Vector2.new(760, 500), UI.Theme.grey)
+		Panels.window("Dev", "🛠 Test Tools", Vector2.new(820, 480), UI.Theme.inkSoft)
 	local grid = UI.new("ScrollingFrame", {
+		Name = "Grid",
 		BackgroundTransparency = 1,
 		Size = UDim2.fromScale(1, 1),
 		CanvasSize = UDim2.new(),
 		AutomaticCanvasSize = Enum.AutomaticSize.Y,
 		ScrollBarThickness = 6,
+		BorderSizePixel = 0,
 		Parent = content,
 	}, {
-		UI.new("UIGridLayout", {
-			CellSize = UDim2.fromOffset(170, 54),
-			CellPadding = UDim2.fromOffset(8, 8),
-			SortOrder = Enum.SortOrder.LayoutOrder,
-		}),
+		UI.grid(Vector2.new(170, 54), 12),
+		UI.padding(4, 6),
 	}) :: ScrollingFrame
 	for order, entry in COMMANDS do
 		UI.button({
@@ -78,18 +77,20 @@ function DevPanel.init()
 
 	local screen = UI.screen("DevToggle", 4)
 	toggle = UI.button({
+		name = "DevToggle",
 		text = "🛠",
-		size = UDim2.fromOffset(56, 56),
-		position = UDim2.new(0, 12, 0, 60),
-		color = UI.Theme.grey,
+		size = UDim2.fromOffset(52, 52),
+		position = UDim2.fromOffset(16, 12),
+		color = UI.Theme.inkSoft,
+		radius = 16,
 		parent = screen,
 		onClick = function()
 			Panels.toggle("Dev")
 		end,
 	})
-	toggle.Visible = false
+	toggle.root.Visible = false
 	ClientState.changed:connect(function(snapshot: Types.Snapshot)
-		toggle.Visible = snapshot.isDev
+		toggle.root.Visible = snapshot.isDev
 	end)
 end
 

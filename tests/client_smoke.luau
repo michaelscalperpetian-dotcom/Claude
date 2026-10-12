@@ -99,25 +99,91 @@ step("hatch reveal plays to the end", function()
 	taskLib.wait(5)
 end)
 
+-- Candy buttons keep their text on a label inside the clickable face.
+local function click(root, text)
+	for _, d in root:GetDescendants() do
+		if d:IsA("TextLabel") and d.Text == text and d.Parent and d.Parent:IsA("TextButton") then
+			d.Parent.Activated:Fire()
+			return true
+		end
+	end
+	return false
+end
+
+local function sentMessage(name)
+	for _, message in sent do
+		if message.name == name then
+			return message
+		end
+	end
+	return nil
+end
+
 step("buttons send the right requests", function()
 	local hud = playerGui:FindFirstChild("HUD")
-	local function click(root, text)
-		for _, d in root:GetDescendants() do
-			if d:IsA("TextButton") and d.Text == text then
-				d.Activated:Fire()
-				return true
-			end
-		end
-		return false
-	end
 	assert(click(hud, "🦖 Roar"), "roar button")
-	local found = false
-	for _, message in sent do
-		if message.name == "Roar" then
-			found = true
-		end
-	end
-	assert(found, "Roar sent")
+	assert(sentMessage("Roar"), "Roar sent")
+end)
+
+step("new windows: quests, settings and codes", function()
+	local Panels = env.Panels
+	assert(Panels.has("Quests") and Panels.has("Settings"), "windows exist")
+	listeners.State(
+		snapshot({ quests = { day = 0, progress = {}, claimed = {}, bonusClaimed = false } })
+	)
+	Panels.open("Quests")
+	taskLib.wait(0.05)
+	Panels.open("Settings")
+	taskLib.wait(0.05)
+	local panels = playerGui:FindFirstChild("Panels")
+	local settings = panels:FindFirstChild("Settings")
+	assert(
+		settings:FindFirstChild("music", true) == nil,
+		"no Music switch without tracks in Config"
+	)
+	local sfx = settings:FindFirstChild("sfx", true)
+	local switch = sfx:FindFirstChild("Switch")
+	switch.Activated:Fire()
+	local message = sentMessage("SetSetting")
+	assert(
+		message and message.args[1] == "sfx" and message.args[2] == false,
+		"sound effects switched off"
+	)
+	local box = settings:FindFirstChild("CodeBox", true)
+	box.Text = "dino"
+	assert(click(settings, "Redeem"), "redeem button")
+	local redeem = sentMessage("RedeemCode")
+	assert(redeem and redeem.args[1] == "dino", "code sent")
+	Panels.close()
+end)
+
+step("quest badge lights up when a quest is done", function()
+	local QuestData = require("./loader").load("src/shared/Data/QuestData")
+	local day = snapshot().quests.day
+	local first = QuestData.forDay(day)[1]
+	local s = snapshot({
+		quests = {
+			day = day,
+			progress = { [first.id] = first.goal },
+			claimed = {},
+			bonusClaimed = false,
+		},
+	})
+	assert(C.QuestsUI.claimable(s), "claimable")
+	s.quests.claimed[first.id] = true
+	assert(not C.QuestsUI.claimable(s), "nothing left after claiming")
+end)
+
+step("a buddy attribute spawns a follower", function()
+	env.localPlayer:SetAttribute("Buddy", "Raptor||3")
+	env.attributeChanged(env.localPlayer, "Buddy")
+	taskLib.wait(0.05)
+	local folder = env.workspace:FindFirstChild("Buddies")
+	assert(folder and #folder:GetChildren() == 1, "follower built")
+	env.localPlayer:SetAttribute("Buddy", nil)
+	env.attributeChanged(env.localPlayer, "Buddy")
+	taskLib.wait(0.05)
+	assert(#folder:GetChildren() == 0, "follower removed")
 end)
 
 print(`\n{passed} passed, {failed} failed`)

@@ -54,7 +54,22 @@ export type Profile = {
 	receipts: { string },
 	firstJoin: number,
 	lastSeen: number,
+	quests: QuestState,
+	dexClaimed: { [string]: boolean }, -- Dex milestone (species count) -> claimed
+	codes: { [string]: boolean }, -- redeemed codes
+	settings: Settings,
+	buddy: string?, -- id of the dino following the player around
 }
+
+-- Today's quest progress; reset when the UTC day changes.
+export type QuestState = {
+	day: number,
+	progress: { [string]: number },
+	claimed: { [string]: boolean },
+	bonusClaimed: boolean,
+}
+
+export type Settings = { music: boolean, sfx: boolean }
 
 -- Everything the client needs to draw its own HUD. Sent on change.
 export type Snapshot = {
@@ -89,6 +104,10 @@ export type Snapshot = {
 	raidsEnabled: boolean,
 	riding: string?,
 	carrying: boolean,
+	quests: QuestState,
+	dexClaimed: { [string]: boolean },
+	settings: Settings,
+	buddy: string?,
 }
 
 -- Tutorial steps (server is authoritative; client only renders hints).

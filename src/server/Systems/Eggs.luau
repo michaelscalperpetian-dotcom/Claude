@@ -22,6 +22,7 @@ local Data = require(script.Parent.Data)
 local Nest = require(script.Parent.Nest)
 local Plots = require(script.Parent.Plots)
 local Progress = require(script.Parent.Progress)
+local Quests = require(script.Parent.Quests)
 local Prompts = require(script.Parent.Prompts)
 local Sessions = require(script.Parent.Sessions)
 local State = require(script.Parent.State)
@@ -93,6 +94,7 @@ local function buyEgg(player: Player, eggId: unknown)
 	})
 	Notify.send(player, `🥚 {eggType.name} is warming in your nest!`, "good")
 	Progress.event(player, "buy_egg")
+	Quests.track(player, "buy_egg")
 	State.markDirty(player)
 end
 
@@ -136,6 +138,8 @@ function Eggs.hatch(player: Player, slot: string)
 	if not species or not DinoData.get(species) then
 		return
 	end
+	local known = profile.dex[species]
+	local isNew = known == nil or known[mutation or "Normal"] ~= true
 	Nest.removeEgg(player, slot)
 	local dino = Nest.addDino(player, species, mutation)
 	if not dino then
@@ -145,8 +149,13 @@ function Eggs.hatch(player: Player, slot: string)
 		return
 	end
 	profile.stats.hatched += 1
+	Quests.track(player, "hatch")
 	local data = DinoData.get(species) :: DinoData.Species
-	Notify.effect(player, "Hatch", { species = species, mutation = mutation, dinoId = dino.id })
+	Notify.effect(
+		player,
+		"Hatch",
+		{ species = species, mutation = mutation, dinoId = dino.id, new = isNew }
+	)
 	Analytics.event(player, "Hatch" .. data.rarity)
 	if egg.kind == "starter" then
 		Progress.event(player, "hatch_starter")
@@ -243,6 +252,7 @@ local function incubateTrayEgg(player: Player, eggId: string)
 		placedAt = now,
 		hatchAt = now + species.layHatchSeconds / Stats.hatchSpeed(session),
 	})
+	Quests.track(player, "incubate_tray")
 end
 
 local function sellTrayEgg(player: Player, eggId: string)
@@ -258,6 +268,7 @@ local function sellTrayEgg(player: Player, eggId: string)
 	Nest.removeTrayEgg(player, eggId)
 	local amount = Coins.add(player, Economy.trayEggValue(species.income), "Gameplay", "SellEgg")
 	Notify.send(player, `Sold a {species.name} egg for 💰 {amount}`, "good")
+	Quests.track(player, "sell_tray")
 end
 
 -- Friends standing near your incubators warm your eggs (2x speed).

@@ -1,7 +1,8 @@
 --!strict
--- The always-on HUD: coins, day/night + storm timers, active boosts, menu
--- buttons (right side) and action buttons (bottom row, clear of the mobile
--- thumbstick and jump button).
+-- The always-on HUD:
+--   * top centre: coin counter with income, day/night + storm chips, boosts
+--   * left: menu buttons (2 columns), kept above the mobile thumbstick
+--   * bottom centre: action buttons, clear of the thumbstick and jump button
 
 local AdService = game:GetService("AdService")
 local Players = game:GetService("Players")
@@ -24,77 +25,74 @@ local UI = require(script.Parent.Parent.Lib.UI)
 local Hud = {}
 
 local screen: ScreenGui
+local coinsPill: Frame
 local coinsLabel: TextLabel
 local incomeLabel: TextLabel
-local coinsPill: Frame
-local cycleLabel: TextLabel
-local cyclePill: Frame
-local stormPill: Frame
-local stormLabel: TextLabel
-local boostList: Frame
-local rewardsBadge: TextLabel
-local lockButton: TextButton
-local adButton: TextButton
-local dismountButton: TextButton
+local cycleChip: UI.Chip
+local stormChip: UI.Chip
+local boostRow: Frame
+local lockButton: UI.Button
+local adButton: UI.Button
+local dismountButton: UI.Button
 local coinValue: NumberValue
 
 local adAvailable = false
 
-Hud.buttons = {} :: { [string]: TextButton }
+-- Buttons other controllers poke (tutorial highlights, tests).
+Hud.buttons = {} :: { [string]: UI.Button }
+Hud.menu = {} :: { [string]: UI.MenuButton }
+-- Other controllers can add badge logic for their menu buttons.
+Hud.badgeRefreshers = {} :: { (Types.Snapshot) -> () }
 
-local function pill(
-	name: string,
-	size: Vector2,
-	position: UDim2,
-	anchor: Vector2,
-	color: Color3
-): Frame
-	return UI.new("Frame", {
-		Name = name,
-		Size = UDim2.fromOffset(size.X, size.Y),
-		Position = position,
-		AnchorPoint = anchor,
-		BackgroundColor3 = color,
-		BackgroundTransparency = 0.1,
+-- ===== Coins =====
+
+local function buildCoins()
+	coinsPill = UI.new("Frame", {
+		Name = "Coins",
+		AnchorPoint = Vector2.new(0.5, 0),
+		Position = UDim2.new(0.5, 0, 0, 10),
+		Size = UDim2.fromOffset(310, 58),
+		BackgroundColor3 = UI.Theme.hud,
+		BackgroundTransparency = 0.18,
 		Parent = screen,
-	}, {
-		UI.corner(math.floor(size.Y / 2)),
-		UI.stroke(UI.Theme.ink, 3),
-	}) :: Frame
+	}, { UI.round(), UI.stroke(UI.Theme.ink, 3) }) :: Frame
+	local coin = UI.coin(52, coinsPill)
+	coin.Position = UDim2.new(0, -6, 0.5, 0)
+	coin.AnchorPoint = Vector2.new(0, 0.5)
+	coinsLabel = UI.text({
+		name = "Amount",
+		text = "0",
+		size = UDim2.new(1, -150, 0, 42),
+		position = UDim2.new(0, 56, 0.5, 0),
+		anchor = Vector2.new(0, 0.5),
+		align = Enum.TextXAlignment.Left,
+		maxTextSize = 36,
+		outlineThickness = 3,
+		parent = coinsPill,
+	})
+	local income = UI.new("Frame", {
+		Name = "Income",
+		AnchorPoint = Vector2.new(1, 0.5),
+		Position = UDim2.new(1, -8, 0.5, 0),
+		Size = UDim2.fromOffset(92, 36),
+		BackgroundColor3 = UI.Theme.green,
+		Parent = coinsPill,
+	}, { UI.round(), UI.stroke(UI.darken(UI.Theme.green, 0.45), 2.5), UI.shade(0.84) }) :: Frame
+	incomeLabel = UI.text({
+		text = "+0/s",
+		size = UDim2.new(1, -12, 1, -8),
+		position = UDim2.fromOffset(6, 4),
+		maxTextSize = 22,
+		outline = UI.darken(UI.Theme.green, 0.6),
+		parent = income,
+	})
 end
 
-local function menuButton(
-	name: string,
-	emoji: string,
-	label: string,
-	color: Color3,
-	order: number,
-	onClick: () -> ()
-): TextButton
-	local button = UI.button({
-		text = emoji,
-		size = UDim2.fromOffset(78, 78),
-		color = color,
-		order = order,
-		maxTextSize = 40,
-		onClick = onClick,
-	})
-	button.Name = name
-	UI.text({
-		text = label,
-		size = UDim2.new(1, 8, 0, 22),
-		position = UDim2.new(0.5, 0, 1, 2),
-		anchor = Vector2.new(0.5, 0),
-		maxTextSize = 18,
-		parent = button,
-	})
-	Hud.buttons[name] = button
-	return button
-end
+-- ===== Timers and boosts =====
 
-local boostPills: { [string]: { frame: Frame, label: TextLabel } } = {}
+local boostChips: { [string]: UI.Chip } = {}
 
-local function boostPill(
+local function boostChip(
 	id: string,
 	text: string,
 	color: Color3,
@@ -102,34 +100,28 @@ local function boostPill(
 	seen: { [string]: boolean }
 )
 	seen[id] = true
-	local existing = boostPills[id]
+	local existing = boostChips[id]
 	if existing then
 		existing.label.Text = text
 		return
 	end
-	local frame = UI.new("Frame", {
-		Name = id,
-		Size = UDim2.fromOffset(210, 40),
-		BackgroundColor3 = color,
-		BackgroundTransparency = 0.1,
-		LayoutOrder = order,
-		Parent = boostList,
-	}, { UI.corner(20), UI.stroke(UI.Theme.ink, 2) }) :: Frame
-	local label = UI.text({
+	local chip = UI.chip({
+		name = id,
 		text = text,
-		size = UDim2.new(1, -16, 1, -8),
-		position = UDim2.fromOffset(8, 4),
-		maxTextSize = 22,
-		parent = frame,
+		size = UDim2.fromOffset(150, 34),
+		color = color,
+		order = order,
+		maxTextSize = 19,
+		parent = boostRow,
 	})
-	boostPills[id] = { frame = frame, label = label }
-	UI.pop(frame)
+	boostChips[id] = chip
+	UI.pop(chip.root)
 end
 
 local function refreshBoosts(snapshot: Types.Snapshot, now: number)
 	local seen: { [string]: boolean } = {}
 	if snapshot.boosts.luckUntil > now then
-		boostPill(
+		boostChip(
 			"Luck",
 			"🍀 Luck " .. Format.time(snapshot.boosts.luckUntil - now),
 			UI.Theme.green,
@@ -138,27 +130,21 @@ local function refreshBoosts(snapshot: Types.Snapshot, now: number)
 		)
 	end
 	if snapshot.boosts.coinsUntil > now then
-		boostPill(
+		boostChip(
 			"Coins",
-			"⚡ 2x Coins " .. Format.time(snapshot.boosts.coinsUntil - now),
+			"⚡ 2x " .. Format.time(snapshot.boosts.coinsUntil - now),
 			UI.Theme.orange,
 			2,
 			seen
 		)
 	end
 	if snapshot.lockUntil > now then
-		boostPill(
-			"Lock",
-			"🔒 Locked " .. Format.time(snapshot.lockUntil - now),
-			UI.Theme.red,
-			3,
-			seen
-		)
+		boostChip("Lock", "🔒 " .. Format.time(snapshot.lockUntil - now), UI.Theme.red, 3, seen)
 	end
 	if snapshot.shieldUntil > now then
-		boostPill(
+		boostChip(
 			"Shield",
-			"🛡 Shield " .. Format.duration(snapshot.shieldUntil - now),
+			"🛡 " .. Format.duration(snapshot.shieldUntil - now),
 			UI.Theme.blue,
 			4,
 			seen
@@ -167,67 +153,61 @@ local function refreshBoosts(snapshot: Types.Snapshot, now: number)
 	if snapshot.friendsHere > 0 then
 		local bonus =
 			math.min(snapshot.friendsHere * Config.FRIEND_BOOST_PER_FRIEND, Config.FRIEND_BOOST_MAX)
-		boostPill(
-			"Friends",
-			`👥 Friends +{math.floor(bonus * 100 + 0.5)}%`,
-			UI.Theme.purple,
-			5,
-			seen
-		)
+		boostChip("Friends", `👥 +{math.floor(bonus * 100 + 0.5)}%`, UI.Theme.purple, 5, seen)
 	end
 	if snapshot.multiplier > 1.01 then
-		boostPill(
+		boostChip(
 			"Multiplier",
-			`💰 x{string.format("%.1f", snapshot.multiplier)} coins`,
-			UI.Theme.hud,
+			`💰 x{string.format("%.1f", snapshot.multiplier)}`,
+			UI.Theme.teal,
 			6,
 			seen
 		)
 	end
-	for id, entry in boostPills do
+	for id, chip in boostChips do
 		if not seen[id] then
-			entry.frame:Destroy()
-			boostPills[id] = nil
+			chip.root:Destroy()
+			boostChips[id] = nil
 		end
 	end
 end
 
 local function refreshTimers()
 	local snapshot = ClientState.get()
+	coinsLabel.Text = Format.number(math.floor(coinValue.Value))
 	local cycleNow = Clock.cycleNow()
 	local now = Clock.now()
 
 	local dn = Cycle.dayNight(cycleNow)
 	local raids = ReplicatedStorage:GetAttribute("RaidsEnabled") ~= false
 	if dn.isNight then
-		cycleLabel.Text = `🌙 Night {Format.time(dn.secondsLeft)}`
-			.. (if raids then " • Raids on!" else "")
-		cyclePill.BackgroundColor3 = UI.Theme.night
+		cycleChip.label.Text = `🌙 Night {Format.time(dn.secondsLeft)}`
+			.. (if raids then " • Raids!" else "")
+		UI.setChipColor(cycleChip, UI.Theme.night)
 	else
-		cycleLabel.Text = `☀️ Day {Format.time(dn.secondsLeft)}`
-		cyclePill.BackgroundColor3 = UI.Theme.hud
+		cycleChip.label.Text = `☀️ Day {Format.time(dn.secondsLeft)}`
+		UI.setChipColor(cycleChip, UI.Theme.day)
 	end
 
 	local storm = Cycle.storm(cycleNow)
 	if storm.active then
-		stormPill.Visible = true
+		stormChip.root.Visible = true
 		if storm.mega then
-			stormLabel.Text = `{MutationData.MEGA_STORM_EMOJI} Rainbow Mega Storm {Format.time(
-				storm.secondsLeft
-			)}`
-			stormPill.BackgroundColor3 = UI.Theme.purple
+			stormChip.label.Text =
+				`{MutationData.MEGA_STORM_EMOJI} Mega Storm {Format.time(storm.secondsLeft)}`
+			UI.setChipColor(stormChip, UI.Theme.purple)
 		elseif storm.kind then
 			local info = MutationData.stormInfo(storm.kind)
-			stormLabel.Text = `{info.emoji} {info.name} {Format.time(storm.secondsLeft)}`
-			stormPill.BackgroundColor3 = UI.Theme.orange
+			stormChip.label.Text = `{info.emoji} {info.name} {Format.time(storm.secondsLeft)}`
+			UI.setChipColor(stormChip, UI.Theme.orange)
 		end
 	else
-		stormPill.Visible = true
 		local nextInfo = if storm.nextKind then MutationData.stormInfo(storm.nextKind) else nil
-		stormLabel.Text = if nextInfo
-			then `Next: {nextInfo.emoji} {nextInfo.name} in {Format.time(storm.secondsLeft)}`
-			else ""
-		stormPill.BackgroundColor3 = UI.Theme.hud
+		stormChip.root.Visible = nextInfo ~= nil
+		if nextInfo then
+			stormChip.label.Text = `Next {nextInfo.emoji} in {Format.time(storm.secondsLeft)}`
+			UI.setChipColor(stormChip, UI.Theme.hud)
+		end
 	end
 
 	if not snapshot then
@@ -236,20 +216,32 @@ local function refreshTimers()
 	refreshBoosts(snapshot, now)
 
 	if snapshot.lockUntil > now then
-		lockButton.Text = "🔒 " .. Format.time(snapshot.lockUntil - now)
-		UI.setEnabled(lockButton, false, UI.Theme.red)
+		UI.setButton(
+			lockButton,
+			{ text = "🔒 " .. Format.time(snapshot.lockUntil - now), enabled = false }
+		)
 	elseif snapshot.lockCooldownUntil > now then
-		lockButton.Text = "⏳ " .. Format.time(snapshot.lockCooldownUntil - now)
-		UI.setEnabled(lockButton, false, UI.Theme.red)
+		UI.setButton(
+			lockButton,
+			{ text = "⏳ " .. Format.time(snapshot.lockCooldownUntil - now), enabled = false }
+		)
 	else
-		lockButton.Text = "🔒 Lock"
-		UI.setEnabled(lockButton, true, if dn.isNight then UI.Theme.red else UI.Theme.hud)
+		UI.setButton(lockButton, {
+			text = "🔒 Lock",
+			enabled = true,
+			color = if dn.isNight then UI.Theme.red else UI.Theme.night,
+		})
 	end
 
-	local canClaim = Streak.status(snapshot.streak, Cycle.dayNumber(now))
-	rewardsBadge.Visible = canClaim
-	adButton.Visible = adAvailable and snapshot.tutorial == 99
-	dismountButton.Visible = snapshot.riding ~= nil
+	local rewards = Hud.menu.Rewards
+	if rewards then
+		rewards.badge.Visible = (Streak.status(snapshot.streak, Cycle.dayNumber(now)))
+	end
+	adButton.root.Visible = adAvailable and snapshot.tutorial == 99
+	dismountButton.root.Visible = snapshot.riding ~= nil
+	for _, refresh in Hud.badgeRefreshers do
+		refresh(snapshot)
+	end
 end
 
 local function onState(snapshot: Types.Snapshot)
@@ -289,198 +281,170 @@ function Hud.coinTarget(): Vector2
 	return coinsPill.AbsolutePosition + coinsPill.AbsoluteSize / 2
 end
 
+function Hud.coinPill(): Frame
+	return coinsPill
+end
+
+-- ===== Menu =====
+
+local MENU = {
+	{ name = "Shop", icon = "🥚", caption = "Eggs", color = UI.Theme.green },
+	{ name = "Store", icon = "💎", caption = "Store", color = UI.Theme.blue },
+	{ name = "Rewards", icon = "🎁", caption = "Daily", color = UI.Theme.orange },
+	{ name = "Quests", icon = "📜", caption = "Quests", color = UI.Theme.purple },
+	{ name = "Dex", icon = "📖", caption = "Dex", color = UI.Theme.pink },
+	{ name = "Settings", icon = "⚙️", caption = "Settings", color = UI.Theme.teal },
+}
+
+local function buildMenu()
+	local menu = UI.new("Frame", {
+		Name = "Menu",
+		BackgroundTransparency = 1,
+		AnchorPoint = Vector2.new(0, 0.5),
+		Position = UDim2.new(0, 16, 0.44, 0),
+		Size = UDim2.fromOffset(70 * 2 + 18, 3 * 70 + 2 * 34),
+		Parent = screen,
+	}, {
+		UI.new("UIGridLayout", {
+			CellSize = UDim2.fromOffset(70, 70),
+			CellPadding = UDim2.fromOffset(18, 34),
+			SortOrder = Enum.SortOrder.LayoutOrder,
+		}),
+	}) :: Frame
+	for order, entry in MENU do
+		local item = UI.menuButton({
+			icon = entry.icon,
+			caption = entry.caption,
+			color = entry.color,
+			order = order,
+			parent = menu,
+			onClick = function()
+				Panels.toggle(entry.name)
+			end,
+		})
+		item.button.root.Name = entry.name
+		Hud.menu[entry.name] = item
+	end
+end
+
+-- Hide menu buttons whose window doesn't exist (e.g. a feature turned off).
+local function syncMenu()
+	for name, item in Hud.menu do
+		item.button.root.Visible = Panels.has(name)
+	end
+end
+
+-- ===== Actions =====
+
+local function buildActions()
+	local actions = UI.new("Frame", {
+		Name = "Actions",
+		BackgroundTransparency = 1,
+		AnchorPoint = Vector2.new(0.5, 1),
+		Position = UDim2.new(0.5, 0, 1, -18),
+		Size = UDim2.fromOffset(700, 60),
+		Parent = screen,
+	}, {
+		UI.list(
+			Enum.FillDirection.Horizontal,
+			12,
+			Enum.HorizontalAlignment.Center,
+			Enum.VerticalAlignment.Center
+		),
+	}) :: Frame
+	local function action(
+		name: string,
+		text: string,
+		color: Color3,
+		order: number,
+		onClick: () -> ()
+	): UI.Button
+		local button = UI.button({
+			name = name,
+			text = text,
+			size = UDim2.fromOffset(138, 56),
+			color = color,
+			order = order,
+			maxTextSize = 26,
+			parent = actions,
+			onClick = onClick,
+		})
+		Hud.buttons[name] = button
+		return button
+	end
+	lockButton = action("Lock", "🔒 Lock", UI.Theme.night, 1, function()
+		Net.send("LockGate")
+	end)
+	action("Roar", "🦖 Roar", UI.Theme.orange, 2, function()
+		Net.send("Roar")
+	end)
+	action("Invite", "📣 Invite", UI.Theme.blue, 3, invite)
+	adButton = action("Ad", "▶ Free 2x", UI.Theme.purple, 4, function()
+		Net.send("WatchAd")
+	end)
+	adButton.root.Visible = false
+	task.spawn(pcall, function()
+		AdService:RegisterAdOpportunityAsync(adButton.face)
+	end)
+	dismountButton = action("Dismount", "⬇ Get off", UI.Theme.grey, 5, function()
+		Net.send("Ride", nil)
+	end)
+	dismountButton.root.Visible = false
+end
+
 function Hud.init()
 	screen = UI.screen("HUD", 1)
 
 	coinValue = Instance.new("NumberValue")
 	coinValue.Changed:Connect(function(value: number)
-		coinsLabel.Text = "💰 " .. Format.number(math.floor(value))
+		coinsLabel.Text = Format.number(math.floor(value))
 	end)
 
-	coinsPill = pill(
-		"Coins",
-		Vector2.new(300, 60),
-		UDim2.new(0.5, 0, 0, 8),
-		Vector2.new(0.5, 0),
-		UI.Theme.hud
-	)
-	coinsLabel = UI.text({
-		text = "💰 0",
-		size = UDim2.new(0.68, 0, 1, -10),
-		position = UDim2.fromOffset(12, 5),
-		color = UI.Theme.gold,
-		align = Enum.TextXAlignment.Left,
-		maxTextSize = 36,
-		parent = coinsPill,
-	})
-	incomeLabel = UI.text({
-		text = "+0/s",
-		size = UDim2.new(0.3, -10, 0.6, 0),
-		position = UDim2.new(1, -10, 0.5, 0),
-		anchor = Vector2.new(1, 0.5),
-		color = UI.Theme.green,
-		align = Enum.TextXAlignment.Right,
-		maxTextSize = 24,
-		parent = coinsPill,
-	})
-
-	cyclePill = pill(
-		"Cycle",
-		Vector2.new(300, 40),
-		UDim2.new(0.5, 0, 0, 74),
-		Vector2.new(0.5, 0),
-		UI.Theme.hud
-	)
-	cycleLabel = UI.text({
+	buildCoins()
+	local timers = UI.new("Frame", {
+		Name = "Timers",
+		BackgroundTransparency = 1,
+		AnchorPoint = Vector2.new(0.5, 0),
+		Position = UDim2.new(0.5, 0, 0, 76),
+		Size = UDim2.fromOffset(640, 36),
+		Parent = screen,
+	}, { UI.list(Enum.FillDirection.Horizontal, 10, Enum.HorizontalAlignment.Center) }) :: Frame
+	cycleChip = UI.chip({
+		name = "Cycle",
 		text = "☀️ Day",
-		size = UDim2.new(1, -20, 1, -8),
-		position = UDim2.fromOffset(10, 4),
-		maxTextSize = 24,
-		parent = cyclePill,
+		size = UDim2.fromOffset(210, 36),
+		color = UI.Theme.day,
+		order = 1,
+		maxTextSize = 21,
+		parent = timers,
 	})
-	stormPill = pill(
-		"Storm",
-		Vector2.new(360, 34),
-		UDim2.new(0.5, 0, 0, 120),
-		Vector2.new(0.5, 0),
-		UI.Theme.hud
-	)
-	stormLabel = UI.text({
+	stormChip = UI.chip({
+		name = "Storm",
 		text = "",
-		size = UDim2.new(1, -20, 1, -6),
-		position = UDim2.fromOffset(10, 3),
-		maxTextSize = 20,
-		parent = stormPill,
+		size = UDim2.fromOffset(250, 36),
+		color = UI.Theme.hud,
+		order = 2,
+		maxTextSize = 21,
+		parent = timers,
 	})
-
-	boostList = UI.new("Frame", {
+	stormChip.root.Visible = false
+	boostRow = UI.new("Frame", {
 		Name = "Boosts",
 		BackgroundTransparency = 1,
-		Position = UDim2.new(0, 12, 0.32, 0),
-		Size = UDim2.fromOffset(210, 280),
+		AnchorPoint = Vector2.new(0.5, 0),
+		Position = UDim2.new(0.5, 0, 0, 122),
+		Size = UDim2.fromOffset(820, 34),
 		Parent = screen,
-	}, { UI.list(Enum.FillDirection.Vertical, 6, Enum.HorizontalAlignment.Left) }) :: Frame
+	}, { UI.list(Enum.FillDirection.Horizontal, 8, Enum.HorizontalAlignment.Center) }) :: Frame
 
-	-- Menu buttons (right side)
-	local menu = UI.new("Frame", {
-		Name = "Menu",
-		BackgroundTransparency = 1,
-		AnchorPoint = Vector2.new(1, 0.5),
-		Position = UDim2.new(1, -14, 0.46, 0),
-		Size = UDim2.fromOffset(84, 430),
-		Parent = screen,
-	}, {
-		UI.list(
-			Enum.FillDirection.Vertical,
-			26,
-			Enum.HorizontalAlignment.Center,
-			Enum.VerticalAlignment.Center
-		),
-	}) :: Frame
-	menuButton("Shop", "🥚", "Eggs", UI.Theme.green, 1, function()
-		Panels.toggle("Shop")
-	end).Parent =
-		menu
-	menuButton("Store", "💎", "Store", UI.Theme.blue, 2, function()
-		Panels.toggle("Store")
-	end).Parent =
-		menu
-	local rewards = menuButton("Rewards", "🎁", "Rewards", UI.Theme.orange, 3, function()
-		Panels.toggle("Rewards")
-	end)
-	rewards.Parent = menu
-	rewardsBadge = UI.text({
-		text = "!",
-		size = UDim2.fromOffset(28, 28),
-		position = UDim2.new(1, 4, 0, -6),
-		anchor = Vector2.new(1, 0),
-		color = UI.Theme.white,
-		maxTextSize = 24,
-		parent = rewards,
-	})
-	rewardsBadge.BackgroundTransparency = 0
-	rewardsBadge.BackgroundColor3 = UI.Theme.red
-	UI.corner(14).Parent = rewardsBadge
-	menuButton("Dex", "📖", "Dex", UI.Theme.purple, 4, function()
-		Panels.toggle("Dex")
-	end).Parent =
-		menu
-
-	-- Action row (bottom center)
-	local actions = UI.new("Frame", {
-		Name = "Actions",
-		BackgroundTransparency = 1,
-		AnchorPoint = Vector2.new(0.5, 1),
-		Position = UDim2.new(0.5, 0, 1, -14),
-		Size = UDim2.fromOffset(640, 64),
-		Parent = screen,
-	}, {
-		UI.list(
-			Enum.FillDirection.Horizontal,
-			10,
-			Enum.HorizontalAlignment.Center,
-			Enum.VerticalAlignment.Center
-		),
-	}) :: Frame
-	lockButton = UI.button({
-		text = "🔒 Lock",
-		size = UDim2.fromOffset(150, 58),
-		color = UI.Theme.hud,
-		order = 1,
-		parent = actions,
-		onClick = function()
-			Net.send("LockGate")
-		end,
-	})
-	Hud.buttons.Lock = lockButton
-	Hud.buttons.Roar = UI.button({
-		text = "🦖 Roar",
-		size = UDim2.fromOffset(130, 58),
-		color = UI.Theme.orange,
-		order = 2,
-		parent = actions,
-		onClick = function()
-			Net.send("Roar")
-		end,
-	})
-	Hud.buttons.Invite = UI.button({
-		text = "📣 Invite",
-		size = UDim2.fromOffset(130, 58),
-		color = UI.Theme.blue,
-		order = 3,
-		parent = actions,
-		onClick = invite,
-	})
-	adButton = UI.button({
-		text = "▶ Free 2x",
-		size = UDim2.fromOffset(140, 58),
-		color = UI.Theme.purple,
-		order = 4,
-		parent = actions,
-		onClick = function()
-			Net.send("WatchAd")
-		end,
-	})
-	adButton.Visible = false
-	task.spawn(pcall, function()
-		AdService:RegisterAdOpportunityAsync(adButton)
-	end)
-	dismountButton = UI.button({
-		text = "⬇ Get off",
-		size = UDim2.fromOffset(140, 58),
-		color = UI.Theme.grey,
-		order = 5,
-		parent = actions,
-		onClick = function()
-			Net.send("Ride", nil)
-		end,
-	})
-	dismountButton.Visible = false
+	buildMenu()
+	buildActions()
 
 	ClientState.changed:connect(onState)
 end
 
 function Hud.start()
+	syncMenu()
 	task.spawn(function()
 		while true do
 			checkAds()
