@@ -8,9 +8,14 @@ local Config = {
 	PLOT_COUNT = 8,
 	PLOT_SIZE = 64,
 	PLOT_RING_RADIUS = 132,
-	-- Classic Roblox studs on top of every brick (ground, paths, nests, fences).
-	-- Round shapes, water and glowing parts stay smooth.
-	CLASSIC_STUDS = true,
+	-- How every surface looks:
+	--   "square"  square studs on every face of every part (dinos and eggs too),
+	--             from the SquareStuds MaterialVariant in MaterialService. Its
+	--             images live in assets/textures; add them once in Studio (README).
+	--   "classic" Roblox's built-in round studs on the top of every brick.
+	--   "none"    smooth plastic everywhere.
+	-- Glowing, glass and ice parts always stay smooth.
+	STUD_STYLE = "square" :: "square" | "classic" | "none",
 
 	-- Starting state
 	STARTING_COINS = 100,

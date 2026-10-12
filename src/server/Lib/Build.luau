@@ -1,7 +1,8 @@
 --!strict
--- Part-building helpers for the generated world. Every part is anchored and
--- smooth. Purely decorative parts can skip touch/query work (`decor`) and small
--- ones can skip shadows, which keeps a part-built island cheap on phones.
+-- Part-building helpers for the generated world. Every part is anchored
+-- SmoothPlastic, which wears the stud material. Purely decorative parts can
+-- skip touch/query work (`decor`) and small ones can skip shadows, which keeps
+-- a part-built island cheap on phones.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -12,7 +13,7 @@ local Build = {}
 
 export type Options = {
 	name: string?,
-	smooth: boolean?, -- no studs (water, glass, glowing parts)
+	smooth: boolean?, -- no classic studs (water)
 	material: Enum.Material?,
 	transparency: number?,
 	reflectance: number?,
@@ -29,9 +30,10 @@ local SMOOTH_MATERIALS = {
 }
 
 -- Classic bricks: studs on top, inlets underneath. Surfaces only render on
--- block faces, so round shapes stay smooth.
+-- block faces, so round shapes stay smooth. (Square studs come from a
+-- material instead, see Shared.Visual.Studs.)
 local function surfaces(p: BasePart, options: Options?)
-	local studded = Config.CLASSIC_STUDS
+	local studded = Config.STUD_STYLE == "classic"
 		and not (options and options.smooth)
 		and not SMOOTH_MATERIALS[p.Material]
 		and (p:IsA("WedgePart") or (p:IsA("Part") and p.Shape == Enum.PartType.Block))

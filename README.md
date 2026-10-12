@@ -23,6 +23,28 @@ In Studio the edit view only shows a "Press Play" sign. The island, the nests an
 
 ---
 
+## Turn on the square studs (once, about 2 minutes)
+
+Every surface in the game (ground, paths, fences, trees, the volcano, dinos and eggs) wears **square studs** from one custom material, `MaterialService → SquareStuds`. The place already uses it everywhere, but Roblox only lets images be added by uploading them, so you add its three pictures once:
+
+1. Download the three images in [`assets/textures/`](assets/textures): `SquareStuds_Color.png`, `SquareStuds_Normal.png` and `SquareStuds_Roughness.png`.
+2. In Studio open the **Material Manager**: **Window → 3D → Material Manager** (in older Studio: the **Model** tab → **Material Manager**).
+3. Find **SquareStuds** (it's listed under *Smooth Plastic*), select it and click **Edit**.
+4. Next to each map, use the **import** button and pick the matching file:
+   - **Color** → `SquareStuds_Color.png`
+   - **Normal** → `SquareStuds_Normal.png`
+   - **Roughness** → `SquareStuds_Roughness.png`
+5. Leave **Studs Per Tile** at **4**. Each picture holds 4 × 4 studs, so one stud is one 1×1 stud cell, like classic Roblox bricks.
+6. Press **▶ Play**. Studio uploads the images to your account; a new upload can show grey for a minute until it's approved.
+
+You can also upload the images in the Asset Manager or Creator Hub, right-click each one, choose **Copy Asset ID**, and paste the IDs into the `ColorMap`, `NormalMap` and `RoughnessMap` properties of `SquareStuds`. If you build the place with Rojo, paste them into `default.project.json` (`MaterialService.SquareStuds`) as `"rbxassetid://…"` so rebuilds keep them.
+
+Until the images are added, parts just look smooth. Glowing lava, glass and crystal parts always stay smooth on purpose.
+
+**Other looks:** set `STUD_STYLE` in `src/shared/Config.luau` to `"classic"` for Roblox's built-in round studs on brick tops (no upload needed), or `"none"` for smooth plastic. To change the studs themselves (size, roundness, height), edit the numbers at the top of `tools/textures/make_studs.py`, run `python3 tools/textures/make_studs.py`, and import the new images.
+
+---
+
 ## Publish it
 
 1. **File → Publish to Roblox** and create a new experience.
@@ -72,14 +94,18 @@ Purchases follow the rules in the plan (section 2.5):
 | **Mutations** | Glossy, Lava, Frost, Cosmic, Rainbow (1.5×–8× coins). There's a storm every 30 minutes, and a **Rainbow Mega Storm every Saturday at 17:00 UTC**. |
 | **Night raids** | At night, visitors can steal *laid* eggs (never your dinos). You get a free gate lock with a cooldown, a 24-hour shield for new players, and you can tag a thief to get your egg back. Grown dinos roar thieves away. Raids are off in private servers. |
 | **Tutorial** | A guided first 3 minutes: hatch → collect → buy → gift egg → raid practice → lock. Each step is logged as an onboarding funnel in Creator Analytics. |
-| **Progression** | Dino-Dex (with mutations), a 7-day login streak, slot and incubator upgrades bought with coins, and selling dinos and eggs. |
+| **Progression** | Dino-Dex (with mutations) with prizes at 3, 6, 9 and all 13 species, a 7-day login streak, slot and incubator upgrades bought with coins, and selling dinos and eggs. |
+| **Daily quests** | Three fresh quests every day (hatch eggs, buy eggs, collect coins, roar...), each with a coin or boost reward, plus a bonus for finishing all three. |
+| **Codes** | A code box in ⚙️ Settings. Codes are listed in `src/server/Lib/CodeData.luau` (server only, so nobody can read them early): add a NAME in capitals, a reward, and optionally an `expires` time. Each player can use each code once. Starts with `DINO`, `RAWR` and `EGGCELLENT`. |
+| **Dino buddy** | Pick any of your dinos as a buddy and it follows you around the island. |
 | **Social (no chat needed)** | Friend coin boost (+10% each, up to +40%), likes on nest signs, a Roar emote, invites, and riding your dinos (with the pass). |
+| **Look & feel** | A cartoon island with square studs on every surface, a volcano, candy-striped hub, day/night lighting with glowing lamps, chunky rounded UI that scales for phones, tablets and PCs, a hatch reveal with light beams, coins that fly to your counter, and sound effects (switchable in ⚙️ Settings). |
 | **Saving** | Session-locked DataStore profiles with retries, autosave, save on leave and on shutdown, and schema versioning. |
 
 Not built yet (next steps from the plan):
 - **Real 3D art.** Dinos and eggs are built from simple shapes in `src/shared/Visual/`. Replace `DinoModel.build` to use real models.
-- **Sounds and music.**
-- **Daily quests, trading, and global leaderboards.**
+- **Music.** Sound effects use Roblox's built-in sounds. For music, paste audio IDs you're allowed to use (e.g. Roblox-uploaded tracks from the Creator Store) into `Config.MUSIC_TRACKS`; the Music switch in Settings appears on its own.
+- **Trading and global leaderboards.**
 - **The Roblox Plus prompt.**
 - **"Your dino is grown!" push notifications.** These need Open Cloud; the in-game opt-in prompt is already there.
 - **Your icon and thumbnails.** These are the most important art spend.
@@ -106,10 +132,11 @@ When you use Rojo, edit the files in `src/` and not the scripts in Studio, becau
 **Checks** (CI runs all of these):
 
 ```sh
-stylua --check src tests        # formatting
+stylua --check src tests tools  # formatting
 selene src                      # lint
-lune run tests/run              # 42 unit tests: odds, growth, economy, storms, streaks
-lune run tests/smoke            # builds the island + every dino/egg model with real Roblox classes
+lune run tests/run              # unit tests: odds, growth, economy, storms, streaks, quests, studs
+lune run tests/smoke            # builds the island + every dino/egg model with real Roblox classes,
+                                # and checks every part wears the stud material
 lune run tests/integration      # plays a full session against the real server code
 lune run tests/client_smoke     # builds the whole UI and opens every window
 ```
@@ -122,7 +149,7 @@ src/
 │   ├── Config.luau         every tunable number + monetization IDs
 │   ├── Data/               dinos, eggs, mutations, tutorial, store items
 │   ├── Util/               pure logic: odds, growth, economy, day/night + storms, streaks
-│   ├── Visual/             dino and egg model builders
+│   ├── Visual/             dino and egg model builders, the stud look
 │   ├── Net.luau            every remote, rate-limited
 │   └── Types.luau          save format + state snapshot
 ├── server/                 → ServerScriptService.Server
@@ -135,6 +162,9 @@ src/
     ├── Controllers/        HUD, shop + odds, store, dex, rewards, dino panel,
     │                       tutorial, effects, world FX, dev panel
     └── Lib/                UI toolkit, pop-up windows
+assets/textures/            square-stud material images (import once, see above)
+tools/textures/             make_studs.py: generates those images
+tools/preview/              offline renderers for the island, models and UI
 tests/                      Lune test suites
 build/RaiseADino.rbxlx      ready-to-open place file
 ```

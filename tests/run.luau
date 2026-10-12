@@ -1,7 +1,9 @@
 --!strict
 -- Unit tests for the pure game logic. Run with: lune run tests/run
 
+local fs = require("@lune/fs")
 local process = require("@lune/process")
+local serde = require("@lune/serde")
 local Loader = require("./loader")
 
 local Config = Loader.load("src/shared/Config")
@@ -516,6 +518,32 @@ describe("DexRewards", function()
 		eq(last.count, #DinoData.LIST)
 		for i = 2, #DexRewards.MILESTONES do
 			ok(DexRewards.MILESTONES[i].count > DexRewards.MILESTONES[i - 1].count, "increasing")
+		end
+	end)
+end)
+
+describe("Square studs", function()
+	it("STUD_STYLE is a known style", function()
+		local style = Config.STUD_STYLE
+		ok(style == "square" or style == "classic" or style == "none", `unknown style {style}`)
+	end)
+	it("the place makes SquareStuds the SmoothPlastic override", function()
+		local project = serde.decode("json", fs.readFile("default.project.json"))
+		local service = project.tree.MaterialService
+		ok(service, "MaterialService in the project")
+		eq(service["$properties"].SmoothPlasticName, "SquareStuds", "override")
+		local variant = service.SquareStuds
+		ok(variant, "SquareStuds variant")
+		eq(variant["$className"], "MaterialVariant", "class")
+		eq(variant["$properties"].BaseMaterial, "SmoothPlastic", "base material")
+		eq(variant["$properties"].StudsPerTile, 4, "4 studs per 1024px tile")
+	end)
+	it("ships the 1024 x 1024 stud maps", function()
+		for _, name in { "Color", "Normal", "Roughness" } do
+			local png = fs.readFile(`assets/textures/SquareStuds_{name}.png`)
+			eq(string.sub(png, 2, 4), "PNG", name)
+			eq(string.unpack(">I4", png, 17), 1024, `{name} width`)
+			eq(string.unpack(">I4", png, 21), 1024, `{name} height`)
 		end
 	end)
 end)

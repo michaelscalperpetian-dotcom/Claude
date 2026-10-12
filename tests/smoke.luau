@@ -234,6 +234,67 @@ check("the island and all plots build", function()
 	assert((tags.GamePrompt or 0) >= 1, "shop prompt tagged")
 end)
 
+-- Square studs come from the SmoothPlastic override, so every part that isn't
+-- meant to glow or shine must be SmoothPlastic, without classic surfaces on top.
+local Enum = roblox.Enum
+-- (by name: Lune's enum items aren't stable table keys)
+local SPECIAL = { Neon = true, Glass = true, Ice = true, ForceField = true }
+
+local function checkSurfaces(root, label)
+	for _, part in root:GetDescendants() do
+		if part:IsA("BasePart") and part.Transparency < 1 and not SPECIAL[part.Material.Name] then
+			assert(
+				part.Material == Enum.Material.SmoothPlastic,
+				`{label} {part:GetFullName()} is {part.Material.Name}, not SmoothPlastic`
+			)
+			if Config.STUD_STYLE == "square" then
+				assert(
+					part.TopSurface == Enum.SurfaceType.Smooth
+						and part.BottomSurface == Enum.SurfaceType.Smooth,
+					`{label} {part:GetFullName()} has classic surfaces`
+				)
+			end
+		end
+	end
+end
+
+check("every world part wears the stud material", function()
+	checkSurfaces(workspaceService, "world")
+end)
+
+check("every dino and egg part wears the stud material", function()
+	local folder = Instance.new("Folder")
+	for _, species in DinoData.LIST do
+		for stage = 1, 4 do
+			DinoModel.build(species.id, stage, nil, "Static").Parent = folder
+		end
+		for _, mutation in MutationData.ORDER do
+			DinoModel.build(species.id, 3, mutation, "Static").Parent = folder
+		end
+	end
+	for _, egg in EggData.LIST do
+		EggModel.build(EggModel.lookForShopEgg(egg.id), 3, true).Parent = folder
+	end
+	checkSurfaces(folder, "model")
+	folder:Destroy()
+end)
+
+check("Studs.apply sets the SmoothPlastic override", function()
+	local calls = {}
+	roblox.implementMethod("MaterialService", "SetBaseMaterialOverride", function(_, material, name)
+		table.insert(calls, { material, name })
+	end)
+	local variant = Instance.new("MaterialVariant")
+	variant.Name = "SquareStuds"
+	variant.Parent = dataModel:GetService("MaterialService")
+	local Studs = Loader.load("src/shared/Visual/Studs")
+	Studs.apply()
+	assert(#calls == 1, "one override call")
+	assert(calls[1][1] == Enum.Material.SmoothPlastic, "SmoothPlastic")
+	local expected = if Config.STUD_STYLE == "square" then "SquareStuds" else ""
+	assert(calls[1][2] == expected, `override name {calls[1][2]}`)
+end)
+
 print(`\n{passed} passed, {failed} failed`)
 if failed > 0 then
 	process.exit(1)

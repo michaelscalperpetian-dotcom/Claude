@@ -89,6 +89,20 @@
         }
       }
     },
+    "MaterialService": {
+      "$className": "MaterialService",
+      "$properties": {
+        "SmoothPlasticName": "SquareStuds"
+      },
+      "SquareStuds": {
+        "$className": "MaterialVariant",
+        "$properties": {
+          "BaseMaterial": "SmoothPlastic",
+          "MaterialPattern": "Regular",
+          "StudsPerTile": 4
+        }
+      }
+    },
     "Lighting": {
       "$properties": {
         "Technology": "ShadowMap",

@@ -1,6 +1,12 @@
 --!strict
 -- Raise a Dino client entry point. Same two-phase bootstrap as the server.
 
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local Studs = require(ReplicatedStorage.Shared.Visual.Studs)
+
+Studs.apply()
+
 local Controllers = script:WaitForChild("Controllers")
 
 type Controller = {

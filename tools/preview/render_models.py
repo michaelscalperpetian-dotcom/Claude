@@ -77,7 +77,10 @@ def main():
     ap.add_argument("--only", default=None, help="comma-separated species ids")
     ap.add_argument("--size", type=int, default=230)
     ap.add_argument("--yaw", type=float, default=-35)
+    ap.add_argument("--studs", action="store_true", help="square-stud material on SmoothPlastic")
     args = ap.parse_args()
+    if args.studs:
+        render3d.load_stud_maps()
     data = json.load(open(args.models))
     only = set(args.only.split(",")) if args.only else None
     dinos = [d for d in data["dinos"] if not only or d["id"] in only]

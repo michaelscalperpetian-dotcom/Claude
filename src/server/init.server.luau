@@ -5,9 +5,11 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Net = require(ReplicatedStorage.Shared.Net)
+local Studs = require(ReplicatedStorage.Shared.Visual.Studs)
 
 -- Remotes must exist before any system registers handlers in init().
 Net.serverInit()
+Studs.apply()
 
 local Systems = script:WaitForChild("Systems")
 

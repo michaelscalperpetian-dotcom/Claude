@@ -75,9 +75,12 @@ local function plotInfo(index)
 	return { cf = { plot.cframe:GetComponents() }, index = index }
 end
 
+local Config = require("../../tests/loader").load("src/shared/Config")
+
 local scene = {
 	parts = Export.parts(env.workspace, characters),
 	plots = { plotInfo(1), plotInfo(2), plotInfo(3) },
+	studStyle = Config.STUD_STYLE,
 }
 fs.writeFile(outDir .. "/scene.json", serde.encode("json", scene))
 print(`scene: {#scene.parts} parts`)

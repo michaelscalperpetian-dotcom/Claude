@@ -89,21 +89,35 @@
       </Properties>
     </Item>
   </Item>
-  <Item class="Players" referent="6">
+  <Item class="MaterialService" referent="6">
+    <Properties>
+      <string name="Name">MaterialService</string>
+      <string name="SmoothPlasticName">SquareStuds</string>
+    </Properties>
+    <Item class="MaterialVariant" referent="7">
+      <Properties>
+        <string name="Name">SquareStuds</string>
+        <token name="BaseMaterial">272</token>
+        <token name="MaterialPattern">0</token>
+        <float name="StudsPerTile">4</float>
+      </Properties>
+    </Item>
+  </Item>
+  <Item class="Players" referent="8">
     <Properties>
       <string name="Name">Players</string>
       <bool name="CharacterAutoLoads">false</bool>
     </Properties>
   </Item>
-  <Item class="ReplicatedStorage" referent="7">
+  <Item class="ReplicatedStorage" referent="9">
     <Properties>
       <string name="Name">ReplicatedStorage</string>
     </Properties>
-    <Item class="Folder" referent="8">
+    <Item class="Folder" referent="10">
       <Properties>
         <string name="Name">Shared</string>
       </Properties>
-      <Item class="ModuleScript" referent="9">
+      <Item class="ModuleScript" referent="11">
         <Properties>
           <string name="Name">Config</string>
           <string name="Source"><![CDATA[--!strict
@@ -116,6 +130,14 @@ local Config = {
 	PLOT_COUNT = 8,
 	PLOT_SIZE = 64,
 	PLOT_RING_RADIUS = 132,
+	-- How every surface looks:
+	--   "square"  square studs on every face of every part (dinos and eggs too),
+	--             from the SquareStuds MaterialVariant in MaterialService. Its
+	--             images live in assets/textures; add them once in Studio (README).
+	--   "classic" Roblox's built-in round studs on the top of every brick.
+	--   "none"    smooth plastic everywhere.
+	-- Glowing, glass and ice parts always stay smooth.
+	STUD_STYLE = "square" :: "square" | "classic" | "none",
 
 	-- Starting state
 	STARTING_COINS = 100,
@@ -279,11 +301,11 @@ return Config
 ]]></string>
         </Properties>
       </Item>
-      <Item class="Folder" referent="10">
+      <Item class="Folder" referent="12">
         <Properties>
           <string name="Name">Data</string>
         </Properties>
-        <Item class="ModuleScript" referent="11">
+        <Item class="ModuleScript" referent="13">
           <Properties>
             <string name="Name">DexRewards</string>
             <string name="Source"><![CDATA[--!strict
@@ -347,7 +369,7 @@ return DexRewards
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="12">
+        <Item class="ModuleScript" referent="14">
           <Properties>
             <string name="Name">DinoData</string>
             <string name="Source"><![CDATA[--!strict
@@ -815,7 +837,7 @@ return DinoData
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="13">
+        <Item class="ModuleScript" referent="15">
           <Properties>
             <string name="Name">EggData</string>
             <string name="Source"><![CDATA[--!strict
@@ -934,7 +956,7 @@ return EggData
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="14">
+        <Item class="ModuleScript" referent="16">
           <Properties>
             <string name="Name">MutationData</string>
             <string name="Source"><![CDATA[--!strict
@@ -1074,7 +1096,7 @@ return MutationData
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="15">
+        <Item class="ModuleScript" referent="17">
           <Properties>
             <string name="Name">QuestData</string>
             <string name="Source"><![CDATA[--!strict
@@ -1177,7 +1199,7 @@ return QuestData
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="16">
+        <Item class="ModuleScript" referent="18">
           <Properties>
             <string name="Name">StoreData</string>
             <string name="Source"><![CDATA[--!strict
@@ -1309,7 +1331,7 @@ return StoreData
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="17">
+        <Item class="ModuleScript" referent="19">
           <Properties>
             <string name="Name">TutorialData</string>
             <string name="Source"><![CDATA[--!strict
@@ -1369,7 +1391,7 @@ return TutorialData
           </Properties>
         </Item>
       </Item>
-      <Item class="ModuleScript" referent="18">
+      <Item class="ModuleScript" referent="20">
         <Properties>
           <string name="Name">Net</string>
           <string name="Source"><![CDATA[--!strict
@@ -1537,7 +1559,7 @@ return Net
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="19">
+      <Item class="ModuleScript" referent="21">
         <Properties>
           <string name="Name">Palette</string>
           <string name="Source"><![CDATA[--!strict
@@ -1623,7 +1645,7 @@ return Palette
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="20">
+      <Item class="ModuleScript" referent="22">
         <Properties>
           <string name="Name">Tags</string>
           <string name="Source"><![CDATA[--!strict
@@ -1637,7 +1659,7 @@ return {
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="21">
+      <Item class="ModuleScript" referent="23">
         <Properties>
           <string name="Name">Types</string>
           <string name="Source"><![CDATA[--!strict
@@ -1759,11 +1781,11 @@ return nil
 ]]></string>
         </Properties>
       </Item>
-      <Item class="Folder" referent="22">
+      <Item class="Folder" referent="24">
         <Properties>
           <string name="Name">Util</string>
         </Properties>
-        <Item class="ModuleScript" referent="23">
+        <Item class="ModuleScript" referent="25">
           <Properties>
             <string name="Name">Clock</string>
             <string name="Source"><![CDATA[--!strict
@@ -1795,7 +1817,7 @@ return Clock
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="24">
+        <Item class="ModuleScript" referent="26">
           <Properties>
             <string name="Name">Cycle</string>
             <string name="Source"><![CDATA[--!strict
@@ -1957,7 +1979,7 @@ return Cycle
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="25">
+        <Item class="ModuleScript" referent="27">
           <Properties>
             <string name="Name">Economy</string>
             <string name="Source"><![CDATA[--!strict
@@ -2024,7 +2046,7 @@ return Economy
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="26">
+        <Item class="ModuleScript" referent="28">
           <Properties>
             <string name="Name">EggOdds</string>
             <string name="Source"><![CDATA[--!strict
@@ -2064,7 +2086,7 @@ return EggOdds
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="27">
+        <Item class="ModuleScript" referent="29">
           <Properties>
             <string name="Name">Format</string>
             <string name="Source"><![CDATA[--!strict
@@ -2133,7 +2155,7 @@ return Format
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="28">
+        <Item class="ModuleScript" referent="30">
           <Properties>
             <string name="Name">Frames</string>
             <string name="Source"><![CDATA[--!strict
@@ -2180,7 +2202,7 @@ return Frames
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="29">
+        <Item class="ModuleScript" referent="31">
           <Properties>
             <string name="Name">Growth</string>
             <string name="Source"><![CDATA[--!strict
@@ -2287,7 +2309,7 @@ return Growth
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="30">
+        <Item class="ModuleScript" referent="32">
           <Properties>
             <string name="Name">Odds</string>
             <string name="Source"><![CDATA[--!strict
@@ -2408,7 +2430,7 @@ return Odds
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="31">
+        <Item class="ModuleScript" referent="33">
           <Properties>
             <string name="Name">Rng</string>
             <string name="Source"><![CDATA[--!strict
@@ -2470,7 +2492,7 @@ return Rng
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="32">
+        <Item class="ModuleScript" referent="34">
           <Properties>
             <string name="Name">Signal</string>
             <string name="Source"><![CDATA[--!strict
@@ -2515,7 +2537,7 @@ return Signal
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="33">
+        <Item class="ModuleScript" referent="35">
           <Properties>
             <string name="Name">Streak</string>
             <string name="Source"><![CDATA[--!strict
@@ -2561,11 +2583,11 @@ return Streak
           </Properties>
         </Item>
       </Item>
-      <Item class="Folder" referent="34">
+      <Item class="Folder" referent="36">
         <Properties>
           <string name="Name">Visual</string>
         </Properties>
-        <Item class="ModuleScript" referent="35">
+        <Item class="ModuleScript" referent="37">
           <Properties>
             <string name="Name">DinoModel</string>
             <string name="Source"><![CDATA[--!strict
@@ -3533,7 +3555,7 @@ return DinoModel
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="36">
+        <Item class="ModuleScript" referent="38">
           <Properties>
             <string name="Name">EggModel</string>
             <string name="Source"><![CDATA[--!strict
@@ -3711,14 +3733,52 @@ return EggModel
 ]]></string>
           </Properties>
         </Item>
+        <Item class="ModuleScript" referent="39">
+          <Properties>
+            <string name="Name">Studs</string>
+            <string name="Source"><![CDATA[--!strict
+-- The stud look (Config.STUD_STYLE). The place ships with the SquareStuds
+-- MaterialVariant in MaterialService set as the SmoothPlastic override, so
+-- every face of every SmoothPlastic part (world, plots, dinos, eggs) shows
+-- square studs once its images are added (see README). Any other style turns
+-- that override off; "classic" then gets round studs from Build's surfaces.
+
+local MaterialService = game:GetService("MaterialService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local Config = require(ReplicatedStorage.Shared.Config)
+
+local Studs = {}
+
+Studs.VARIANT = "SquareStuds"
+
+-- Runs on the server and on every client.
+function Studs.apply()
+	local name = if Config.STUD_STYLE == "square" then Studs.VARIANT else ""
+	if name ~= "" and not MaterialService:FindFirstChild(name) then
+		warn(`[Studs] MaterialService.{name} is missing, so parts stay smooth.`)
+		return
+	end
+	local ok, err = pcall(function()
+		MaterialService:SetBaseMaterialOverride(Enum.Material.SmoothPlastic, name)
+	end)
+	if not ok then
+		warn(`[Studs] could not set the SmoothPlastic override: {err}`)
+	end
+end
+
+return Studs
+]]></string>
+          </Properties>
+        </Item>
       </Item>
     </Item>
   </Item>
-  <Item class="ServerScriptService" referent="37">
+  <Item class="ServerScriptService" referent="40">
     <Properties>
       <string name="Name">ServerScriptService</string>
     </Properties>
-    <Item class="Script" referent="38">
+    <Item class="Script" referent="41">
       <Properties>
         <string name="Name">Server</string>
         <token name="RunContext">0</token>
@@ -3729,9 +3789,11 @@ return EggModel
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Net = require(ReplicatedStorage.Shared.Net)
+local Studs = require(ReplicatedStorage.Shared.Visual.Studs)
 
 -- Remotes must exist before any system registers handlers in init().
 Net.serverInit()
+Studs.apply()
 
 local Systems = script:WaitForChild("Systems")
 
@@ -3767,26 +3829,29 @@ end
 print("[RaiseADino] server started")
 ]]></string>
       </Properties>
-      <Item class="Folder" referent="39">
+      <Item class="Folder" referent="42">
         <Properties>
           <string name="Name">Lib</string>
         </Properties>
-        <Item class="ModuleScript" referent="40">
+        <Item class="ModuleScript" referent="43">
           <Properties>
             <string name="Name">Build</string>
             <string name="Source"><![CDATA[--!strict
--- Part-building helpers for the generated world. Every part is anchored and
--- smooth. Purely decorative parts can skip touch/query work (`decor`) and small
--- ones can skip shadows, which keeps a part-built island cheap on phones.
+-- Part-building helpers for the generated world. Every part is anchored
+-- SmoothPlastic, which wears the stud material. Purely decorative parts can
+-- skip touch/query work (`decor`) and small ones can skip shadows, which keeps
+-- a part-built island cheap on phones.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local Config = require(ReplicatedStorage.Shared.Config)
 local Frames = require(ReplicatedStorage.Shared.Util.Frames)
 
 local Build = {}
 
 export type Options = {
 	name: string?,
+	smooth: boolean?, -- no classic studs (water)
 	material: Enum.Material?,
 	transparency: number?,
 	reflectance: number?,
@@ -3795,12 +3860,30 @@ export type Options = {
 	decor: boolean?, -- no Touched events or raycasts
 }
 
+local SMOOTH_MATERIALS = {
+	[Enum.Material.Neon] = true,
+	[Enum.Material.Glass] = true,
+	[Enum.Material.ForceField] = true,
+	[Enum.Material.Ice] = true,
+}
+
+-- Classic bricks: studs on top, inlets underneath. Surfaces only render on
+-- block faces, so round shapes stay smooth. (Square studs come from a
+-- material instead, see Shared.Visual.Studs.)
+local function surfaces(p: BasePart, options: Options?)
+	local studded = Config.STUD_STYLE == "classic"
+		and not (options and options.smooth)
+		and not SMOOTH_MATERIALS[p.Material]
+		and (p:IsA("WedgePart") or (p:IsA("Part") and p.Shape == Enum.PartType.Block))
+		and p:FindFirstChildOfClass("SpecialMesh") == nil
+	p.TopSurface = if studded then Enum.SurfaceType.Studs else Enum.SurfaceType.Smooth
+	p.BottomSurface = if studded then Enum.SurfaceType.Inlet else Enum.SurfaceType.Smooth
+end
+
 local function finish(p: BasePart, color: Color3, parent: Instance, options: Options?): ()
 	p.Anchored = true
 	p.Color = color
 	p.Material = Enum.Material.SmoothPlastic
-	p.TopSurface = Enum.SurfaceType.Smooth
-	p.BottomSurface = Enum.SurfaceType.Smooth
 	if options then
 		if options.name then
 			p.Name = options.name
@@ -3825,6 +3908,7 @@ local function finish(p: BasePart, color: Color3, parent: Instance, options: Opt
 			p.CanQuery = false
 		end
 	end
+	surfaces(p, options)
 	p.Parent = parent
 end
 
@@ -3975,6 +4059,72 @@ function Build.ring(
 	return parts
 end
 
+export type Circle = { center: Vector3, radius: number }
+
+-- Fills the union of flat circles with rows of bricks snapped to the stud
+-- grid, so studs line up across every row (round shapes can't show studs).
+-- The coast steps by `rowDepth` studs, like a classic brick-built island.
+function Build.strips(
+	circles: { Circle },
+	top: number,
+	thickness: number,
+	rowDepth: number,
+	color: Color3,
+	parent: Instance,
+	options: Options?
+): { Part }
+	local minZ, maxZ = math.huge, -math.huge
+	for _, circle in circles do
+		minZ = math.min(minZ, circle.center.Z - circle.radius)
+		maxZ = math.max(maxZ, circle.center.Z + circle.radius)
+	end
+	local parts = {}
+	local z = math.floor(minZ / rowDepth) * rowDepth
+	while z < maxZ do
+		local mid = z + rowDepth / 2
+		local spans: { { number } } = {}
+		for _, circle in circles do
+			local dz = math.abs(mid - circle.center.Z)
+			if dz < circle.radius then
+				local half = math.sqrt(circle.radius * circle.radius - dz * dz)
+				table.insert(spans, {
+					math.floor(circle.center.X - half + 0.5),
+					math.floor(circle.center.X + half + 0.5),
+				})
+			end
+		end
+		table.sort(spans, function(a, b)
+			return a[1] < b[1]
+		end)
+		local merged: { { number } } = {}
+		for _, span in spans do
+			local last = merged[#merged]
+			if last and span[1] <= last[2] then
+				last[2] = math.max(last[2], span[2])
+			else
+				table.insert(merged, { span[1], span[2] })
+			end
+		end
+		for _, span in merged do
+			local width = span[2] - span[1]
+			if width >= 1 then
+				table.insert(
+					parts,
+					Build.block(
+						Vector3.new(width, thickness, rowDepth),
+						CFrame.new((span[1] + span[2]) / 2, top - thickness / 2, mid),
+						color,
+						parent,
+						options
+					)
+				)
+			end
+		end
+		z += rowDepth
+	end
+	return parts
+end
+
 -- Ground position on a circle (angle 0 points along +Z, matching the plots).
 function Build.polar(angle: number, radius: number, y: number?): Vector3
 	return Vector3.new(math.sin(angle) * radius, y or 0, math.cos(angle) * radius)
@@ -3993,7 +4143,7 @@ return Build
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="41">
+        <Item class="ModuleScript" referent="44">
           <Properties>
             <string name="Name">CodeData</string>
             <string name="Source"><![CDATA[--!strict
@@ -4021,7 +4171,7 @@ return CODES
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="42">
+        <Item class="ModuleScript" referent="45">
           <Properties>
             <string name="Name">Island</string>
             <string name="Source"><![CDATA[--!strict
@@ -4082,32 +4232,43 @@ local function lands(): { Land }
 	return list
 end
 
--- Layers from the water up; each land disc is drawn in every layer so the
--- coastline keeps its bumps. Higher layers always win, so overlaps never fight.
-local LAYERS = {
+-- Water layers (smooth discs, so the foam and shallows stay round)...
+local WATER_LAYERS = {
 	{ name = "DeepShallows", grow = 70, top = -1.98, thick = 0.2, color = Palette.water },
 	{ name = "Shallows", grow = 30, top = -1.9, thick = 0.2, color = Palette.shallows },
 	{ name = "Foam", grow = 13, top = -1.8, thick = 0.2, color = Palette.foam },
+}
+-- ...and land layers built from studded brick rows.
+local LAND_LAYERS = {
 	{ name = "Beach", grow = 10, top = -0.9, thick = 2, color = Palette.sand },
-	{ name = "GrassLip", grow = 1.6, top = -0.3, thick = 6, color = Palette.grassDark },
 	{ name = "Grass", grow = 0, top = 0, thick = 6, color = Palette.grass },
 }
+local ROW_DEPTH = 2
 
-local function buildCoast(map: Instance, landList: { Land }, extraGrow: number?)
+local function buildCoast(map: Instance, landList: { Land })
 	local folder = Instance.new("Folder")
 	folder.Name = "Coast"
-	for _, layer in LAYERS do
+	for _, layer in WATER_LAYERS do
 		for _, land in landList do
-			local diameter = 2 * (land.radius + layer.grow + (extraGrow or 0))
 			Build.disc(
-				diameter,
+				2 * (land.radius + layer.grow),
 				layer.thick,
 				CFrame.new(land.center.X, layer.top - layer.thick / 2, land.center.Z),
 				layer.color,
 				folder,
-				{ name = layer.name, decor = true, shadow = layer.thick > 1 }
+				{ name = layer.name, decor = true, shadow = false, smooth = true }
 			)
 		end
+	end
+	for _, layer in LAND_LAYERS do
+		local circles: { Build.Circle } = {}
+		for _, land in landList do
+			table.insert(circles, { center = land.center, radius = land.radius + layer.grow })
+		end
+		Build.strips(circles, layer.top, layer.thick, ROW_DEPTH, layer.color, folder, {
+			name = layer.name,
+			decor = true,
+		})
 	end
 	folder.Parent = map
 end
@@ -4118,7 +4279,7 @@ local function buildOcean(map: Instance)
 		CFrame.new(0, -3.05, 0),
 		Palette.waterDeep,
 		map,
-		{ name = "Ocean", decor = true, shadow = false, reflectance = 0.06 }
+		{ name = "Ocean", decor = true, shadow = false, reflectance = 0.06, smooth = true }
 	)
 end
 
@@ -4222,10 +4383,11 @@ end
 local function buildHub(map: Instance)
 	local hub = Build.model("Hub", map)
 	local plazaTop = 0.3
-	Build.disc(
-		Island.PLAZA_RADIUS * 2,
+	Build.strips(
+		{ { center = Vector3.zero, radius = Island.PLAZA_RADIUS } },
+		plazaTop,
 		1,
-		CFrame.new(0, plazaTop - 0.5, 0),
+		ROW_DEPTH,
 		Palette.plaza,
 		hub,
 		{ name = "Plaza" }
@@ -4740,7 +4902,7 @@ return Island
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="43">
+        <Item class="ModuleScript" referent="46">
           <Properties>
             <string name="Name">Notify</string>
             <string name="Source"><![CDATA[--!strict
@@ -4775,7 +4937,7 @@ return Notify
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="44">
+        <Item class="ModuleScript" referent="47">
           <Properties>
             <string name="Name">Props</string>
             <string name="Source"><![CDATA[--!strict
@@ -5272,7 +5434,7 @@ return Props
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="45">
+        <Item class="ModuleScript" referent="48">
           <Properties>
             <string name="Name">Stats</string>
             <string name="Source"><![CDATA[--!strict
@@ -5386,11 +5548,11 @@ return Stats
           </Properties>
         </Item>
       </Item>
-      <Item class="Folder" referent="46">
+      <Item class="Folder" referent="49">
         <Properties>
           <string name="Name">Systems</string>
         </Properties>
-        <Item class="ModuleScript" referent="47">
+        <Item class="ModuleScript" referent="50">
           <Properties>
             <string name="Name">Analytics</string>
             <string name="Source"><![CDATA[--!strict
@@ -5466,7 +5628,7 @@ return Analytics
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="48">
+        <Item class="ModuleScript" referent="51">
           <Properties>
             <string name="Name">Cheats</string>
             <string name="Source"><![CDATA[--!strict
@@ -5652,7 +5814,7 @@ return Cheats
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="49">
+        <Item class="ModuleScript" referent="52">
           <Properties>
             <string name="Name">Codes</string>
             <string name="Source"><![CDATA[--!strict
@@ -5714,7 +5876,7 @@ return Codes
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="50">
+        <Item class="ModuleScript" referent="53">
           <Properties>
             <string name="Name">Coins</string>
             <string name="Source"><![CDATA[--!strict
@@ -5831,7 +5993,7 @@ return Coins
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="51">
+        <Item class="ModuleScript" referent="54">
           <Properties>
             <string name="Name">Data</string>
             <string name="Source"><![CDATA[--!strict
@@ -6195,7 +6357,7 @@ return Data
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="52">
+        <Item class="ModuleScript" referent="55">
           <Properties>
             <string name="Name">Dinos</string>
             <string name="Source"><![CDATA[--!strict
@@ -6484,7 +6646,7 @@ return Dinos
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="53">
+        <Item class="ModuleScript" referent="56">
           <Properties>
             <string name="Name">Eggs</string>
             <string name="Source"><![CDATA[--!strict
@@ -6874,7 +7036,7 @@ return Eggs
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="54">
+        <Item class="ModuleScript" referent="57">
           <Properties>
             <string name="Name">Lifecycle</string>
             <string name="Source"><![CDATA[--!strict
@@ -7007,7 +7169,7 @@ return Lifecycle
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="55">
+        <Item class="ModuleScript" referent="58">
           <Properties>
             <string name="Name">Monetization</string>
             <string name="Source"><![CDATA[--!strict
@@ -7383,7 +7545,7 @@ return Monetization
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="56">
+        <Item class="ModuleScript" referent="59">
           <Properties>
             <string name="Name">Nest</string>
             <string name="Source"><![CDATA[--!strict
@@ -7598,7 +7760,7 @@ return Nest
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="57">
+        <Item class="ModuleScript" referent="60">
           <Properties>
             <string name="Name">Plots</string>
             <string name="Source"><![CDATA[--!strict
@@ -7800,8 +7962,11 @@ local function buildDino(
 	text.Font = Enum.Font.FredokaOne
 	text.TextScaled = true
 	text.TextColor3 = Color3.new(1, 1, 1)
-	text.TextStrokeTransparency = 0.3
 	text.Text = labelFor(dino, stage)
+	local textStroke = Instance.new("UIStroke")
+	textStroke.Color = Color3.fromRGB(43, 33, 64)
+	textStroke.Thickness = 2.5
+	textStroke.Parent = text
 	text.Parent = gui
 	gui.Parent = labelAttachment or root
 
@@ -7934,8 +8099,11 @@ local function buildIncubatorEgg(
 	text.Font = Enum.Font.FredokaOne
 	text.TextScaled = true
 	text.TextColor3 = Color3.new(1, 1, 1)
-	text.TextStrokeTransparency = 0.2
 	text.Text = ""
+	local textStroke = Instance.new("UIStroke")
+	textStroke.Color = Color3.fromRGB(43, 33, 64)
+	textStroke.Thickness = 2.5
+	textStroke.Parent = text
 	text.Parent = gui
 	gui.Parent = root
 
@@ -8121,7 +8289,7 @@ return Plots
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="58">
+        <Item class="ModuleScript" referent="61">
           <Properties>
             <string name="Name">Preferences</string>
             <string name="Source"><![CDATA[--!strict
@@ -8246,7 +8414,7 @@ return Preferences
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="59">
+        <Item class="ModuleScript" referent="62">
           <Properties>
             <string name="Name">Progress</string>
             <string name="Source"><![CDATA[--!strict
@@ -8511,7 +8679,7 @@ return Progress
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="60">
+        <Item class="ModuleScript" referent="63">
           <Properties>
             <string name="Name">Prompts</string>
             <string name="Source"><![CDATA[--!strict
@@ -8632,7 +8800,7 @@ return Prompts
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="61">
+        <Item class="ModuleScript" referent="64">
           <Properties>
             <string name="Name">Quests</string>
             <string name="Source"><![CDATA[--!strict
@@ -8776,7 +8944,7 @@ return Quests
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="62">
+        <Item class="ModuleScript" referent="65">
           <Properties>
             <string name="Name">Raids</string>
             <string name="Source"><![CDATA[--!strict
@@ -9219,7 +9387,7 @@ return Raids
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="63">
+        <Item class="ModuleScript" referent="66">
           <Properties>
             <string name="Name">Rewards</string>
             <string name="Source"><![CDATA[--!strict
@@ -9293,7 +9461,7 @@ return Rewards
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="64">
+        <Item class="ModuleScript" referent="67">
           <Properties>
             <string name="Name">Sessions</string>
             <string name="Source"><![CDATA[--!strict
@@ -9390,7 +9558,7 @@ return Sessions
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="65">
+        <Item class="ModuleScript" referent="68">
           <Properties>
             <string name="Name">Social</string>
             <string name="Source"><![CDATA[--!strict
@@ -9482,7 +9650,10 @@ function Social.decorateCharacter(player: Player)
 	label.TextScaled = true
 	label.Text = "⭐ VIP"
 	label.TextColor3 = Color3.fromRGB(255, 215, 60)
-	label.TextStrokeTransparency = 0.2
+	local labelStroke = Instance.new("UIStroke")
+	labelStroke.Color = Color3.fromRGB(43, 33, 64)
+	labelStroke.Thickness = 2.5
+	labelStroke.Parent = label
 	label.Parent = gui
 	gui.Parent = head
 end
@@ -9562,7 +9733,7 @@ return Social
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="66">
+        <Item class="ModuleScript" referent="69">
           <Properties>
             <string name="Name">State</string>
             <string name="Source"><![CDATA[--!strict
@@ -9675,7 +9846,7 @@ return State
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="67">
+        <Item class="ModuleScript" referent="70">
           <Properties>
             <string name="Name">Upgrades</string>
             <string name="Source"><![CDATA[--!strict
@@ -9740,7 +9911,7 @@ return Upgrades
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="68">
+        <Item class="ModuleScript" referent="71">
           <Properties>
             <string name="Name">Weather</string>
             <string name="Source"><![CDATA[--!strict
@@ -9839,7 +10010,7 @@ return Weather
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="69">
+        <Item class="ModuleScript" referent="72">
           <Properties>
             <string name="Name">World</string>
             <string name="Source"><![CDATA[--!strict
@@ -10531,19 +10702,25 @@ return World
       </Item>
     </Item>
   </Item>
-  <Item class="StarterPlayer" referent="70">
+  <Item class="StarterPlayer" referent="73">
     <Properties>
       <string name="Name">StarterPlayer</string>
     </Properties>
-    <Item class="StarterPlayerScripts" referent="71">
+    <Item class="StarterPlayerScripts" referent="74">
       <Properties>
         <string name="Name">StarterPlayerScripts</string>
       </Properties>
-      <Item class="LocalScript" referent="72">
+      <Item class="LocalScript" referent="75">
         <Properties>
           <string name="Name">Client</string>
           <string name="Source"><![CDATA[--!strict
 -- Raise a Dino client entry point. Same two-phase bootstrap as the server.
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local Studs = require(ReplicatedStorage.Shared.Visual.Studs)
+
+Studs.apply()
 
 local Controllers = script:WaitForChild("Controllers")
 
@@ -10579,11 +10756,11 @@ end
 print("[RaiseADino] client started")
 ]]></string>
         </Properties>
-        <Item class="Folder" referent="73">
+        <Item class="Folder" referent="76">
           <Properties>
             <string name="Name">Controllers</string>
           </Properties>
-          <Item class="ModuleScript" referent="74">
+          <Item class="ModuleScript" referent="77">
             <Properties>
               <string name="Name">Audio</string>
               <string name="Source"><![CDATA[--!strict
@@ -10781,7 +10958,7 @@ return Audio
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="75">
+          <Item class="ModuleScript" referent="78">
             <Properties>
               <string name="Name">Buddies</string>
               <string name="Source"><![CDATA[--!strict
@@ -10948,7 +11125,7 @@ return Buddies
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="76">
+          <Item class="ModuleScript" referent="79">
             <Properties>
               <string name="Name">ClientState</string>
               <string name="Source"><![CDATA[--!strict
@@ -11018,7 +11195,7 @@ return ClientState
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="77">
+          <Item class="ModuleScript" referent="80">
             <Properties>
               <string name="Name">DevPanel</string>
               <string name="Source"><![CDATA[--!strict
@@ -11121,7 +11298,7 @@ return DevPanel
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="78">
+          <Item class="ModuleScript" referent="81">
             <Properties>
               <string name="Name">DexUI</string>
               <string name="Source"><![CDATA[--!strict
@@ -11381,7 +11558,7 @@ return DexUI
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="79">
+          <Item class="ModuleScript" referent="82">
             <Properties>
               <string name="Name">DinoPanel</string>
               <string name="Source"><![CDATA[--!strict
@@ -11726,7 +11903,7 @@ return DinoPanel
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="80">
+          <Item class="ModuleScript" referent="83">
             <Properties>
               <string name="Name">Effects</string>
               <string name="Source"><![CDATA[--!strict
@@ -12325,7 +12502,7 @@ return Effects
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="81">
+          <Item class="ModuleScript" referent="84">
             <Properties>
               <string name="Name">Hud</string>
               <string name="Source"><![CDATA[--!strict
@@ -12791,7 +12968,7 @@ return Hud
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="82">
+          <Item class="ModuleScript" referent="85">
             <Properties>
               <string name="Name">PromptVisibility</string>
               <string name="Source"><![CDATA[--!strict
@@ -12910,7 +13087,7 @@ return PromptVisibility
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="83">
+          <Item class="ModuleScript" referent="86">
             <Properties>
               <string name="Name">QuestsUI</string>
               <string name="Source"><![CDATA[--!strict
@@ -13195,7 +13372,7 @@ return QuestsUI
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="84">
+          <Item class="ModuleScript" referent="87">
             <Properties>
               <string name="Name">RewardsUI</string>
               <string name="Source"><![CDATA[--!strict
@@ -13424,7 +13601,7 @@ return RewardsUI
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="85">
+          <Item class="ModuleScript" referent="88">
             <Properties>
               <string name="Name">SettingsUI</string>
               <string name="Source"><![CDATA[--!strict
@@ -13644,7 +13821,7 @@ return SettingsUI
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="86">
+          <Item class="ModuleScript" referent="89">
             <Properties>
               <string name="Name">ShopUI</string>
               <string name="Source"><![CDATA[--!strict
@@ -14172,7 +14349,7 @@ return ShopUI
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="87">
+          <Item class="ModuleScript" referent="90">
             <Properties>
               <string name="Name">StoreUI</string>
               <string name="Source"><![CDATA[--!strict
@@ -14525,7 +14702,7 @@ return StoreUI
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="88">
+          <Item class="ModuleScript" referent="91">
             <Properties>
               <string name="Name">Toasts</string>
               <string name="Source"><![CDATA[--!strict
@@ -14654,7 +14831,7 @@ return Toasts
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="89">
+          <Item class="ModuleScript" referent="92">
             <Properties>
               <string name="Name">Tutorial</string>
               <string name="Source"><![CDATA[--!strict
@@ -15001,7 +15178,7 @@ return Tutorial
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="90">
+          <Item class="ModuleScript" referent="93">
             <Properties>
               <string name="Name">WorldFx</string>
               <string name="Source"><![CDATA[--!strict
@@ -15028,59 +15205,110 @@ local EGG_TAG = "IncubatorEgg"
 local WANDER_RADIUS = 7
 
 -- ===== Dino wandering =====
+-- Each dino strolls around its home spot: it turns toward a new spot, hops
+-- along with a little waddle, then rests and breathes before the next walk.
+-- Simulated per frame on the client (pure decoration), skipped when far away.
 
-local active: { [Model]: boolean } = {}
+type Walker = {
+	root: BasePart,
+	home: Vector3,
+	position: Vector3,
+	facing: Vector3,
+	target: Vector3?,
+	waitUntil: number,
+	phase: number,
+	hop: number,
+	speed: number,
+	rng: Random,
+}
 
-local function wander(model: Model)
-	if active[model] then
+local walkers: { [Model]: Walker } = {}
+local FAR = 220
+
+local function flatten(v: Vector3, fallback: Vector3): Vector3
+	local flat = Vector3.new(v.X, 0, v.Z)
+	return if flat.Magnitude > 1e-4 then flat.Unit else fallback
+end
+
+local function addWalker(model: Model)
+	if walkers[model] then
 		return
 	end
-	active[model] = true
 	local root = model.PrimaryPart
-	if not root then
+	local home = model:GetAttribute("Home")
+	if not root or typeof(home) ~= "CFrame" then
 		return
 	end
+	local height = model:GetAttribute("Height")
+	local h = if typeof(height) == "number" then height else 4
 	local rng = Random.new()
-	task.spawn(function()
-		task.wait(rng:NextNumber(0, 3))
-		while active[model] and model.Parent do
-			local home = model:GetAttribute("Home")
-			if typeof(home) ~= "CFrame" then
-				break
-			end
-			local angle = rng:NextNumber(0, math.pi * 2)
-			local distance = rng:NextNumber(0, WANDER_RADIUS)
-			local target = home.Position
-				+ Vector3.new(math.cos(angle) * distance, 0, math.sin(angle) * distance)
-			local current = root.CFrame.Position
-			local flat = Vector3.new(target.X, current.Y, target.Z)
-			local travel = (flat - current).Magnitude
-			if travel > 0.5 then
-				local facing = CFrame.lookAt(current, flat)
-				-- turn, then walk
-				local turn = TweenService:Create(root, TweenInfo.new(0.4), { CFrame = facing })
-				turn:Play()
-				turn.Completed:Wait()
-				if not active[model] or not model.Parent then
-					break
-				end
-				local walk = TweenService:Create(
-					root,
-					TweenInfo.new(travel / 5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
-					{ CFrame = CFrame.lookAt(flat, flat + facing.LookVector) }
-				)
-				walk:Play()
-				walk.Completed:Wait()
-			end
-			task.wait(rng:NextNumber(2, 6))
+	walkers[model] = {
+		root = root,
+		home = home.Position,
+		position = root.CFrame.Position,
+		facing = flatten(home.LookVector, Vector3.new(0, 0, -1)),
+		target = nil,
+		waitUntil = os.clock() + rng:NextNumber(0, 3),
+		phase = rng:NextNumber(0, 10),
+		hop = math.clamp(h * 0.06, 0.12, 1.2),
+		speed = math.clamp(2.5 + h * 0.35, 2.5, 8),
+		rng = rng,
+	}
+end
+
+local function stepWalkers(dt: number)
+	local camera = Workspace.CurrentCamera
+	local eye = if camera then camera.CFrame.Position else Vector3.zero
+	local now = os.clock()
+	for model, w in walkers do
+		if not model.Parent then
+			walkers[model] = nil
+			continue
 		end
-		active[model] = nil
-	end)
+		if (w.position - eye).Magnitude > FAR then
+			continue
+		end
+		-- the server moves dinos to a new home when the nest is rearranged
+		local home = model:GetAttribute("Home")
+		if typeof(home) == "CFrame" and (home.Position - w.home).Magnitude > 0.1 then
+			w.home = home.Position
+			w.position = home.Position
+			w.target = nil
+		end
+		local moving = false
+		local target = w.target
+		if target then
+			local flat = Vector3.new(target.X - w.position.X, 0, target.Z - w.position.Z)
+			local distance = flat.Magnitude
+			if distance < 0.25 then
+				w.target = nil
+				w.waitUntil = now + w.rng:NextNumber(2, 6)
+			else
+				local direction = flat.Unit
+				w.facing = flatten(w.facing:Lerp(direction, math.min(1, dt * 5)), direction)
+				if w.facing:Dot(direction) > 0.85 then
+					w.position += direction * math.min(distance, w.speed * dt)
+					moving = true
+				end
+			end
+		elseif now >= w.waitUntil then
+			local angle = w.rng:NextNumber(0, math.pi * 2)
+			local radius = w.rng:NextNumber(1, WANDER_RADIUS)
+			w.target = w.home + Vector3.new(math.cos(angle) * radius, 0, math.sin(angle) * radius)
+		end
+		w.phase += dt * (if moving then 4 + w.speed * 1.5 else 2)
+		local lift = if moving
+			then math.abs(math.sin(w.phase)) * w.hop
+			else (math.sin(w.phase) * 0.5 + 0.5) * w.hop * 0.15
+		local waddle = if moving then math.sin(w.phase) * 0.07 else 0
+		local p = w.position + Vector3.new(0, lift, 0)
+		w.root.CFrame = CFrame.lookAt(p, p + w.facing) * CFrame.Angles(0, 0, waddle)
+	end
 end
 
 local function onDinoAdded(instance: Instance)
 	if instance:IsA("Model") then
-		wander(instance)
+		addWalker(instance)
 	end
 end
 
@@ -15308,15 +15536,16 @@ function WorldFx.init()
 	end)
 	CollectionService:GetInstanceRemovedSignal(DinoModel.TAG):Connect(function(instance)
 		if instance:IsA("Model") then
-			active[instance] = nil
+			walkers[instance] = nil
 		end
 	end)
 end
 
 function WorldFx.start()
-	RunService.Heartbeat:Connect(function()
+	RunService.Heartbeat:Connect(function(dt: number)
 		rainbowStep()
 		followCamera()
+		stepWalkers(dt)
 	end)
 	while true do
 		local now = Clock.now()
@@ -15333,11 +15562,11 @@ return WorldFx
             </Properties>
           </Item>
         </Item>
-        <Item class="Folder" referent="91">
+        <Item class="Folder" referent="94">
           <Properties>
             <string name="Name">Lib</string>
           </Properties>
-          <Item class="ModuleScript" referent="92">
+          <Item class="ModuleScript" referent="95">
             <Properties>
               <string name="Name">Panels</string>
               <string name="Source"><![CDATA[--!strict
@@ -15642,7 +15871,7 @@ return Panels
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="93">
+          <Item class="ModuleScript" referent="96">
             <Properties>
               <string name="Name">UI</string>
               <string name="Source"><![CDATA[--!strict
@@ -16374,13 +16603,13 @@ return UI
       </Item>
     </Item>
   </Item>
-  <Item class="Workspace" referent="94">
+  <Item class="Workspace" referent="97">
     <Properties>
       <string name="Name">Workspace</string>
       <bool name="NeedsPivotMigration">false</bool>
       <bool name="StreamingEnabled">false</bool>
     </Properties>
-    <Item class="Part" referent="95">
+    <Item class="Part" referent="98">
       <Properties>
         <string name="Name">PressPlay</string>
         <bool name="Anchored">true</bool>
@@ -16391,7 +16620,7 @@ return UI
           <Z>24</Z>
         </Vector3>
       </Properties>
-      <Item class="BillboardGui" referent="96">
+      <Item class="BillboardGui" referent="99">
         <Properties>
           <string name="Name">Sign</string>
           <bool name="AlwaysOnTop">true</bool>
@@ -16407,7 +16636,7 @@ return UI
             <Z>0</Z>
           </Vector3>
         </Properties>
-        <Item class="TextLabel" referent="97">
+        <Item class="TextLabel" referent="100">
           <Properties>
             <string name="Name">Text</string>
             <float name="BackgroundTransparency">1</float>

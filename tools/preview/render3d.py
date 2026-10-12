@@ -15,6 +15,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+from pathlib import Path
 import json
 import math
 
@@ -39,6 +40,8 @@ class Part:
         self.color = np.array(data["color"], dtype=np.float64)
         self.material = data.get("material", "SmoothPlastic")
         self.transparency = float(data.get("transparency", 0))
+        if self.material == "ForceField":
+            self.transparency = max(self.transparency, 0.6)  # a see-through shimmer in Roblox
         self.reflectance = float(data.get("reflectance", 0))
         self.name = data.get("name", "")
         self.cast_shadow = data.get("castShadow", True) is not False
@@ -403,6 +406,108 @@ def stud_shading(parts: list[Part], idx: np.ndarray, n_local: np.ndarray, points
     return factor
 
 
+# Square studs: the SquareStuds MaterialVariant (assets/textures) that Roblox
+# lays over every SmoothPlastic part. None until load_stud_maps() runs.
+STUD_MAPS: tuple[list[np.ndarray], list[np.ndarray], float] | None = None
+STUD_MATERIALS = ("SmoothPlastic",)
+
+
+def _mips(a: np.ndarray) -> list[np.ndarray]:
+    levels = [a]
+    while levels[-1].shape[0] > 1:
+        b = levels[-1]
+        n = b.shape[0] // 2
+        levels.append(b.reshape(n, 2, n, 2, *b.shape[2:]).mean(axis=(1, 3)))
+    return levels
+
+
+def load_stud_maps(directory: str | Path | None = None, studs_per_tile: float = 4.0) -> None:
+    global STUD_MAPS
+    root = Path(directory) if directory else Path(__file__).resolve().parents[2] / "assets" / "textures"
+    albedo = np.asarray(Image.open(root / "SquareStuds_Color.png").convert("L"), dtype=np.float64) / 255
+    normal = np.asarray(Image.open(root / "SquareStuds_Normal.png").convert("RGB"), dtype=np.float64) / 255 * 2 - 1
+    STUD_MAPS = (_mips(albedo), _mips(normal), studs_per_tile)
+
+
+def _bilinear(level: np.ndarray, u: np.ndarray, v: np.ndarray) -> np.ndarray:
+    size = level.shape[0]
+    x = u * size - 0.5
+    y = v * size - 0.5
+    x0 = np.floor(x).astype(np.int64)
+    y0 = np.floor(y).astype(np.int64)
+    fx = x - x0
+    fy = y - y0
+    if level.ndim == 3:
+        fx = fx[:, None]
+        fy = fy[:, None]
+    x0m, x1m = x0 % size, (x0 + 1) % size
+    y0m, y1m = y0 % size, (y0 + 1) % size
+    top = level[y0m, x0m] * (1 - fx) + level[y0m, x1m] * fx
+    bottom = level[y1m, x0m] * (1 - fx) + level[y1m, x1m] * fx
+    return top * (1 - fy) + bottom * fy
+
+
+def _sample(levels: list[np.ndarray], u: np.ndarray, v: np.ndarray, lod: np.ndarray) -> np.ndarray:
+    """Trilinear, wrapping lookup; u and v are in tiles (row index grows with v)."""
+    lod = np.clip(lod, 0, len(levels) - 1)
+    lo = np.floor(lod).astype(np.int64)
+    frac = lod - lo
+    out = np.zeros((len(u),) + levels[0].shape[2:])
+    for level in np.unique(lo):
+        sel = lo == level
+        a = _bilinear(levels[level], u[sel], v[sel])
+        b = _bilinear(levels[min(level + 1, len(levels) - 1)], u[sel], v[sel])
+        f = frac[sel] if a.ndim == 1 else frac[sel][:, None]
+        out[sel] = a * (1 - f) + b * f
+    return out
+
+
+# Face axes for box projection: the hit's dominant local axis picks which two
+# local axes become the texture's u and v.
+_U_AXIS = np.array([2, 0, 0])
+_V_AXIS = np.array([1, 2, 1])
+
+
+def stud_surface(parts: list[Part], idx: np.ndarray, n_local: np.ndarray, n_world: np.ndarray,
+                 points: np.ndarray, depth: np.ndarray, view: np.ndarray, cam: "Camera"):
+    """Albedo factor and bumped normals for square-studded parts."""
+    factor = np.ones(len(idx))
+    normals = n_world.copy()
+    if STUD_MAPS is None:
+        return factor, normals
+    albedo_mips, normal_mips, per_tile = STUD_MAPS
+    studded = np.array([p.material in STUD_MATERIALS for p in parts])[idx]
+    if not np.any(studded):
+        return factor, normals
+    sel = np.nonzero(studded)[0]
+    centers = np.stack([parts[i].center for i in idx[sel]])
+    rots = np.stack([parts[i].rot for i in idx[sel]])
+    halves = np.stack([parts[i].half for i in idx[sel]])
+    local = np.einsum("nji,nj->ni", rots, points[sel] - centers) + halves  # from the min corner
+    axis = np.argmax(np.abs(n_local[sel]), axis=1)
+    ua, va = _U_AXIS[axis], _V_AXIS[axis]
+    rows = np.arange(len(sel))
+    u = local[rows, ua] / per_tile
+    v = local[rows, va] / per_tile
+    # Texture footprint of one screen pixel (studs), like the GPU's mip choice.
+    n_geo = n_world[sel]
+    cos = np.clip(np.abs(np.einsum("ij,ij->i", n_geo, view[sel])), 0.25, 1)
+    footprint = depth[sel] * (2 * cam.tan / cam.height) / cos
+    lod = np.log2(np.maximum(footprint * albedo_mips[0].shape[0] / per_tile, 1e-6))
+    factor[sel] = _sample(albedo_mips, u, v, lod)
+    ts = _sample(normal_mips, u, v, lod)
+    tu = rots[rows, :, ua]
+    tv = rots[rows, :, va]
+    tu = tu - n_geo * np.einsum("ij,ij->i", tu, n_geo)[:, None]
+    tv = tv - n_geo * np.einsum("ij,ij->i", tv, n_geo)[:, None]
+    tu /= np.linalg.norm(tu, axis=1, keepdims=True) + 1e-12
+    tv /= np.linalg.norm(tv, axis=1, keepdims=True) + 1e-12
+    # Green points up the image, i.e. against v (rows).
+    bumped = ts[:, 0:1] * tu - ts[:, 1:2] * tv + ts[:, 2:3] * n_geo
+    normals[sel] = bumped / (np.linalg.norm(bumped, axis=1, keepdims=True) + 1e-12)
+    return factor, normals
+
+
 def shadow_map(parts: list[Part], light_dir: np.ndarray, size: int = 2048):
     # Huge flat parts (ocean, island base) don't cast useful shadows and would
     # stretch the shadow map, so only reasonably sized parts are casters.
@@ -459,19 +564,21 @@ def render(parts: list[Part], cam: Camera, lighting: dict, shadows: bool = True,
         facing = np.einsum("ij,ij->i", n_world, view) > 0
         n_world[facing] *= -1
 
+        albedo, n_shade = stud_surface(parts, idx, n_local, n_world, points, depth[hit], view, cam)
+
         light = np.array(lighting["sun_dir"], dtype=np.float64)
         light /= np.linalg.norm(light)
-        ndl = np.clip(n_world @ light, 0, 1)
+        ndl = np.clip(n_shade @ light, 0, 1)
 
         if shadows:
             scam, sdepth = shadow_map(parts, light)
             shadowed = in_shadow(points + n_world * 0.3, scam, sdepth)
             ndl = np.where(shadowed, 0.0, ndl)
 
-        hemi = (n_world[:, 1:2] * 0.5 + 0.5)
+        hemi = (n_shade[:, 1:2] * 0.5 + 0.5)
         ambient = np.array(lighting["ground_ambient"]) * (1 - hemi) + np.array(lighting["sky_ambient"]) * hemi
         base = colors[idx]
-        base = base * stud_shading(parts, idx, n_local, points)[:, None]
+        base = base * (albedo * stud_shading(parts, idx, n_local, points))[:, None]
         lit = base * (ambient + np.array(lighting["sun_color"]) * lighting["sun_strength"] * 1.6 * ndl[:, None])
         # soft rim so silhouettes read like Roblox's specular
         rim = np.clip(1 - np.abs(np.einsum("ij,ij->i", n_world, -view)), 0, 1) ** 3
@@ -589,6 +696,8 @@ def main():
 
     with open(args.scene) as f:
         scene = json.load(f)
+    if scene.get("studStyle") == "square":
+        load_stud_maps()
     w, h = (int(v) for v in args.size.split("x"))
 
     if args.view == "overview":
