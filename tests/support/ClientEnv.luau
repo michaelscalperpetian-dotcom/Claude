@@ -238,6 +238,7 @@ function ClientEnv.new(options: Options?)
 			PromptOptIn = function() end,
 		},
 		SoundService = dataModel:GetService("SoundService"),
+		MaterialService = dataModel:GetService("MaterialService"),
 		UserInputService = {
 			TouchEnabled = false,
 			KeyboardEnabled = true,

@@ -106,6 +106,7 @@ function Panels.window(name: string, title: string, size: Vector2, accent: Color
 		BackgroundColor3 = UI.Theme.panel,
 		Parent = frame,
 	}, { UI.corner(28), UI.stroke(UI.Theme.ink, 4) }) :: Frame
+	UI.studs(body, 28)
 
 	-- coloured ribbon header (rounded top, square bottom)
 	local header = UI.new("Frame", {

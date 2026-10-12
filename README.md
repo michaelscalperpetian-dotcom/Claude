@@ -27,7 +27,7 @@ In Studio the edit view only shows a "Press Play" sign. The island, the nests an
 
 Every surface in the game (ground, paths, fences, trees, the volcano, dinos and eggs) wears **square studs** from one custom material, `MaterialService → SquareStuds`. The place already uses it everywhere, but Roblox only lets images be added by uploading them, so you add its three pictures once:
 
-1. Download the three images in [`assets/textures/`](assets/textures): `SquareStuds_Color.png`, `SquareStuds_Normal.png` and `SquareStuds_Roughness.png`.
+1. Download the images in [`assets/textures/`](assets/textures): `SquareStuds_Color.png`, `SquareStuds_Normal.png`, `SquareStuds_Roughness.png` (and `SquareStuds_UI.png` for the menus, see below).
 2. In Studio open the **Material Manager**: **Window → 3D → Material Manager** (in older Studio: the **Model** tab → **Material Manager**).
 3. Find **SquareStuds** (it's listed under *Smooth Plastic*), select it and click **Edit**.
 4. Next to each map, use the **import** button and pick the matching file:
@@ -39,7 +39,9 @@ Every surface in the game (ground, paths, fences, trees, the volcano, dinos and 
 
 You can also upload the images in the Asset Manager or Creator Hub, right-click each one, choose **Copy Asset ID**, and paste the IDs into the `ColorMap`, `NormalMap` and `RoughnessMap` properties of `SquareStuds`. If you build the place with Rojo, paste them into `default.project.json` (`MaterialService.SquareStuds`) as `"rbxassetid://…"` so rebuilds keep them.
 
-Until the images are added, parts just look smooth. Glowing lava, glass and crystal parts always stay smooth on purpose.
+**Studs on the menus too:** upload `SquareStuds_UI.png` the same way (Asset Manager → **Import**), right-click it → **Copy Asset ID**, then in the **Explorer** click **MaterialService → SquareStuds** and, in **Properties** under **Attributes**, paste the ID into **UIStudImage**. Every window, card and button then shows studs.
+
+Until the images are added, parts and menus just look smooth. Glowing lava, glass and crystal parts always stay smooth on purpose.
 
 **Other looks:** set `STUD_STYLE` in `src/shared/Config.luau` to `"classic"` for Roblox's built-in round studs on brick tops (no upload needed), or `"none"` for smooth plastic. To change the studs themselves (size, roundness, height), edit the numbers at the top of `tools/textures/make_studs.py`, run `python3 tools/textures/make_studs.py`, and import the new images.
 

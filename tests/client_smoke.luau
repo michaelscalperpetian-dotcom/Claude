@@ -186,6 +186,23 @@ step("a buddy attribute spawns a follower", function()
 	assert(#folder:GetChildren() == 0, "follower removed")
 end)
 
+step("stud overlays cover panels, cards and buttons without joining layouts", function()
+	local count = 0
+	for _, label in playerGui:GetDescendants() do
+		if label.Name == "Studs" and label:IsA("ImageLabel") then
+			count += 1
+			local parent = label.Parent
+			for _, sibling in parent:GetChildren() do
+				assert(
+					not sibling:IsA("UIGridStyleLayout"),
+					`{parent:GetFullName()} has a layout, so its studs would be laid out`
+				)
+			end
+		end
+	end
+	assert(count > 20, `expected studs on many panels, got {count}`)
+end)
+
 print(`\n{passed} passed, {failed} failed`)
 if failed > 0 then
 	process.exit(1)

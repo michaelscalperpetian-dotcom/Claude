@@ -8,8 +8,11 @@
 --     on top of the 3D world, Fredoka One for headings and buttons.
 --   * Layout in design pixels; each ScreenGui gets a UIScale that fits the
 --     design canvas (about 1150 x 650) to phones, tablets and desktops.
+--   * Square studs, like the world: panels, cards and buttons wear a tiled
+--     see-through stud image once its ID is set (see UI.studs).
 
 local GuiService = game:GetService("GuiService")
+local MaterialService = game:GetService("MaterialService")
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local Workspace = game:GetService("Workspace")
@@ -310,6 +313,7 @@ function UI.button(props: ButtonProps): Button
 		ZIndex = z + 1,
 		Parent = root,
 	}, { UI.corner(radius), faceStroke, UI.shade(0.84) }) :: TextButton
+	UI.studs(face, radius, z + 1)
 	UI.new("Frame", {
 		Name = "Shine",
 		BackgroundColor3 = UI.Theme.white,
@@ -441,6 +445,63 @@ function UI.menuButton(props: {
 	return { button = button, badge = badge, badgeLabel = badgeLabel }
 end
 
+-- ===== Studs =====
+-- One see-through stud (assets/textures/SquareStuds_UI.png) tiled over a
+-- panel, card or button of any colour. Its image ID lives in the "UIStudImage"
+-- attribute of MaterialService.SquareStuds, next to the world's stud maps.
+-- Until it's set, the UI stays smooth; setting it updates every screen live.
+
+UI.STUD_TILE = 26
+
+local studLabels: { ImageLabel } = {}
+
+local function readStudImage(): string
+	local variant = MaterialService:FindFirstChild("SquareStuds")
+	local value = if variant then variant:GetAttribute("UIStudImage") else nil
+	local id = if type(value) == "number"
+		then tostring(math.floor(value))
+		elseif type(value) == "string" then string.match(value, "%d+")
+		else nil
+	return if id then "rbxassetid://" .. id else ""
+end
+
+local studImage = readStudImage()
+
+do
+	local variant = MaterialService:FindFirstChild("SquareStuds")
+	if variant then
+		variant:GetAttributeChangedSignal("UIStudImage"):Connect(function()
+			studImage = readStudImage()
+			for i = #studLabels, 1, -1 do
+				local label = studLabels[i]
+				if label.Parent then
+					label.Image = studImage
+					label.Visible = studImage ~= ""
+				else
+					table.remove(studLabels, i)
+				end
+			end
+		end)
+	end
+end
+
+-- Lays studs over `target`, under its other children (zIndex 0 by default).
+function UI.studs(target: GuiObject, radius: number?, zIndex: number?): ImageLabel
+	local label = UI.new("ImageLabel", {
+		Name = "Studs",
+		BackgroundTransparency = 1,
+		Size = UDim2.fromScale(1, 1),
+		Image = studImage,
+		Visible = studImage ~= "",
+		ScaleType = Enum.ScaleType.Tile,
+		TileSize = UDim2.fromOffset(UI.STUD_TILE, UI.STUD_TILE),
+		ZIndex = zIndex or 0,
+		Parent = target,
+	}, { UI.corner(radius or 16) }) :: ImageLabel
+	table.insert(studLabels, label)
+	return label
+end
+
 -- ===== Cards, chips, bars =====
 
 function UI.card(props: {
@@ -454,7 +515,7 @@ function UI.card(props: {
 	name: string?,
 	parent: Instance?,
 }): Frame
-	return UI.new("Frame", {
+	local card = UI.new("Frame", {
 		Name = props.name or "Card",
 		Size = props.size,
 		Position = props.position or UDim2.new(),
@@ -463,6 +524,8 @@ function UI.card(props: {
 		LayoutOrder = props.order or 0,
 		Parent = props.parent,
 	}, { UI.corner(props.radius or 16), UI.stroke(props.edge or UI.Theme.cardEdge, 2.5) }) :: Frame
+	UI.studs(card, props.radius or 16)
+	return card
 end
 
 -- Rounded pill with text, used for HUD timers and small tags.

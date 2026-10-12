@@ -96,6 +96,9 @@
       },
       "SquareStuds": {
         "$className": "MaterialVariant",
+        "$attributes": {
+          "UIStudImage": ""
+        },
         "$properties": {
           "BaseMaterial": "SmoothPlastic",
           "MaterialPattern": "Regular",
