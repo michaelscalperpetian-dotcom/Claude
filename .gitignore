@@ -19,3 +19,8 @@ roblox.toml
 # OS
 .DS_Store
 Thumbs.db
+
+# Python / preview output
+__pycache__/
+*.pyc
+tools/preview/out/

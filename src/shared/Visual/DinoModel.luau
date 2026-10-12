@@ -9,6 +9,7 @@ local CollectionService = game:GetService("CollectionService")
 
 local DinoData = require(script.Parent.Parent.Data.DinoData)
 local MutationData = require(script.Parent.Parent.Data.MutationData)
+local Frames = require(script.Parent.Parent.Util.Frames)
 local Growth = require(script.Parent.Parent.Util.Growth)
 
 local DinoModel = {}
@@ -102,13 +103,13 @@ local function cylinder(
 	local length = (z - a).Magnitude
 	p.Size = Vector3.new(length, thickness, thickness) * bld.scale
 	local mid = (a + z) / 2
-	local cf = CFrame.lookAt(mid, mid + (z - a).Unit) * CFrame.Angles(0, math.rad(90), 0)
+	local cf = Frames.alongX(mid, z - a)
 	p.CFrame = cf.Rotation + cf.Position * bld.scale
 	return p
 end
 
 local function along(center: Vector3, direction: Vector3): CFrame
-	return CFrame.lookAt(center, center + direction.Unit)
+	return Frames.alongZ(center, direction)
 end
 
 local function addParticles(target: BasePart, color: Color3, scale: number, rate: number)

@@ -428,6 +428,47 @@ describe("Streak", function()
 	end)
 end)
 
+describe("Frames (robust orientation)", function()
+	local roblox = require("@lune/roblox")
+	local Common = require("./support/Common")
+	Loader.globals.Vector3 = roblox.Vector3
+	Loader.globals.CFrame = Common.CFrame
+	local Frames = Loader.load("src/shared/Util/Frames")
+	local V = roblox.Vector3
+	local function close(a, b)
+		return (a - b).Magnitude < 1e-6
+	end
+	it("points X along any direction, including straight down", function()
+		for _, dir in { V.new(0, -1, 0), V.new(0, 1, 0), V.new(1, 0, 0), V.new(0.3, -0.8, 0.2) } do
+			local cf = Frames.alongX(V.new(1, 2, 3), dir)
+			ok(close(cf.RightVector, dir.Unit), "x axis follows direction")
+			for _, v in { cf:GetComponents() } do
+				ok(v == v, "no NaN")
+			end
+		end
+	end)
+	it("faces a target on the ground plane like Roblox's lookAt", function()
+		for _, target in { V.new(0, 0, -5), V.new(0, 3, 5), V.new(4, -2, 9), V.new(-7, 0, 1) } do
+			local cf = Frames.facing(V.new(0, 0, 0), target)
+			local flat = V.new(target.X, 0, target.Z).Unit
+			ok(close(cf.LookVector, flat), "looks at the target")
+			ok(close(cf.UpVector, V.new(0, 1, 0)), "stays upright")
+		end
+	end)
+	it("test CFrame.lookAt matches Roblox (Lune's mirrors Z)", function()
+		local cf = Common.CFrame.lookAt(V.new(1, 2, 3), V.new(4, 0, 9))
+		ok(close(cf.LookVector, (V.new(4, 0, 9) - V.new(1, 2, 3)).Unit), "look vector")
+		ok(math.abs(cf.RightVector.Y) < 1e-6, "right vector is horizontal")
+		ok(close(cf.Position, V.new(1, 2, 3)), "position")
+	end)
+	it("points Z along any direction, including straight up", function()
+		for _, dir in { V.new(0, 1, 0), V.new(0, -1, 0), V.new(0, 0, 1), V.new(-0.5, 0.5, 0.1) } do
+			local cf = Frames.alongZ(V.new(0, 0, 0), dir)
+			ok(close(-cf.LookVector, dir.Unit), "z axis follows direction")
+		end
+	end)
+end)
+
 describe("Format", function()
 	it("abbreviates big numbers", function()
 		eq(Format.number(950), "950")

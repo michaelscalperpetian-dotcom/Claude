@@ -156,10 +156,24 @@ check("every dino builds at every stage, mutation and mode", function()
 					for _, d in model:GetDescendants() do
 						if d:IsA("BasePart") and d.Name ~= "Root" then
 							count += 1
-							lowest = math.min(lowest, d.CFrame.Position.Y - d.Size.Y / 2)
+							-- vertical half-extent of a rotated box: |R| * half size
+							local _, _, _, _, _, _, r10, r11, r12 = d.CFrame:GetComponents()
+							local halfHeight = (
+								math.abs(r10) * d.Size.X
+								+ math.abs(r11) * d.Size.Y
+								+ math.abs(r12) * d.Size.Z
+							) / 2
+							lowest = math.min(lowest, d.CFrame.Position.Y - halfHeight)
 						end
 					end
 					assert(count >= 10, `{species.id} only has {count} parts`)
+					for _, d in model:GetDescendants() do
+						if d:IsA("BasePart") then
+							for _, v in { d.CFrame:GetComponents() } do
+								assert(v == v, `{species.id} part {d.Name} has a NaN CFrame`)
+							end
+						end
+					end
 					assert(
 						lowest > -1,
 						`{species.id} stage {stage} sinks into the ground ({lowest})`
