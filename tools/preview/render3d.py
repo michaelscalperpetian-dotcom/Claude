@@ -28,7 +28,7 @@ EPS = 1e-4
 
 
 class Part:
-    __slots__ = ("shape", "center", "rot", "half", "color", "material", "transparency", "reflectance", "name", "cast_shadow", "lights")
+    __slots__ = ("shape", "center", "rot", "half", "color", "material", "transparency", "reflectance", "name", "cast_shadow", "lights", "studs")
 
     def __init__(self, data: dict):
         cf = data["cf"]
@@ -43,6 +43,7 @@ class Part:
         self.name = data.get("name", "")
         self.cast_shadow = data.get("castShadow", True) is not False
         self.lights = data.get("lights") or []
+        self.studs = data.get("topSurface") == "Studs" and self.shape == "Block"
 
     def corners(self) -> np.ndarray:
         signs = np.array([[sx, sy, sz] for sx in (-1, 1) for sy in (-1, 1) for sz in (-1, 1)], dtype=np.float64)
@@ -373,6 +374,35 @@ NIGHT = {
 }
 
 
+def stud_shading(parts: list[Part], idx: np.ndarray, n_local: np.ndarray, points: np.ndarray) -> np.ndarray:
+    """Brightness factor that draws classic Roblox studs on studded top faces:
+    a round stud per 1x1 cell with a lit top-left rim and a shaded bottom-right."""
+    factor = np.ones(len(idx))
+    studded = np.array([p.studs for p in parts])[idx] & (n_local[:, 1] > 0.9)
+    if not np.any(studded):
+        return factor
+    sel = np.nonzero(studded)[0]
+    centers = np.stack([parts[i].center for i in idx[sel]])
+    rots = np.stack([parts[i].rot for i in idx[sel]])
+    halves = np.stack([parts[i].half for i in idx[sel]])
+    local = np.einsum("nji,nj->ni", rots, points[sel] - centers)
+    u = local[:, 0] + halves[:, 0]
+    v = local[:, 2] + halves[:, 2]
+    fu = u - np.floor(u) - 0.5
+    fv = v - np.floor(v) - 0.5
+    r = np.hypot(fu, fv) + 1e-6
+    light = -(fu + fv) / (r * 1.4142)  # +1 toward the lit (top-left) side
+    f = np.ones(len(sel))
+    top = r < 0.24
+    rim = (r >= 0.24) & (r < 0.31)
+    shade = (r >= 0.31) & (r < 0.37)
+    f[top] = 1.05
+    f[rim] = 1.0 + 0.2 * light[rim]
+    f[shade] = 1.0 - 0.08 * np.clip(-light[shade], 0, 1)
+    factor[sel] = f
+    return factor
+
+
 def shadow_map(parts: list[Part], light_dir: np.ndarray, size: int = 2048):
     # Huge flat parts (ocean, island base) don't cast useful shadows and would
     # stretch the shadow map, so only reasonably sized parts are casters.
@@ -425,6 +455,7 @@ def render(parts: list[Part], cam: Camera, lighting: dict, shadows: bool = True,
         n_world = np.einsum("nij,nj->ni", rots[idx], n_local)
         n_world /= np.linalg.norm(n_world, axis=1, keepdims=True) + 1e-12
         view = dirs[hit]
+        points = cam.eye + view * depth[hit][:, None]
         facing = np.einsum("ij,ij->i", n_world, view) > 0
         n_world[facing] *= -1
 
@@ -432,7 +463,6 @@ def render(parts: list[Part], cam: Camera, lighting: dict, shadows: bool = True,
         light /= np.linalg.norm(light)
         ndl = np.clip(n_world @ light, 0, 1)
 
-        points = cam.eye + view * depth[hit][:, None]
         if shadows:
             scam, sdepth = shadow_map(parts, light)
             shadowed = in_shadow(points + n_world * 0.3, scam, sdepth)
@@ -441,6 +471,7 @@ def render(parts: list[Part], cam: Camera, lighting: dict, shadows: bool = True,
         hemi = (n_world[:, 1:2] * 0.5 + 0.5)
         ambient = np.array(lighting["ground_ambient"]) * (1 - hemi) + np.array(lighting["sky_ambient"]) * hemi
         base = colors[idx]
+        base = base * stud_shading(parts, idx, n_local, points)[:, None]
         lit = base * (ambient + np.array(lighting["sun_color"]) * lighting["sun_strength"] * 1.6 * ndl[:, None])
         # soft rim so silhouettes read like Roblox's specular
         rim = np.clip(1 - np.abs(np.einsum("ij,ij->i", n_world, -view)), 0, 1) ** 3

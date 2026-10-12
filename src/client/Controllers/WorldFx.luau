@@ -22,59 +22,110 @@ local EGG_TAG = "IncubatorEgg"
 local WANDER_RADIUS = 7
 
 -- ===== Dino wandering =====
+-- Each dino strolls around its home spot: it turns toward a new spot, hops
+-- along with a little waddle, then rests and breathes before the next walk.
+-- Simulated per frame on the client (pure decoration), skipped when far away.
 
-local active: { [Model]: boolean } = {}
+type Walker = {
+	root: BasePart,
+	home: Vector3,
+	position: Vector3,
+	facing: Vector3,
+	target: Vector3?,
+	waitUntil: number,
+	phase: number,
+	hop: number,
+	speed: number,
+	rng: Random,
+}
 
-local function wander(model: Model)
-	if active[model] then
+local walkers: { [Model]: Walker } = {}
+local FAR = 220
+
+local function flatten(v: Vector3, fallback: Vector3): Vector3
+	local flat = Vector3.new(v.X, 0, v.Z)
+	return if flat.Magnitude > 1e-4 then flat.Unit else fallback
+end
+
+local function addWalker(model: Model)
+	if walkers[model] then
 		return
 	end
-	active[model] = true
 	local root = model.PrimaryPart
-	if not root then
+	local home = model:GetAttribute("Home")
+	if not root or typeof(home) ~= "CFrame" then
 		return
 	end
+	local height = model:GetAttribute("Height")
+	local h = if typeof(height) == "number" then height else 4
 	local rng = Random.new()
-	task.spawn(function()
-		task.wait(rng:NextNumber(0, 3))
-		while active[model] and model.Parent do
-			local home = model:GetAttribute("Home")
-			if typeof(home) ~= "CFrame" then
-				break
-			end
-			local angle = rng:NextNumber(0, math.pi * 2)
-			local distance = rng:NextNumber(0, WANDER_RADIUS)
-			local target = home.Position
-				+ Vector3.new(math.cos(angle) * distance, 0, math.sin(angle) * distance)
-			local current = root.CFrame.Position
-			local flat = Vector3.new(target.X, current.Y, target.Z)
-			local travel = (flat - current).Magnitude
-			if travel > 0.5 then
-				local facing = CFrame.lookAt(current, flat)
-				-- turn, then walk
-				local turn = TweenService:Create(root, TweenInfo.new(0.4), { CFrame = facing })
-				turn:Play()
-				turn.Completed:Wait()
-				if not active[model] or not model.Parent then
-					break
-				end
-				local walk = TweenService:Create(
-					root,
-					TweenInfo.new(travel / 5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
-					{ CFrame = CFrame.lookAt(flat, flat + facing.LookVector) }
-				)
-				walk:Play()
-				walk.Completed:Wait()
-			end
-			task.wait(rng:NextNumber(2, 6))
+	walkers[model] = {
+		root = root,
+		home = home.Position,
+		position = root.CFrame.Position,
+		facing = flatten(home.LookVector, Vector3.new(0, 0, -1)),
+		target = nil,
+		waitUntil = os.clock() + rng:NextNumber(0, 3),
+		phase = rng:NextNumber(0, 10),
+		hop = math.clamp(h * 0.06, 0.12, 1.2),
+		speed = math.clamp(2.5 + h * 0.35, 2.5, 8),
+		rng = rng,
+	}
+end
+
+local function stepWalkers(dt: number)
+	local camera = Workspace.CurrentCamera
+	local eye = if camera then camera.CFrame.Position else Vector3.zero
+	local now = os.clock()
+	for model, w in walkers do
+		if not model.Parent then
+			walkers[model] = nil
+			continue
 		end
-		active[model] = nil
-	end)
+		if (w.position - eye).Magnitude > FAR then
+			continue
+		end
+		-- the server moves dinos to a new home when the nest is rearranged
+		local home = model:GetAttribute("Home")
+		if typeof(home) == "CFrame" and (home.Position - w.home).Magnitude > 0.1 then
+			w.home = home.Position
+			w.position = home.Position
+			w.target = nil
+		end
+		local moving = false
+		local target = w.target
+		if target then
+			local flat = Vector3.new(target.X - w.position.X, 0, target.Z - w.position.Z)
+			local distance = flat.Magnitude
+			if distance < 0.25 then
+				w.target = nil
+				w.waitUntil = now + w.rng:NextNumber(2, 6)
+			else
+				local direction = flat.Unit
+				w.facing = flatten(w.facing:Lerp(direction, math.min(1, dt * 5)), direction)
+				if w.facing:Dot(direction) > 0.85 then
+					w.position += direction * math.min(distance, w.speed * dt)
+					moving = true
+				end
+			end
+		elseif now >= w.waitUntil then
+			local angle = w.rng:NextNumber(0, math.pi * 2)
+			local radius = w.rng:NextNumber(1, WANDER_RADIUS)
+			w.target = w.home + Vector3.new(math.cos(angle) * radius, 0, math.sin(angle) * radius)
+		end
+		w.phase += dt * (if moving then 4 + w.speed * 1.5 else 2)
+		local lift = if moving
+			then math.abs(math.sin(w.phase)) * w.hop
+			else (math.sin(w.phase) * 0.5 + 0.5) * w.hop * 0.15
+		local waddle = if moving then math.sin(w.phase) * 0.07 else 0
+		local p = w.position + Vector3.new(0, lift, 0)
+		w.root.CFrame = CFrame.lookAt(p, p + w.facing) * CFrame.Angles(0, 0, waddle)
+	end
 end
 
 local function onDinoAdded(instance: Instance)
 	if instance:IsA("Model") then
-		wander(instance)
+		addWalker(instance)
 	end
 end
 
@@ -302,15 +353,16 @@ function WorldFx.init()
 	end)
 	CollectionService:GetInstanceRemovedSignal(DinoModel.TAG):Connect(function(instance)
 		if instance:IsA("Model") then
-			active[instance] = nil
+			walkers[instance] = nil
 		end
 	end)
 end
 
 function WorldFx.start()
-	RunService.Heartbeat:Connect(function()
+	RunService.Heartbeat:Connect(function(dt: number)
 		rainbowStep()
 		followCamera()
+		stepWalkers(dt)
 	end)
 	while true do
 		local now = Clock.now()

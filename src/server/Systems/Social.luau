@@ -87,7 +87,10 @@ function Social.decorateCharacter(player: Player)
 	label.TextScaled = true
 	label.Text = "⭐ VIP"
 	label.TextColor3 = Color3.fromRGB(255, 215, 60)
-	label.TextStrokeTransparency = 0.2
+	local labelStroke = Instance.new("UIStroke")
+	labelStroke.Color = Color3.fromRGB(43, 33, 64)
+	labelStroke.Thickness = 2.5
+	labelStroke.Parent = label
 	label.Parent = gui
 	gui.Parent = head
 end

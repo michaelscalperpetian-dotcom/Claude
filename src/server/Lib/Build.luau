@@ -5,12 +5,14 @@
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local Config = require(ReplicatedStorage.Shared.Config)
 local Frames = require(ReplicatedStorage.Shared.Util.Frames)
 
 local Build = {}
 
 export type Options = {
 	name: string?,
+	smooth: boolean?, -- no studs (water, glass, glowing parts)
 	material: Enum.Material?,
 	transparency: number?,
 	reflectance: number?,
@@ -19,12 +21,29 @@ export type Options = {
 	decor: boolean?, -- no Touched events or raycasts
 }
 
+local SMOOTH_MATERIALS = {
+	[Enum.Material.Neon] = true,
+	[Enum.Material.Glass] = true,
+	[Enum.Material.ForceField] = true,
+	[Enum.Material.Ice] = true,
+}
+
+-- Classic bricks: studs on top, inlets underneath. Surfaces only render on
+-- block faces, so round shapes stay smooth.
+local function surfaces(p: BasePart, options: Options?)
+	local studded = Config.CLASSIC_STUDS
+		and not (options and options.smooth)
+		and not SMOOTH_MATERIALS[p.Material]
+		and (p:IsA("WedgePart") or (p:IsA("Part") and p.Shape == Enum.PartType.Block))
+		and p:FindFirstChildOfClass("SpecialMesh") == nil
+	p.TopSurface = if studded then Enum.SurfaceType.Studs else Enum.SurfaceType.Smooth
+	p.BottomSurface = if studded then Enum.SurfaceType.Inlet else Enum.SurfaceType.Smooth
+end
+
 local function finish(p: BasePart, color: Color3, parent: Instance, options: Options?): ()
 	p.Anchored = true
 	p.Color = color
 	p.Material = Enum.Material.SmoothPlastic
-	p.TopSurface = Enum.SurfaceType.Smooth
-	p.BottomSurface = Enum.SurfaceType.Smooth
 	if options then
 		if options.name then
 			p.Name = options.name
@@ -49,6 +68,7 @@ local function finish(p: BasePart, color: Color3, parent: Instance, options: Opt
 			p.CanQuery = false
 		end
 	end
+	surfaces(p, options)
 	p.Parent = parent
 end
 
@@ -195,6 +215,72 @@ function Build.ring(
 			parts,
 			Build.block(Vector3.new(length, height, width), cf, color, parent, options)
 		)
+	end
+	return parts
+end
+
+export type Circle = { center: Vector3, radius: number }
+
+-- Fills the union of flat circles with rows of bricks snapped to the stud
+-- grid, so studs line up across every row (round shapes can't show studs).
+-- The coast steps by `rowDepth` studs, like a classic brick-built island.
+function Build.strips(
+	circles: { Circle },
+	top: number,
+	thickness: number,
+	rowDepth: number,
+	color: Color3,
+	parent: Instance,
+	options: Options?
+): { Part }
+	local minZ, maxZ = math.huge, -math.huge
+	for _, circle in circles do
+		minZ = math.min(minZ, circle.center.Z - circle.radius)
+		maxZ = math.max(maxZ, circle.center.Z + circle.radius)
+	end
+	local parts = {}
+	local z = math.floor(minZ / rowDepth) * rowDepth
+	while z < maxZ do
+		local mid = z + rowDepth / 2
+		local spans: { { number } } = {}
+		for _, circle in circles do
+			local dz = math.abs(mid - circle.center.Z)
+			if dz < circle.radius then
+				local half = math.sqrt(circle.radius * circle.radius - dz * dz)
+				table.insert(spans, {
+					math.floor(circle.center.X - half + 0.5),
+					math.floor(circle.center.X + half + 0.5),
+				})
+			end
+		end
+		table.sort(spans, function(a, b)
+			return a[1] < b[1]
+		end)
+		local merged: { { number } } = {}
+		for _, span in spans do
+			local last = merged[#merged]
+			if last and span[1] <= last[2] then
+				last[2] = math.max(last[2], span[2])
+			else
+				table.insert(merged, { span[1], span[2] })
+			end
+		end
+		for _, span in merged do
+			local width = span[2] - span[1]
+			if width >= 1 then
+				table.insert(
+					parts,
+					Build.block(
+						Vector3.new(width, thickness, rowDepth),
+						CFrame.new((span[1] + span[2]) / 2, top - thickness / 2, mid),
+						color,
+						parent,
+						options
+					)
+				)
+			end
+		end
+		z += rowDepth
 	end
 	return parts
 end

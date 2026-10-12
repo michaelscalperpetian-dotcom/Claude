@@ -8,6 +8,9 @@ local Config = {
 	PLOT_COUNT = 8,
 	PLOT_SIZE = 64,
 	PLOT_RING_RADIUS = 132,
+	-- Classic Roblox studs on top of every brick (ground, paths, nests, fences).
+	-- Round shapes, water and glowing parts stay smooth.
+	CLASSIC_STUDS = true,
 
 	-- Starting state
 	STARTING_COINS = 100,

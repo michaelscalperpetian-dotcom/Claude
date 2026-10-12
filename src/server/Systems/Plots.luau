@@ -197,8 +197,11 @@ local function buildDino(
 	text.Font = Enum.Font.FredokaOne
 	text.TextScaled = true
 	text.TextColor3 = Color3.new(1, 1, 1)
-	text.TextStrokeTransparency = 0.3
 	text.Text = labelFor(dino, stage)
+	local textStroke = Instance.new("UIStroke")
+	textStroke.Color = Color3.fromRGB(43, 33, 64)
+	textStroke.Thickness = 2.5
+	textStroke.Parent = text
 	text.Parent = gui
 	gui.Parent = labelAttachment or root
 
@@ -331,8 +334,11 @@ local function buildIncubatorEgg(
 	text.Font = Enum.Font.FredokaOne
 	text.TextScaled = true
 	text.TextColor3 = Color3.new(1, 1, 1)
-	text.TextStrokeTransparency = 0.2
 	text.Text = ""
+	local textStroke = Instance.new("UIStroke")
+	textStroke.Color = Color3.fromRGB(43, 33, 64)
+	textStroke.Thickness = 2.5
+	textStroke.Parent = text
 	text.Parent = gui
 	gui.Parent = root
 

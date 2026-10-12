@@ -56,32 +56,43 @@ local function lands(): { Land }
 	return list
 end
 
--- Layers from the water up; each land disc is drawn in every layer so the
--- coastline keeps its bumps. Higher layers always win, so overlaps never fight.
-local LAYERS = {
+-- Water layers (smooth discs, so the foam and shallows stay round)...
+local WATER_LAYERS = {
 	{ name = "DeepShallows", grow = 70, top = -1.98, thick = 0.2, color = Palette.water },
 	{ name = "Shallows", grow = 30, top = -1.9, thick = 0.2, color = Palette.shallows },
 	{ name = "Foam", grow = 13, top = -1.8, thick = 0.2, color = Palette.foam },
+}
+-- ...and land layers built from studded brick rows.
+local LAND_LAYERS = {
 	{ name = "Beach", grow = 10, top = -0.9, thick = 2, color = Palette.sand },
-	{ name = "GrassLip", grow = 1.6, top = -0.3, thick = 6, color = Palette.grassDark },
 	{ name = "Grass", grow = 0, top = 0, thick = 6, color = Palette.grass },
 }
+local ROW_DEPTH = 2
 
-local function buildCoast(map: Instance, landList: { Land }, extraGrow: number?)
+local function buildCoast(map: Instance, landList: { Land })
 	local folder = Instance.new("Folder")
 	folder.Name = "Coast"
-	for _, layer in LAYERS do
+	for _, layer in WATER_LAYERS do
 		for _, land in landList do
-			local diameter = 2 * (land.radius + layer.grow + (extraGrow or 0))
 			Build.disc(
-				diameter,
+				2 * (land.radius + layer.grow),
 				layer.thick,
 				CFrame.new(land.center.X, layer.top - layer.thick / 2, land.center.Z),
 				layer.color,
 				folder,
-				{ name = layer.name, decor = true, shadow = layer.thick > 1 }
+				{ name = layer.name, decor = true, shadow = false, smooth = true }
 			)
 		end
+	end
+	for _, layer in LAND_LAYERS do
+		local circles: { Build.Circle } = {}
+		for _, land in landList do
+			table.insert(circles, { center = land.center, radius = land.radius + layer.grow })
+		end
+		Build.strips(circles, layer.top, layer.thick, ROW_DEPTH, layer.color, folder, {
+			name = layer.name,
+			decor = true,
+		})
 	end
 	folder.Parent = map
 end
@@ -92,7 +103,7 @@ local function buildOcean(map: Instance)
 		CFrame.new(0, -3.05, 0),
 		Palette.waterDeep,
 		map,
-		{ name = "Ocean", decor = true, shadow = false, reflectance = 0.06 }
+		{ name = "Ocean", decor = true, shadow = false, reflectance = 0.06, smooth = true }
 	)
 end
 
@@ -196,10 +207,11 @@ end
 local function buildHub(map: Instance)
 	local hub = Build.model("Hub", map)
 	local plazaTop = 0.3
-	Build.disc(
-		Island.PLAZA_RADIUS * 2,
+	Build.strips(
+		{ { center = Vector3.zero, radius = Island.PLAZA_RADIUS } },
+		plazaTop,
 		1,
-		CFrame.new(0, plazaTop - 0.5, 0),
+		ROW_DEPTH,
 		Palette.plaza,
 		hub,
 		{ name = "Plaza" }
