@@ -14,6 +14,7 @@ local Clock = require(ReplicatedStorage.Shared.Util.Clock)
 local Cycle = require(ReplicatedStorage.Shared.Util.Cycle)
 local DinoModel = require(ReplicatedStorage.Shared.Visual.DinoModel)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
+local Tags = require(ReplicatedStorage.Shared.Tags)
 
 local WorldFx = {}
 
@@ -144,23 +145,53 @@ local stormEmitter: ParticleEmitter
 local lastNight: boolean? = nil
 local lastStorm = ""
 
+-- Bright cartoon day; a blue, readable night lit by lamps.
+local DAY = {
+	lighting = {
+		ClockTime = 14.2,
+		Brightness = 2.6,
+		Ambient = Color3.fromRGB(115, 112, 128),
+		OutdoorAmbient = Color3.fromRGB(148, 148, 163),
+		ColorShift_Top = Color3.fromRGB(255, 242, 220),
+	},
+	atmosphere = {
+		Density = 0.28,
+		Color = Color3.fromRGB(199, 230, 255),
+		Decay = Color3.fromRGB(122, 178, 242),
+	},
+}
+local NIGHT = {
+	lighting = {
+		ClockTime = 0.6,
+		Brightness = 1.3,
+		Ambient = Color3.fromRGB(82, 86, 140),
+		OutdoorAmbient = Color3.fromRGB(98, 104, 170),
+		ColorShift_Top = Color3.fromRGB(150, 170, 255),
+	},
+	atmosphere = {
+		Density = 0.32,
+		Color = Color3.fromRGB(64, 74, 132),
+		Decay = Color3.fromRGB(38, 44, 98),
+	},
+}
+
+local function setNightLights(on: boolean)
+	for _, light in CollectionService:GetTagged(Tags.NIGHT_LIGHT) do
+		if light:IsA("Light") then
+			light.Enabled = on
+		end
+	end
+end
+
 local function setLighting(isNight: boolean)
 	local info = TweenInfo.new(6, Enum.EasingStyle.Sine)
-	if isNight then
-		TweenService:Create(Lighting, info, {
-			ClockTime = 0.3,
-			Brightness = 1.2,
-			Ambient = Color3.fromRGB(70, 75, 120),
-			OutdoorAmbient = Color3.fromRGB(80, 85, 140),
-		}):Play()
-	else
-		TweenService:Create(Lighting, info, {
-			ClockTime = 14.2,
-			Brightness = 2.4,
-			Ambient = Color3.fromRGB(110, 110, 110),
-			OutdoorAmbient = Color3.fromRGB(140, 140, 140),
-		}):Play()
+	local look = if isNight then NIGHT else DAY
+	TweenService:Create(Lighting, info, look.lighting):Play()
+	local atmosphere = Lighting:FindFirstChildOfClass("Atmosphere")
+	if atmosphere then
+		TweenService:Create(atmosphere, info, look.atmosphere):Play()
 	end
+	setNightLights(isNight)
 end
 
 local STORM_LOOKS: { [string]: { tint: Color3, particles: Color3, rate: number, speed: number } } =
@@ -264,6 +295,11 @@ function WorldFx.init()
 		onDinoAdded(instance)
 	end
 	CollectionService:GetInstanceAddedSignal(DinoModel.TAG):Connect(onDinoAdded)
+	CollectionService:GetInstanceAddedSignal(Tags.NIGHT_LIGHT):Connect(function(instance)
+		if instance:IsA("Light") then
+			instance.Enabled = lastNight == true
+		end
+	end)
 	CollectionService:GetInstanceRemovedSignal(DinoModel.TAG):Connect(function(instance)
 		if instance:IsA("Model") then
 			active[instance] = nil

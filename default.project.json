@@ -89,6 +89,95 @@
         }
       }
     },
+    "Lighting": {
+      "$properties": {
+        "Technology": "ShadowMap",
+        "ClockTime": 14.2,
+        "GeographicLatitude": 25,
+        "Brightness": 2.6,
+        "Ambient": [
+          0.45,
+          0.44,
+          0.5
+        ],
+        "OutdoorAmbient": [
+          0.58,
+          0.58,
+          0.64
+        ],
+        "ColorShift_Top": [
+          1,
+          0.95,
+          0.86
+        ],
+        "ColorShift_Bottom": [
+          0,
+          0,
+          0
+        ],
+        "EnvironmentDiffuseScale": 0.6,
+        "EnvironmentSpecularScale": 0.35,
+        "GlobalShadows": true,
+        "ShadowSoftness": 0.25,
+        "ExposureCompensation": 0.1
+      },
+      "Sky": {
+        "$className": "Sky",
+        "$properties": {
+          "SunAngularSize": 16,
+          "MoonAngularSize": 12,
+          "StarCount": 3000,
+          "CelestialBodiesShown": true
+        }
+      },
+      "Atmosphere": {
+        "$className": "Atmosphere",
+        "$properties": {
+          "Density": 0.28,
+          "Offset": 0.12,
+          "Color": [
+            0.78,
+            0.9,
+            1.0
+          ],
+          "Decay": [
+            0.48,
+            0.7,
+            0.95
+          ],
+          "Glare": 0.15,
+          "Haze": 1.1
+        }
+      },
+      "Bloom": {
+        "$className": "BloomEffect",
+        "$properties": {
+          "Intensity": 0.6,
+          "Size": 24,
+          "Threshold": 1.5
+        }
+      },
+      "ColorCorrection": {
+        "$className": "ColorCorrectionEffect",
+        "$properties": {
+          "Brightness": 0.02,
+          "Contrast": 0.08,
+          "Saturation": 0.22,
+          "TintColor": [
+            1.0,
+            0.98,
+            0.95
+          ]
+        }
+      },
+      "SunRays": {
+        "$className": "SunRaysEffect",
+        "$properties": {
+          "Intensity": 0.05,
+          "Spread": 0.6
+        }
+      }
+    },
     "Players": {
       "$properties": {
         "CharacterAutoLoads": false

@@ -75,6 +75,7 @@ function Export.part(part)
 		transparency = part.Transparency,
 		reflectance = part.Reflectance,
 		material = enumName(part.Material),
+		castShadow = part.CastShadow,
 		lights = if #lights > 0 then lights else nil,
 	}
 end

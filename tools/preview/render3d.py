@@ -28,7 +28,7 @@ EPS = 1e-4
 
 
 class Part:
-    __slots__ = ("shape", "center", "rot", "half", "color", "material", "transparency", "reflectance", "name")
+    __slots__ = ("shape", "center", "rot", "half", "color", "material", "transparency", "reflectance", "name", "cast_shadow", "lights")
 
     def __init__(self, data: dict):
         cf = data["cf"]
@@ -41,6 +41,8 @@ class Part:
         self.transparency = float(data.get("transparency", 0))
         self.reflectance = float(data.get("reflectance", 0))
         self.name = data.get("name", "")
+        self.cast_shadow = data.get("castShadow", True) is not False
+        self.lights = data.get("lights") or []
 
     def corners(self) -> np.ndarray:
         signs = np.array([[sx, sy, sz] for sx in (-1, 1) for sy in (-1, 1) for sz in (-1, 1)], dtype=np.float64)
@@ -357,11 +359,12 @@ DAY = {
 }
 
 NIGHT = {
+    "point_lights": True,
     "sun_dir": (0.3, 0.8, 0.5),
     "sun_color": (0.65, 0.72, 1.0),
-    "sun_strength": 0.28,
-    "sky_ambient": (0.33, 0.36, 0.55),
-    "ground_ambient": (0.22, 0.22, 0.32),
+    "sun_strength": 0.22,
+    "sky_ambient": (0.36, 0.38, 0.62),
+    "ground_ambient": (0.24, 0.24, 0.38),
     "sky_top": (0.05, 0.07, 0.2),
     "sky_horizon": (0.18, 0.2, 0.42),
     "haze": (0.2, 0.22, 0.4),
@@ -373,7 +376,7 @@ NIGHT = {
 def shadow_map(parts: list[Part], light_dir: np.ndarray, size: int = 2048):
     # Huge flat parts (ocean, island base) don't cast useful shadows and would
     # stretch the shadow map, so only reasonably sized parts are casters.
-    casters = [p for p in parts if p.radius() < 120]
+    casters = [p for p in parts if p.radius() < 120 and p.cast_shadow]
     parts = casters
     pts = np.concatenate([p.corners() for p in parts]) if parts else np.zeros((1, 3))
     lo = pts.min(axis=0)
@@ -450,6 +453,25 @@ def render(parts: list[Part], cam: Camera, lighting: dict, shadows: bool = True,
         lit = lit * (1 - t) + img[hit] * t
         n = neon[idx][:, None]
         lit = np.where(n, base * 1.25 + 0.08, lit)
+
+        if lighting.get("point_lights"):
+            # Point lights (lamps, lava glow): smooth falloff, Lambert term.
+            extra = np.zeros_like(lit)
+            for part in parts:
+                for light in part.lights:
+                    rng = float(light["range"])
+                    to_light = part.center[None, :] - points
+                    d = np.linalg.norm(to_light, axis=1)
+                    near = d < rng
+                    if not np.any(near):
+                        continue
+                    ldir = to_light[near] / (d[near][:, None] + 1e-9)
+                    lam = np.clip(np.einsum("ij,ij->i", n_world[near], ldir), 0, 1) * 0.7 + 0.3
+                    fall = (1 - d[near] / rng) ** 2
+                    extra[near] += (
+                        base[near] * np.array(light["color"])[None, :] * (light["brightness"] * 0.9 * fall * lam)[:, None]
+                    )
+            lit = lit + extra
 
         dist = depth[hit][:, None]
         fog = 1 - np.exp(-dist * lighting["haze_density"])
@@ -531,7 +553,7 @@ def main():
     ap.add_argument("--ss", type=int, default=2)
     ap.add_argument("--night", action="store_true")
     ap.add_argument("--noshadow", action="store_true")
-    ap.add_argument("--view", default=None, help="overview | plot:N | hub | lineup")
+    ap.add_argument("--view", default=None, help="overview | plot:N | gate:N | hub | volcano | lineup")
     args = ap.parse_args()
 
     with open(args.scene) as f:
@@ -542,6 +564,11 @@ def main():
         eye, target = (150, 240, -330), (0, -10, 10)
     elif args.view == "hub":
         eye, target = (0, 26, -62), (0, 8, 0)
+    elif args.view == "volcano":
+        eye, target = (-20, 40, 60), (74, 20, 179)
+    elif args.view and args.view.startswith("gate:"):
+        # third-person view of a player walking up to a nest
+        eye, target = plot_view(scene, int(args.view.split(":")[1]), 48, 13, 4)
     elif args.view and args.view.startswith("plot:"):
         eye, target = plot_view(scene, int(args.view.split(":")[1]), 62, 30)
     elif args.view == "lineup":

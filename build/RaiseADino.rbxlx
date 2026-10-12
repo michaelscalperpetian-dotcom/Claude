@@ -1,19 +1,109 @@
 <roblox version="4">
-  <Item class="Players" referent="0">
+  <Item class="Lighting" referent="0">
+    <Properties>
+      <string name="Name">Lighting</string>
+      <Color3 name="Ambient">
+        <R>0.45</R>
+        <G>0.44</G>
+        <B>0.5</B>
+      </Color3>
+      <float name="Brightness">2.6</float>
+      <float name="ClockTime">14.2</float>
+      <Color3 name="ColorShift_Bottom">
+        <R>0</R>
+        <G>0</G>
+        <B>0</B>
+      </Color3>
+      <Color3 name="ColorShift_Top">
+        <R>1</R>
+        <G>0.95</G>
+        <B>0.86</B>
+      </Color3>
+      <float name="EnvironmentDiffuseScale">0.6</float>
+      <float name="EnvironmentSpecularScale">0.35</float>
+      <float name="ExposureCompensation">0.1</float>
+      <float name="GeographicLatitude">25</float>
+      <bool name="GlobalShadows">true</bool>
+      <Color3 name="OutdoorAmbient">
+        <R>0.58</R>
+        <G>0.58</G>
+        <B>0.64</B>
+      </Color3>
+      <float name="ShadowSoftness">0.25</float>
+      <token name="Technology">3</token>
+    </Properties>
+    <Item class="Atmosphere" referent="1">
+      <Properties>
+        <string name="Name">Atmosphere</string>
+        <Color3 name="Color">
+          <R>0.78</R>
+          <G>0.9</G>
+          <B>1</B>
+        </Color3>
+        <Color3 name="Decay">
+          <R>0.48</R>
+          <G>0.7</G>
+          <B>0.95</B>
+        </Color3>
+        <float name="Density">0.28</float>
+        <float name="Glare">0.15</float>
+        <float name="Haze">1.1</float>
+        <float name="Offset">0.12</float>
+      </Properties>
+    </Item>
+    <Item class="BloomEffect" referent="2">
+      <Properties>
+        <string name="Name">Bloom</string>
+        <float name="Intensity">0.6</float>
+        <float name="Size">24</float>
+        <float name="Threshold">1.5</float>
+      </Properties>
+    </Item>
+    <Item class="ColorCorrectionEffect" referent="3">
+      <Properties>
+        <string name="Name">ColorCorrection</string>
+        <float name="Brightness">0.02</float>
+        <float name="Contrast">0.08</float>
+        <float name="Saturation">0.22</float>
+        <Color3 name="TintColor">
+          <R>1</R>
+          <G>0.98</G>
+          <B>0.95</B>
+        </Color3>
+      </Properties>
+    </Item>
+    <Item class="Sky" referent="4">
+      <Properties>
+        <string name="Name">Sky</string>
+        <bool name="CelestialBodiesShown">true</bool>
+        <float name="MoonAngularSize">12</float>
+        <int name="StarCount">3000</int>
+        <float name="SunAngularSize">16</float>
+      </Properties>
+    </Item>
+    <Item class="SunRaysEffect" referent="5">
+      <Properties>
+        <string name="Name">SunRays</string>
+        <float name="Intensity">0.05</float>
+        <float name="Spread">0.6</float>
+      </Properties>
+    </Item>
+  </Item>
+  <Item class="Players" referent="6">
     <Properties>
       <string name="Name">Players</string>
       <bool name="CharacterAutoLoads">false</bool>
     </Properties>
   </Item>
-  <Item class="ReplicatedStorage" referent="1">
+  <Item class="ReplicatedStorage" referent="7">
     <Properties>
       <string name="Name">ReplicatedStorage</string>
     </Properties>
-    <Item class="Folder" referent="2">
+    <Item class="Folder" referent="8">
       <Properties>
         <string name="Name">Shared</string>
       </Properties>
-      <Item class="ModuleScript" referent="3">
+      <Item class="ModuleScript" referent="9">
         <Properties>
           <string name="Name">Config</string>
           <string name="Source"><![CDATA[--!strict
@@ -183,11 +273,11 @@ return Config
 ]]></string>
         </Properties>
       </Item>
-      <Item class="Folder" referent="4">
+      <Item class="Folder" referent="10">
         <Properties>
           <string name="Name">Data</string>
         </Properties>
-        <Item class="ModuleScript" referent="5">
+        <Item class="ModuleScript" referent="11">
           <Properties>
             <string name="Name">DinoData</string>
             <string name="Source"><![CDATA[--!strict
@@ -653,7 +743,7 @@ return DinoData
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="6">
+        <Item class="ModuleScript" referent="12">
           <Properties>
             <string name="Name">EggData</string>
             <string name="Source"><![CDATA[--!strict
@@ -772,7 +862,7 @@ return EggData
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="7">
+        <Item class="ModuleScript" referent="13">
           <Properties>
             <string name="Name">MutationData</string>
             <string name="Source"><![CDATA[--!strict
@@ -912,7 +1002,7 @@ return MutationData
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="8">
+        <Item class="ModuleScript" referent="14">
           <Properties>
             <string name="Name">StoreData</string>
             <string name="Source"><![CDATA[--!strict
@@ -1044,7 +1134,7 @@ return StoreData
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="9">
+        <Item class="ModuleScript" referent="15">
           <Properties>
             <string name="Name">TutorialData</string>
             <string name="Source"><![CDATA[--!strict
@@ -1104,7 +1194,7 @@ return TutorialData
           </Properties>
         </Item>
       </Item>
-      <Item class="ModuleScript" referent="10">
+      <Item class="ModuleScript" referent="16">
         <Properties>
           <string name="Name">Net</string>
           <string name="Source"><![CDATA[--!strict
@@ -1262,7 +1352,107 @@ return Net
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="11">
+      <Item class="ModuleScript" referent="17">
+        <Properties>
+          <string name="Name">Palette</string>
+          <string name="Source"><![CDATA[--!strict
+-- The game's colours in one place, so the world and the UI share one cartoon
+-- look: a limited, saturated palette with 2-3 shades per material (light top,
+-- base, dark edge) instead of many unrelated colours.
+
+local function rgb(r: number, g: number, b: number): Color3
+	return Color3.fromRGB(r, g, b)
+end
+
+local Palette = {
+	-- World materials (light, base, dark)
+	grassLight = rgb(155, 227, 110),
+	grass = rgb(123, 211, 90),
+	grassDark = rgb(93, 183, 74),
+	grassDeep = rgb(74, 158, 60),
+	leafLight = rgb(126, 214, 92),
+	leaf = rgb(88, 186, 74),
+	leafDark = rgb(60, 150, 70),
+	pine = rgb(62, 155, 90),
+	pineDark = rgb(45, 125, 78),
+	sandLight = rgb(250, 228, 160),
+	sand = rgb(242, 214, 138),
+	sandDark = rgb(226, 190, 110),
+	path = rgb(236, 200, 134),
+	pathEdge = rgb(214, 172, 108),
+	dirt = rgb(201, 139, 85),
+	dirtDark = rgb(168, 107, 62),
+	water = rgb(79, 195, 247),
+	waterDeep = rgb(46, 155, 219),
+	shallows = rgb(118, 220, 236),
+	foam = rgb(250, 254, 255),
+	woodLight = rgb(205, 145, 92),
+	wood = rgb(181, 122, 74),
+	woodDark = rgb(142, 90, 52),
+	stoneLight = rgb(214, 210, 224),
+	stone = rgb(185, 180, 199),
+	stoneDark = rgb(150, 144, 168),
+	plaza = rgb(222, 196, 160),
+	plazaDark = rgb(196, 166, 128),
+	rockLava = rgb(132, 104, 98),
+	rockLavaDark = rgb(96, 74, 76),
+	lava = rgb(255, 122, 26),
+	lavaHot = rgb(255, 196, 74),
+	cream = rgb(255, 246, 225),
+	white = rgb(255, 255, 255),
+	lampGlow = rgb(255, 224, 138),
+
+	-- Accents (one per nest, also used by UI)
+	red = rgb(255, 93, 93),
+	orange = rgb(255, 159, 67),
+	yellow = rgb(255, 217, 61),
+	blue = rgb(93, 173, 236),
+	purple = rgb(168, 139, 235),
+	pink = rgb(255, 143, 199),
+	mint = rgb(110, 231, 183),
+	teal = rgb(72, 201, 196),
+}
+
+-- Nest accent colours, in plot order.
+Palette.NEST_ACCENTS = {
+	Palette.red,
+	Palette.orange,
+	Palette.yellow,
+	Palette.mint,
+	Palette.blue,
+	Palette.purple,
+	Palette.pink,
+	Palette.teal,
+}
+
+Palette.FLOWERS = {
+	Palette.pink,
+	Palette.yellow,
+	Palette.purple,
+	Palette.white,
+	Palette.red,
+	Palette.orange,
+}
+
+return Palette
+]]></string>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="18">
+        <Properties>
+          <string name="Name">Tags</string>
+          <string name="Source"><![CDATA[--!strict
+-- CollectionService tags shared by the server (which tags things) and the
+-- client (which animates them).
+
+return {
+	-- Lights the client switches on at night (lamps, lanterns).
+	NIGHT_LIGHT = "NightLight",
+}
+]]></string>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="19">
         <Properties>
           <string name="Name">Types</string>
           <string name="Source"><![CDATA[--!strict
@@ -1365,11 +1555,11 @@ return nil
 ]]></string>
         </Properties>
       </Item>
-      <Item class="Folder" referent="12">
+      <Item class="Folder" referent="20">
         <Properties>
           <string name="Name">Util</string>
         </Properties>
-        <Item class="ModuleScript" referent="13">
+        <Item class="ModuleScript" referent="21">
           <Properties>
             <string name="Name">Clock</string>
             <string name="Source"><![CDATA[--!strict
@@ -1401,7 +1591,7 @@ return Clock
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="14">
+        <Item class="ModuleScript" referent="22">
           <Properties>
             <string name="Name">Cycle</string>
             <string name="Source"><![CDATA[--!strict
@@ -1563,7 +1753,7 @@ return Cycle
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="15">
+        <Item class="ModuleScript" referent="23">
           <Properties>
             <string name="Name">Economy</string>
             <string name="Source"><![CDATA[--!strict
@@ -1630,7 +1820,7 @@ return Economy
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="16">
+        <Item class="ModuleScript" referent="24">
           <Properties>
             <string name="Name">EggOdds</string>
             <string name="Source"><![CDATA[--!strict
@@ -1670,7 +1860,7 @@ return EggOdds
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="17">
+        <Item class="ModuleScript" referent="25">
           <Properties>
             <string name="Name">Format</string>
             <string name="Source"><![CDATA[--!strict
@@ -1739,7 +1929,54 @@ return Format
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="18">
+        <Item class="ModuleScript" referent="26">
+          <Properties>
+            <string name="Name">Frames</string>
+            <string name="Source"><![CDATA[--!strict
+-- Robust ways to orient a part along a direction. CFrame.lookAt is undefined
+-- when the direction is straight up or down (it can produce NaN rotations),
+-- which broke vertical legs, so every "point this along that" goes through here.
+
+local Frames = {}
+
+local X_AXIS = Vector3.new(1, 0, 0)
+local Y_AXIS = Vector3.new(0, 1, 0)
+local Z_AXIS = Vector3.new(0, 0, 1)
+
+-- CFrame at `center` whose local X axis points along `direction`
+-- (Roblox cylinders run along X).
+function Frames.alongX(center: Vector3, direction: Vector3): CFrame
+	local x = direction.Unit
+	local reference = if math.abs(x.Y) > 0.99 then Z_AXIS else Y_AXIS
+	local z = x:Cross(reference).Unit
+	local y = z:Cross(x).Unit
+	return CFrame.fromMatrix(center, x, y, z)
+end
+
+-- CFrame at `center` whose local Z axis points along `direction`
+-- (stretched spheres and blocks use Z as their long axis).
+function Frames.alongZ(center: Vector3, direction: Vector3): CFrame
+	local z = direction.Unit
+	local reference = if math.abs(z.Y) > 0.99 then X_AXIS else Y_AXIS
+	local x = reference:Cross(z).Unit
+	local y = z:Cross(x).Unit
+	return CFrame.fromMatrix(center, x, y, z)
+end
+
+-- Facing a point on the horizontal plane (the usual "look at" for characters).
+function Frames.facing(position: Vector3, target: Vector3): CFrame
+	local flat = Vector3.new(target.X - position.X, 0, target.Z - position.Z)
+	if flat.Magnitude < 1e-4 then
+		return CFrame.new(position)
+	end
+	return CFrame.lookAt(position, position + flat)
+end
+
+return Frames
+]]></string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="27">
           <Properties>
             <string name="Name">Growth</string>
             <string name="Source"><![CDATA[--!strict
@@ -1846,7 +2083,7 @@ return Growth
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="19">
+        <Item class="ModuleScript" referent="28">
           <Properties>
             <string name="Name">Odds</string>
             <string name="Source"><![CDATA[--!strict
@@ -1967,7 +2204,7 @@ return Odds
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="20">
+        <Item class="ModuleScript" referent="29">
           <Properties>
             <string name="Name">Rng</string>
             <string name="Source"><![CDATA[--!strict
@@ -2029,7 +2266,7 @@ return Rng
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="21">
+        <Item class="ModuleScript" referent="30">
           <Properties>
             <string name="Name">Signal</string>
             <string name="Source"><![CDATA[--!strict
@@ -2074,7 +2311,7 @@ return Signal
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="22">
+        <Item class="ModuleScript" referent="31">
           <Properties>
             <string name="Name">Streak</string>
             <string name="Source"><![CDATA[--!strict
@@ -2120,11 +2357,11 @@ return Streak
           </Properties>
         </Item>
       </Item>
-      <Item class="Folder" referent="23">
+      <Item class="Folder" referent="32">
         <Properties>
           <string name="Name">Visual</string>
         </Properties>
-        <Item class="ModuleScript" referent="24">
+        <Item class="ModuleScript" referent="33">
           <Properties>
             <string name="Name">DinoModel</string>
             <string name="Source"><![CDATA[--!strict
@@ -2138,6 +2375,7 @@ local CollectionService = game:GetService("CollectionService")
 
 local DinoData = require(script.Parent.Parent.Data.DinoData)
 local MutationData = require(script.Parent.Parent.Data.MutationData)
+local Frames = require(script.Parent.Parent.Util.Frames)
 local Growth = require(script.Parent.Parent.Util.Growth)
 
 local DinoModel = {}
@@ -2231,13 +2469,13 @@ local function cylinder(
 	local length = (z - a).Magnitude
 	p.Size = Vector3.new(length, thickness, thickness) * bld.scale
 	local mid = (a + z) / 2
-	local cf = CFrame.lookAt(mid, mid + (z - a).Unit) * CFrame.Angles(0, math.rad(90), 0)
+	local cf = Frames.alongX(mid, z - a)
 	p.CFrame = cf.Rotation + cf.Position * bld.scale
 	return p
 end
 
 local function along(center: Vector3, direction: Vector3): CFrame
-	return CFrame.lookAt(center, center + direction.Unit)
+	return Frames.alongZ(center, direction)
 end
 
 local function addParticles(target: BasePart, color: Color3, scale: number, rate: number)
@@ -2769,7 +3007,7 @@ return DinoModel
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="25">
+        <Item class="ModuleScript" referent="34">
           <Properties>
             <string name="Name">EggModel</string>
             <string name="Source"><![CDATA[--!strict
@@ -2927,11 +3165,11 @@ return EggModel
       </Item>
     </Item>
   </Item>
-  <Item class="ServerScriptService" referent="26">
+  <Item class="ServerScriptService" referent="35">
     <Properties>
       <string name="Name">ServerScriptService</string>
     </Properties>
-    <Item class="Script" referent="27">
+    <Item class="Script" referent="36">
       <Properties>
         <string name="Name">Server</string>
         <token name="RunContext">0</token>
@@ -2980,11 +3218,952 @@ end
 print("[RaiseADino] server started")
 ]]></string>
       </Properties>
-      <Item class="Folder" referent="28">
+      <Item class="Folder" referent="37">
         <Properties>
           <string name="Name">Lib</string>
         </Properties>
-        <Item class="ModuleScript" referent="29">
+        <Item class="ModuleScript" referent="38">
+          <Properties>
+            <string name="Name">Build</string>
+            <string name="Source"><![CDATA[--!strict
+-- Part-building helpers for the generated world. Every part is anchored and
+-- smooth. Purely decorative parts can skip touch/query work (`decor`) and small
+-- ones can skip shadows, which keeps a part-built island cheap on phones.
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local Frames = require(ReplicatedStorage.Shared.Util.Frames)
+
+local Build = {}
+
+export type Options = {
+	name: string?,
+	material: Enum.Material?,
+	transparency: number?,
+	reflectance: number?,
+	collide: boolean?, -- default true
+	shadow: boolean?, -- default true
+	decor: boolean?, -- no Touched events or raycasts
+}
+
+local function finish(p: BasePart, color: Color3, parent: Instance, options: Options?): ()
+	p.Anchored = true
+	p.Color = color
+	p.Material = Enum.Material.SmoothPlastic
+	p.TopSurface = Enum.SurfaceType.Smooth
+	p.BottomSurface = Enum.SurfaceType.Smooth
+	if options then
+		if options.name then
+			p.Name = options.name
+		end
+		if options.material then
+			p.Material = options.material
+		end
+		if options.transparency then
+			p.Transparency = options.transparency
+		end
+		if options.reflectance then
+			p.Reflectance = options.reflectance
+		end
+		if options.collide == false then
+			p.CanCollide = false
+		end
+		if options.shadow == false then
+			p.CastShadow = false
+		end
+		if options.decor then
+			p.CanTouch = false
+			p.CanQuery = false
+		end
+	end
+	p.Parent = parent
+end
+
+function Build.block(
+	size: Vector3,
+	cframe: CFrame,
+	color: Color3,
+	parent: Instance,
+	options: Options?
+): Part
+	local p = Instance.new("Part")
+	p.Name = "Block"
+	p.Size = size
+	p.CFrame = cframe
+	finish(p, color, parent, options)
+	return p
+end
+
+-- Wedge: the slope rises toward -Z (front), full height at the back (+Z).
+function Build.wedge(
+	size: Vector3,
+	cframe: CFrame,
+	color: Color3,
+	parent: Instance,
+	options: Options?
+): WedgePart
+	local p = Instance.new("WedgePart")
+	p.Name = "Wedge"
+	p.Size = size
+	p.CFrame = cframe
+	finish(p, color, parent, options)
+	return p
+end
+
+function Build.ball(
+	diameter: number,
+	position: Vector3,
+	color: Color3,
+	parent: Instance,
+	options: Options?
+): Part
+	local p = Instance.new("Part")
+	p.Name = "Ball"
+	p.Shape = Enum.PartType.Ball
+	p.Size = Vector3.new(diameter, diameter, diameter)
+	p.CFrame = CFrame.new(position)
+	finish(p, color, parent, options)
+	return p
+end
+
+-- Stretched sphere (a sphere mesh fills the part's box).
+function Build.ellipsoid(
+	size: Vector3,
+	cframe: CFrame,
+	color: Color3,
+	parent: Instance,
+	options: Options?
+): Part
+	local p = Instance.new("Part")
+	p.Name = "Ellipsoid"
+	p.Size = size
+	p.CFrame = cframe
+	local mesh = Instance.new("SpecialMesh")
+	mesh.MeshType = Enum.MeshType.Sphere
+	mesh.Parent = p
+	finish(p, color, parent, options)
+	return p
+end
+
+-- Upright cylinder centred on `cframe` (Roblox cylinders run along X, so this
+-- turns X onto the frame's Y axis).
+function Build.disc(
+	diameter: number,
+	height: number,
+	cframe: CFrame,
+	color: Color3,
+	parent: Instance,
+	options: Options?
+): Part
+	local p = Instance.new("Part")
+	p.Name = "Disc"
+	p.Shape = Enum.PartType.Cylinder
+	p.Size = Vector3.new(height, diameter, diameter)
+	p.CFrame = cframe * CFrame.Angles(0, 0, math.rad(90))
+	finish(p, color, parent, options)
+	return p
+end
+
+-- Cylinder from point a to point b.
+function Build.rod(
+	a: Vector3,
+	b: Vector3,
+	diameter: number,
+	color: Color3,
+	parent: Instance,
+	options: Options?
+): Part
+	local p = Instance.new("Part")
+	p.Name = "Rod"
+	p.Shape = Enum.PartType.Cylinder
+	p.Size = Vector3.new((b - a).Magnitude, diameter, diameter)
+	p.CFrame = Frames.alongX((a + b) / 2, b - a)
+	finish(p, color, parent, options)
+	return p
+end
+
+-- Flat-topped bar from a to b (its up side stays as close to world-up as it can).
+function Build.beam(
+	a: Vector3,
+	b: Vector3,
+	width: number,
+	thickness: number,
+	color: Color3,
+	parent: Instance,
+	options: Options?
+): Part
+	local p = Instance.new("Part")
+	p.Name = "Beam"
+	p.Size = Vector3.new(width, thickness, (b - a).Magnitude)
+	p.CFrame = Frames.alongZ((a + b) / 2, b - a)
+	finish(p, color, parent, options)
+	return p
+end
+
+-- Flat ring of blocks around `center` (an upright frame), e.g. a circular path.
+function Build.ring(
+	center: CFrame,
+	radius: number,
+	width: number,
+	height: number,
+	segments: number,
+	color: Color3,
+	parent: Instance,
+	options: Options?
+): { Part }
+	local parts = {}
+	local step = 2 * math.pi / segments
+	-- Segment length covering the outer edge so neighbours meet without gaps.
+	local length = 2 * (radius + width / 2) * math.tan(step / 2) + 0.05
+	for i = 0, segments - 1 do
+		local angle = i * step
+		local cf = center * CFrame.Angles(0, angle, 0) * CFrame.new(0, 0, -radius)
+		table.insert(
+			parts,
+			Build.block(Vector3.new(length, height, width), cf, color, parent, options)
+		)
+	end
+	return parts
+end
+
+-- Ground position on a circle (angle 0 points along +Z, matching the plots).
+function Build.polar(angle: number, radius: number, y: number?): Vector3
+	return Vector3.new(math.sin(angle) * radius, y or 0, math.cos(angle) * radius)
+end
+
+function Build.model(name: string, parent: Instance?): Model
+	local m = Instance.new("Model")
+	m.Name = name
+	if parent then
+		m.Parent = parent
+	end
+	return m
+end
+
+return Build
+]]></string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="39">
+          <Properties>
+            <string name="Name">Island</string>
+            <string name="Source"><![CDATA[--!strict
+-- Builds the island scenery: layered coastline (grass, beach, foam, shallows),
+-- paths, the central plaza with the egg-shop tent, the volcano, scattered
+-- cartoon props, palms, clouds and little islands on the horizon.
+-- Nests (plots) are built by World; this module only needs to know where they
+-- are so props stay out of them.
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local Config = require(ReplicatedStorage.Shared.Config)
+local EggData = require(ReplicatedStorage.Shared.Data.EggData)
+local EggModel = require(ReplicatedStorage.Shared.Visual.EggModel)
+local DinoModel = require(ReplicatedStorage.Shared.Visual.DinoModel)
+local Palette = require(ReplicatedStorage.Shared.Palette)
+local Rng = require(ReplicatedStorage.Shared.Util.Rng)
+local Build = require(script.Parent.Build)
+local Props = require(script.Parent.Props)
+
+local Island = {}
+
+local TAU = 2 * math.pi
+local PLOT_ANGLE = TAU / Config.PLOT_COUNT
+local HALF = Config.PLOT_SIZE / 2
+
+Island.LAND_RADIUS = 184
+Island.PLAZA_RADIUS = 40
+Island.RING_PATH_RADIUS = 86
+Island.GATE_RADIUS = Config.PLOT_RING_RADIUS - HALF
+Island.VOLCANO_ANGLE = PLOT_ANGLE / 2
+Island.VOLCANO_POSITION = Build.polar(PLOT_ANGLE / 2, 205)
+Island.VOLCANO_RADIUS = 46
+Island.SHOP_RADIUS = 15
+
+local GROUND = { decor = true }
+local FLAT = { decor = true, shadow = false }
+
+type Land = { center: Vector3, radius: number }
+
+-- ===== Coastline =====
+
+local function lands(): { Land }
+	local list: { Land } = { { center = Vector3.zero, radius = Island.LAND_RADIUS } }
+	local gen = Rng.new(7)
+	-- Uneven bumps (a few big peninsulas, some small coves) keep the coast
+	-- from looking like a stamped flower.
+	local bumps = 13
+	for i = 0, bumps - 1 do
+		local angle = i * (TAU / bumps) + (gen.next() - 0.5) * 0.32
+		local big = gen.next() < 0.3
+		local radius = if big then 44 + gen.next() * 16 else 20 + gen.next() * 18
+		local distance = Island.LAND_RADIUS - radius * 0.3 + (gen.next() - 0.3) * 16
+		table.insert(list, { center = Build.polar(angle, distance), radius = radius })
+	end
+	-- the volcano needs solid ground under it
+	table.insert(list, { center = Island.VOLCANO_POSITION, radius = Island.VOLCANO_RADIUS + 12 })
+	return list
+end
+
+-- Layers from the water up; each land disc is drawn in every layer so the
+-- coastline keeps its bumps. Higher layers always win, so overlaps never fight.
+local LAYERS = {
+	{ name = "DeepShallows", grow = 70, top = -1.98, thick = 0.2, color = Palette.water },
+	{ name = "Shallows", grow = 30, top = -1.9, thick = 0.2, color = Palette.shallows },
+	{ name = "Foam", grow = 13, top = -1.8, thick = 0.2, color = Palette.foam },
+	{ name = "Beach", grow = 10, top = -0.9, thick = 2, color = Palette.sand },
+	{ name = "GrassLip", grow = 1.6, top = -0.3, thick = 6, color = Palette.grassDark },
+	{ name = "Grass", grow = 0, top = 0, thick = 6, color = Palette.grass },
+}
+
+local function buildCoast(map: Instance, landList: { Land }, extraGrow: number?)
+	local folder = Instance.new("Folder")
+	folder.Name = "Coast"
+	for _, layer in LAYERS do
+		for _, land in landList do
+			local diameter = 2 * (land.radius + layer.grow + (extraGrow or 0))
+			Build.disc(
+				diameter,
+				layer.thick,
+				CFrame.new(land.center.X, layer.top - layer.thick / 2, land.center.Z),
+				layer.color,
+				folder,
+				{ name = layer.name, decor = true, shadow = layer.thick > 1 }
+			)
+		end
+	end
+	folder.Parent = map
+end
+
+local function buildOcean(map: Instance)
+	Build.block(
+		Vector3.new(4000, 2, 4000),
+		CFrame.new(0, -3.05, 0),
+		Palette.waterDeep,
+		map,
+		{ name = "Ocean", decor = true, shadow = false, reflectance = 0.06 }
+	)
+end
+
+-- ===== Paths =====
+
+local function buildPaths(map: Instance)
+	local folder = Instance.new("Folder")
+	folder.Name = "Paths"
+	local inner = Island.PLAZA_RADIUS - 4
+	local outer = Island.GATE_RADIUS + 1
+	for i = 0, Config.PLOT_COUNT - 1 do
+		local angle = i * PLOT_ANGLE
+		local a = Build.polar(angle, inner)
+		local b = Build.polar(angle, outer)
+		Build.beam(
+			a + Vector3.new(0, -0.09, 0),
+			b + Vector3.new(0, -0.09, 0),
+			12.5,
+			0.3,
+			Palette.pathEdge,
+			folder,
+			FLAT
+		)
+		Build.beam(
+			a + Vector3.new(0, -0.03, 0),
+			b + Vector3.new(0, -0.03, 0),
+			10,
+			0.3,
+			Palette.path,
+			folder,
+			FLAT
+		)
+	end
+	local center = CFrame.new(0, -0.09, 0)
+	Build.ring(center, Island.RING_PATH_RADIUS, 11, 0.3, 64, Palette.pathEdge, folder, FLAT)
+	Build.ring(
+		center + Vector3.new(0, 0.06, 0),
+		Island.RING_PATH_RADIUS,
+		8.5,
+		0.3,
+		64,
+		Palette.path,
+		folder,
+		FLAT
+	)
+	folder.Parent = map
+end
+
+-- A trail of dino footprints from the plaza toward the volcano.
+local function buildFootprints(map: Instance)
+	local folder = Instance.new("Folder")
+	folder.Name = "Footprints"
+	local angle = Island.VOLCANO_ANGLE
+	local outward = Build.polar(angle, 1)
+	local side = Vector3.new(outward.Z, 0, -outward.X)
+	local facing = angle + math.pi
+	local step = 0
+	for r = Island.PLAZA_RADIUS + 6, 150, 5.5 do
+		if math.abs(r - Island.RING_PATH_RADIUS) > 8 then
+			local offset = if step % 2 == 0 then 1.4 else -1.4
+			local p = Build.polar(angle, r, 0.06) + side * offset
+			Props.footprint(p, facing, 1, Palette.grassDeep, folder)
+		end
+		step += 1
+	end
+	folder.Parent = map
+end
+
+-- ===== Plaza + egg shop =====
+
+local function stripedPillar(a: Vector3, b: Vector3, parent: Instance)
+	local stripes = 6
+	for i = 0, stripes - 1 do
+		local p0 = a:Lerp(b, i / stripes)
+		local p1 = a:Lerp(b, (i + 1) / stripes)
+		Build.rod(p0, p1, 1.3, if i % 2 == 0 then Palette.red else Palette.white, parent)
+	end
+end
+
+-- Candy-striped tent roof: a cone of alternating wedges with a scalloped rim.
+local function tent(center: Vector3, radius: number, height: number, parent: Instance)
+	local segments = 16
+	local width = 2 * radius * math.sin(math.pi / segments) + 0.4
+	for i = 0, segments - 1 do
+		local angle = i * (TAU / segments)
+		local cf = CFrame.new(center)
+			* CFrame.Angles(0, angle, 0)
+			* CFrame.new(0, height / 2, -radius / 2)
+		Build.wedge(
+			Vector3.new(width, height, radius),
+			cf,
+			if i % 2 == 0 then Palette.red else Palette.white,
+			parent,
+			{ name = "Roof" }
+		)
+		local rim = Build.polar(angle + math.pi, radius - 0.3, center.Y - 0.2)
+		Build.ball(2.3, rim, if i % 2 == 0 then Palette.white else Palette.red, parent, FLAT)
+	end
+end
+
+local function buildHub(map: Instance)
+	local hub = Build.model("Hub", map)
+	local plazaTop = 0.3
+	Build.disc(
+		Island.PLAZA_RADIUS * 2,
+		1,
+		CFrame.new(0, plazaTop - 0.5, 0),
+		Palette.plaza,
+		hub,
+		{ name = "Plaza" }
+	)
+	Build.ring(CFrame.new(0, plazaTop - 0.02, 0), 26, 2.2, 0.1, 48, Palette.plazaDark, hub, FLAT)
+	Build.ring(CFrame.new(0, plazaTop - 0.02, 0), 18.5, 1.4, 0.1, 40, Palette.plazaDark, hub, FLAT)
+	Build.ring(
+		CFrame.new(0, plazaTop + 0.1, 0),
+		Island.PLAZA_RADIUS,
+		1.4,
+		0.8,
+		64,
+		Palette.stone,
+		hub,
+		FLAT
+	)
+
+	-- planters and lamps between the paths
+	local gen = Rng.new(11)
+	for i = 0, Config.PLOT_COUNT - 1 do
+		local angle = (i + 0.5) * PLOT_ANGLE
+		local planter = Build.polar(angle, 31, plazaTop)
+		Build.disc(
+			7.5,
+			1.6,
+			CFrame.new(planter + Vector3.new(0, 0.8, 0)),
+			Palette.stone,
+			hub,
+			GROUND
+		)
+		Build.disc(
+			6.4,
+			0.3,
+			CFrame.new(planter + Vector3.new(0, 1.55, 0)),
+			Palette.dirtDark,
+			hub,
+			FLAT
+		)
+		Props.flowers(planter + Vector3.new(0, 1.6, 0), 1.15, gen, hub)
+		Props.lamp(Build.polar(angle, 37.5, plazaTop), 1, hub)
+	end
+
+	-- the shop: stone base, round counter, striped pillars, candy tent
+	local baseTop = plazaTop + 1
+	Build.disc(
+		25,
+		1,
+		CFrame.new(0, baseTop - 0.5, 0),
+		Palette.stoneLight,
+		hub,
+		{ name = "ShopBase" }
+	)
+	local counterTop = baseTop + 3.6
+	Build.disc(18, 3, CFrame.new(0, baseTop + 1.5, 0), Palette.wood, hub, { name = "Counter" })
+	Build.disc(18.4, 0.8, CFrame.new(0, baseTop + 1.7, 0), Palette.red, hub, FLAT)
+	Build.disc(
+		19.6,
+		0.6,
+		CFrame.new(0, counterTop - 0.3, 0),
+		Palette.woodLight,
+		hub,
+		{ name = "CounterTop" }
+	)
+	for i, egg in EggData.LIST do
+		local angle = math.rad(45) + (i - 1) * (TAU / #EggData.LIST)
+		local model = EggModel.build(EggModel.lookForShopEgg(egg.id), 2.8, true)
+		model.Name = egg.id .. "Display"
+		model:PivotTo(CFrame.new(Build.polar(angle, 6.6, counterTop)))
+		model.Parent = hub
+	end
+	local rimY = counterTop + 9.5
+	for i = 0, 3 do
+		local angle = i * (TAU / 4)
+		local foot = Build.polar(angle, 8.6, counterTop)
+		stripedPillar(foot, foot + Vector3.new(0, rimY + 3 - counterTop, 0), hub)
+	end
+	tent(Vector3.new(0, rimY, 0), Island.SHOP_RADIUS, 9, hub)
+	-- a giant spotted egg crowns the tent, with a baby dino on top
+	Build.disc(6.4, 1.4, CFrame.new(0, rimY + 8.2, 0), Palette.yellow, hub, { decor = true })
+	local eggCenter = Vector3.new(0, rimY + 9 + 3.2, 0)
+	Build.ellipsoid(
+		Vector3.new(6.4, 8, 6.4),
+		CFrame.new(eggCenter),
+		Palette.cream,
+		hub,
+		{ name = "BigEgg" }
+	)
+	for i = 1, 6 do
+		local a = i * 1.05
+		local e = math.rad(if i % 2 == 0 then 10 else -25)
+		local p = eggCenter
+			+ Vector3.new(
+				math.cos(e) * math.sin(a) * 3.15,
+				math.sin(e) * 4,
+				math.cos(e) * math.cos(a) * 3.15
+			)
+		Build.ball(
+			1.3,
+			p,
+			if i % 3 == 0 then Palette.purple elseif i % 3 == 1 then Palette.mint else Palette.orange,
+			hub,
+			FLAT
+		)
+	end
+	local baby = DinoModel.build("Raptor", 3, nil, "Static")
+	baby.Name = "ShopMascot"
+	baby:PivotTo(CFrame.new(eggCenter + Vector3.new(0, 3.2, 0)) * CFrame.Angles(0, math.pi, 0))
+	baby.Parent = hub
+
+	-- invisible prompt target in the middle of the counter
+	local promptPart =
+		Build.block(Vector3.new(4, 4, 4), CFrame.new(0, counterTop - 1.5, 0), Palette.white, hub, {
+			name = "ShopPrompt",
+			transparency = 1,
+			collide = false,
+		})
+	return hub, promptPart
+end
+
+-- ===== Volcano =====
+
+-- Low-poly volcano: three frustum bands of wedge facets (gentle foot, steep
+-- cone, steeper top) give a concave cartoon profile. Facets alternate between
+-- two shades, lava runs straight down facet centre lines.
+local VOLCANO_BANDS = {
+	{
+		r0 = 46,
+		r1 = 31,
+		y0 = 0,
+		y1 = 11,
+		light = Color3.fromRGB(150, 118, 104),
+		dark = Color3.fromRGB(136, 106, 96),
+	},
+	{
+		r0 = 31,
+		r1 = 18,
+		y0 = 11,
+		y1 = 34,
+		light = Color3.fromRGB(132, 102, 98),
+		dark = Color3.fromRGB(118, 92, 90),
+	},
+	{
+		r0 = 18,
+		r1 = 13,
+		y0 = 34,
+		y1 = 46,
+		light = Color3.fromRGB(112, 86, 88),
+		dark = Color3.fromRGB(98, 76, 80),
+	},
+}
+local VOLCANO_FACETS = 24
+
+local function volcanoRadiusAt(y: number): number
+	for _, band in VOLCANO_BANDS do
+		if y <= band.y1 then
+			local t = math.clamp((y - band.y0) / (band.y1 - band.y0), 0, 1)
+			return band.r0 + (band.r1 - band.r0) * t
+		end
+	end
+	return VOLCANO_BANDS[#VOLCANO_BANDS].r1
+end
+
+local function buildVolcano(map: Instance)
+	local volcano = Build.model("Volcano", map)
+	local base = Island.VOLCANO_POSITION
+	local bottom = -1.2
+	local step = TAU / VOLCANO_FACETS
+	for b, band in VOLCANO_BANDS do
+		local h = band.y1 - band.y0
+		local depth = band.r0 - band.r1
+		local width = 2 * band.r0 * math.sin(step / 2) + 0.35
+		for i = 0, VOLCANO_FACETS - 1 do
+			-- offset odd bands by half a facet so seams don't line up
+			local angle = (i + (b % 2) * 0.5) * step
+			local cf = CFrame.new(base.X, bottom + band.y0, base.Z)
+				* CFrame.Angles(0, angle, 0)
+				* CFrame.new(0, h / 2, -(band.r1 + depth / 2))
+			Build.wedge(
+				Vector3.new(width, h, depth),
+				cf,
+				if i % 2 == 0 then band.light else band.dark,
+				volcano,
+				{
+					name = "Rock",
+					decor = true,
+				}
+			)
+		end
+		Build.disc(
+			band.r1 * 2 + 0.6,
+			h,
+			CFrame.new(base.X, bottom + band.y0 + h / 2, base.Z),
+			band.dark,
+			volcano,
+			{
+				name = "Core",
+				decor = true,
+				shadow = false,
+			}
+		)
+	end
+	local top = bottom + VOLCANO_BANDS[#VOLCANO_BANDS].y1
+	local rim = VOLCANO_BANDS[#VOLCANO_BANDS].r1
+	for i = 0, 13 do
+		local angle = i * (TAU / 14)
+		Build.ellipsoid(
+			Vector3.new(6, 3.2, 4.6),
+			CFrame.new(base + Build.polar(angle, rim - 0.6, top + 0.4)) * CFrame.Angles(0, angle, 0),
+			Color3.fromRGB(84, 64, 70),
+			volcano,
+			GROUND
+		)
+	end
+	local pool =
+		Build.disc(rim * 2 - 3, 0.6, CFrame.new(base.X, top + 0.1, base.Z), Palette.lava, volcano, {
+			name = "Lava",
+			material = Enum.Material.Neon,
+			decor = true,
+			shadow = false,
+		})
+	Build.disc(rim, 0.6, CFrame.new(base.X, top + 0.25, base.Z), Palette.lavaHot, volcano, {
+		material = Enum.Material.Neon,
+		decor = true,
+		shadow = false,
+	})
+	local glow = Instance.new("PointLight")
+	glow.Color = Palette.lava
+	glow.Range = 60
+	glow.Brightness = 2
+	glow.Parent = pool
+	local smoke = Instance.new("ParticleEmitter")
+	smoke.Color = ColorSequence.new(Color3.fromRGB(120, 112, 120))
+	smoke.Size = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 5),
+		NumberSequenceKeypoint.new(1, 14),
+	})
+	smoke.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.35),
+		NumberSequenceKeypoint.new(1, 1),
+	})
+	smoke.Lifetime = NumberRange.new(5, 8)
+	smoke.Speed = NumberRange.new(5, 8)
+	smoke.Rate = 5
+	smoke.Rotation = NumberRange.new(0, 360)
+	smoke.RotSpeed = NumberRange.new(-20, 20)
+	smoke.SpreadAngle = Vector2.new(12, 12)
+	smoke.Parent = pool
+
+	-- lava flows down the island-facing side (facets sit within 1% of the
+	-- band radius, so a small lift keeps the flows on the surface)
+	local lavaOptions =
+		{ material = Enum.Material.Neon, decor = true, shadow = false, collide = false }
+	local inward = math.atan2(-base.X, -base.Z)
+	local facing = math.floor(inward / step + 0.5)
+	for _, k in { -2, 1, 3 } do
+		local angle = (facing + k + 0.5) * step
+		local stopAt = if k == 1 then 0 else 9
+		local points: { Vector3 } = {}
+		for y = VOLCANO_BANDS[#VOLCANO_BANDS].y1 - 0.5, stopAt, -3.5 do
+			table.insert(points, base + Build.polar(angle, volcanoRadiusAt(y) + 0.6, bottom + y))
+		end
+		for i = 1, #points - 1 do
+			local t = i / #points
+			Build.beam(
+				points[i],
+				points[i + 1],
+				2.2 + t * 2.4,
+				0.8,
+				Palette.lava,
+				volcano,
+				lavaOptions
+			)
+		end
+		local last = points[#points]
+		Build.ellipsoid(
+			Vector3.new(8, 1.2, 8),
+			CFrame.new(last),
+			Palette.lava,
+			volcano,
+			lavaOptions
+		)
+		Build.ellipsoid(
+			Vector3.new(4, 1.4, 4),
+			CFrame.new(last + Vector3.new(0, 0.1, 0)),
+			Palette.lavaHot,
+			volcano,
+			lavaOptions
+		)
+	end
+	local gen = Rng.new(5)
+	for i = 0, 11 do
+		local angle = i * (TAU / 12) + gen.next() * 0.3
+		Props.rock(
+			base + Build.polar(angle, Island.VOLCANO_RADIUS + 1.5, 0),
+			1.7 + gen.next() * 1.2,
+			gen,
+			volcano
+		)
+	end
+end
+
+-- ===== Scattered props =====
+
+local function insidePlot(position: Vector3, margin: number): boolean
+	for i = 0, Config.PLOT_COUNT - 1 do
+		local angle = i * PLOT_ANGLE
+		local center = Build.polar(angle, Config.PLOT_RING_RADIUS)
+		local offset = position - center
+		-- plot axes: local Z points away from the hub
+		local z = offset.X * math.sin(angle) + offset.Z * math.cos(angle)
+		local x = offset.X * math.cos(angle) - offset.Z * math.sin(angle)
+		if math.abs(x) < HALF + margin and math.abs(z) < HALF + margin then
+			return true
+		end
+	end
+	return false
+end
+
+local function nearPath(position: Vector3, margin: number): boolean
+	local r = position.Magnitude
+	if r < Island.PLAZA_RADIUS + margin then
+		return true
+	end
+	if math.abs(r - Island.RING_PATH_RADIUS) < 6.5 + margin then
+		return true
+	end
+	if r < Island.GATE_RADIUS + 14 then
+		local angle = math.atan2(position.X, position.Z)
+		for i = 0, Config.PLOT_COUNT - 1 do
+			local diff = (angle - i * PLOT_ANGLE + math.pi) % TAU - math.pi
+			if math.abs(math.sin(diff) * r) < 7.5 + margin and math.cos(diff) > 0 then
+				return true
+			end
+		end
+	end
+	return false
+end
+
+local function onLand(position: Vector3, landList: { Land }, inset: number): boolean
+	for _, land in landList do
+		local flat = Vector3.new(position.X - land.center.X, 0, position.Z - land.center.Z)
+		if flat.Magnitude < land.radius - inset then
+			return true
+		end
+	end
+	return false
+end
+
+type Spot = { position: Vector3, radius: number }
+
+local function scatter(map: Instance, landList: { Land })
+	local folder = Instance.new("Folder")
+	folder.Name = "Decorations"
+	local gen = Rng.new(2024)
+	local taken: { Spot } = {}
+	local function free(position: Vector3, radius: number): boolean
+		if not onLand(position, landList, radius + 3) then
+			return false
+		end
+		if insidePlot(position, radius + 4) or nearPath(position, radius) then
+			return false
+		end
+		local volcano = Vector3.new(
+			position.X - Island.VOLCANO_POSITION.X,
+			0,
+			position.Z - Island.VOLCANO_POSITION.Z
+		)
+		if volcano.Magnitude < Island.VOLCANO_RADIUS + radius + 6 then
+			return false
+		end
+		for _, spot in taken do
+			if (spot.position - position).Magnitude < spot.radius + radius then
+				return false
+			end
+		end
+		return true
+	end
+	local function place(
+		count: number,
+		radius: number,
+		minR: number,
+		maxR: number,
+		build: (Vector3) -> ()
+	)
+		local placed = 0
+		local tries = 0
+		while placed < count and tries < count * 60 do
+			tries += 1
+			local angle = gen.next() * TAU
+			local r = minR + (maxR - minR) * math.sqrt(gen.next())
+			local p = Build.polar(angle, r)
+			if free(p, radius) then
+				table.insert(taken, { position = p, radius = radius })
+				build(p)
+				placed += 1
+			end
+		end
+	end
+
+	-- landmarks first: decorative egg nests and ponds in open meadows
+	for _, spot in { Build.polar(PLOT_ANGLE * 4.5, 62), Build.polar(PLOT_ANGLE * 6.5, 150) } do
+		if free(spot, 6) then
+			table.insert(taken, { position = spot, radius = 6 })
+			Props.eggNest(spot, 1.2, gen, folder)
+		end
+	end
+	place(2, 10, 60, 175, function(p)
+		Props.pond(p, 1 + gen.next() * 0.3, gen, folder)
+	end)
+	local reach = Island.LAND_RADIUS + 45 -- peninsulas reach past the main disc
+	place(40, 5, 50, reach, function(p)
+		Props.tree(p, 0.9 + gen.next() * 0.45, gen, folder)
+	end)
+	place(22, 4, 115, reach, function(p)
+		Props.pine(p, 0.9 + gen.next() * 0.4, gen, folder)
+	end)
+	place(30, 3, 45, reach, function(p)
+		Props.fern(p, 0.9 + gen.next() * 0.5, gen, folder)
+	end)
+	place(36, 3, 45, reach, function(p)
+		Props.bush(p, 0.8 + gen.next() * 0.5, gen, folder)
+	end)
+	place(24, 2.5, 45, reach, function(p)
+		Props.flowers(p, 1 + gen.next() * 0.3, gen, folder)
+	end)
+	place(18, 3, 60, reach, function(p)
+		Props.rock(p, 0.8 + gen.next() * 0.8, gen, folder)
+	end)
+	place(14, 2.5, 50, reach, function(p)
+		Props.mushroom(p, 0.9 + gen.next() * 0.9, gen, folder)
+	end)
+
+	-- palms ring the beach
+	for i, land in landList do
+		if i > 1 and i < #landList then
+			local outward = Vector3.new(land.center.X, 0, land.center.Z).Unit
+			local p = land.center + outward * (land.radius - 3)
+			p = Vector3.new(p.X, 0, p.Z)
+			if free(p, 3) then
+				table.insert(taken, { position = p, radius = 3 })
+				Props.palm(p, 1 + gen.next() * 0.3, gen, folder)
+			end
+		end
+	end
+	place(14, 3, 170, reach, function(p)
+		Props.palm(p, 0.95 + gen.next() * 0.3, gen, folder)
+	end)
+
+	-- path lamps where the ring path meets each spoke
+	for i = 0, Config.PLOT_COUNT - 1 do
+		local angle = i * PLOT_ANGLE
+		local center = Build.polar(angle, Island.RING_PATH_RADIUS)
+		local outward = Build.polar(angle, 1)
+		local side = Vector3.new(outward.Z, 0, -outward.X)
+		Props.lamp(center + side * 9.5 + outward * 7, 0.9, folder)
+	end
+	folder.Parent = map
+end
+
+-- ===== Sky and horizon =====
+
+local function buildSky(map: Instance)
+	local folder = Instance.new("Folder")
+	folder.Name = "Sky"
+	local gen = Rng.new(99)
+	for i = 0, 13 do
+		local angle = i * (TAU / 14) + gen.next() * 0.3
+		local r = 150 + gen.next() * 300
+		Props.cloud(
+			Build.polar(angle, r, 100 + gen.next() * 45),
+			0.8 + gen.next() * 0.7,
+			gen,
+			folder
+		)
+	end
+	folder.Parent = map
+end
+
+local function buildIslets(map: Instance)
+	local folder = Instance.new("Folder")
+	folder.Name = "Islets"
+	local gen = Rng.new(31)
+	local spots = { { 0.6, 470 }, { 1.9, 560 }, { 3.0, 430 }, { 4.2, 600 }, { 5.3, 500 } }
+	for _, spot in spots do
+		local center = Build.polar(spot[1], spot[2])
+		local radius = 16 + gen.next() * 14
+		local land = { { center = center, radius = radius } }
+		buildCoast(folder, land)
+		Props.palm(center + Vector3.new(radius * 0.2, 0, -radius * 0.1), 1.2, gen, folder)
+		Props.palm(center + Vector3.new(-radius * 0.35, 0, radius * 0.25), 1, gen, folder)
+		Props.bush(center + Vector3.new(radius * 0.3, 0, radius * 0.35), 1, gen, folder)
+	end
+	folder.Parent = map
+end
+
+-- Builds everything and returns the shop's prompt part.
+function Island.build(map: Instance): BasePart
+	local landList = lands()
+	buildOcean(map)
+	buildCoast(map, landList)
+	buildPaths(map)
+	buildFootprints(map)
+	local _, shopPrompt = buildHub(map)
+	buildVolcano(map)
+	scatter(map, landList)
+	buildSky(map)
+	buildIslets(map)
+	return shopPrompt
+end
+
+return Island
+]]></string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="40">
           <Properties>
             <string name="Name">Notify</string>
             <string name="Source"><![CDATA[--!strict
@@ -3019,7 +4198,504 @@ return Notify
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="30">
+        <Item class="ModuleScript" referent="41">
+          <Properties>
+            <string name="Name">Props</string>
+            <string name="Source"><![CDATA[--!strict
+-- Cartoon props built from parts: chunky rounded shapes, 2-3 shades per
+-- material and a few pointy accents. Each builder takes a ground position, a
+-- size multiplier and a random generator (so layouts are repeatable).
+
+local CollectionService = game:GetService("CollectionService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local Frames = require(ReplicatedStorage.Shared.Util.Frames)
+local Palette = require(ReplicatedStorage.Shared.Palette)
+local Rng = require(ReplicatedStorage.Shared.Util.Rng)
+local Tags = require(ReplicatedStorage.Shared.Tags)
+local Build = require(script.Parent.Build)
+
+local Props = {}
+
+-- Lights tagged with this are switched on at night by the client.
+Props.NIGHT_LIGHT_TAG = Tags.NIGHT_LIGHT
+
+type Gen = Rng.Generator
+
+local LEAF = { decor = true, collide = false }
+local SMALL = { decor = true, collide = false, shadow = false }
+
+local function between(gen: Gen, a: number, b: number): number
+	return a + (b - a) * gen.next()
+end
+
+local function pick<T>(gen: Gen, list: { T }): T
+	return list[gen.int(1, #list)]
+end
+
+local function horizontal(angle: number): Vector3
+	return Vector3.new(math.sin(angle), 0, math.cos(angle))
+end
+
+-- Leafy round tree: a short tapered trunk under a cluster of soft blobs.
+function Props.tree(base: Vector3, s: number, gen: Gen, parent: Instance): Model
+	local m = Build.model("Tree", parent)
+	local h = between(gen, 7.5, 9.5) * s
+	local lean = horizontal(gen.next() * math.pi * 2) * between(gen, 0.3, 1.2) * s
+	local mid = base + Vector3.new(0, h * 0.5, 0) + lean * 0.3
+	local top = base + Vector3.new(0, h, 0) + lean
+	Build.ellipsoid(Vector3.new(3.4, 1.4, 3.4) * s, CFrame.new(base), Palette.woodDark, m, LEAF)
+	Build.rod(base - Vector3.new(0, 0.5, 0), mid, 2.1 * s, Palette.wood, m, { name = "Trunk" })
+	Build.rod(mid, top, 1.6 * s, Palette.wood, m, { name = "Trunk" })
+
+	local yaw = CFrame.Angles(0, gen.next() * math.pi * 2, 0)
+	local c = top + Vector3.new(0, 1.6 * s, 0)
+	local function blob(size: Vector3, offset: Vector3, color: Color3)
+		Build.ellipsoid(
+			size * s,
+			CFrame.new(c + yaw:VectorToWorldSpace(offset * s)),
+			color,
+			m,
+			LEAF
+		)
+	end
+	blob(Vector3.new(10.5, 8.5, 10.5), Vector3.zero, Palette.leaf)
+	blob(Vector3.new(7, 6, 7), Vector3.new(4.2, -1.4, 1.2), Palette.leafDark)
+	blob(Vector3.new(6.5, 5.5, 6.5), Vector3.new(-3.8, -1, -2), Palette.leafDark)
+	blob(Vector3.new(6.5, 5.2, 6.5), Vector3.new(0.8, 3.3, -0.6), Palette.leafLight)
+	if gen.next() < 0.3 then
+		-- a few fruits
+		for i = 1, 3 do
+			local a = i * 2.1 + gen.next()
+			local p = c
+				+ Vector3.new(math.sin(a) * 4.6, between(gen, -2.2, 0.5), math.cos(a) * 4.6) * s
+			Build.ball(
+				0.9 * s,
+				p,
+				if gen.next() < 0.5 then Palette.red else Palette.orange,
+				m,
+				SMALL
+			)
+		end
+	end
+	return m
+end
+
+-- Fluffy cartoon pine: stacked blobs that shrink toward the top.
+function Props.pine(base: Vector3, s: number, gen: Gen, parent: Instance): Model
+	local m = Build.model("Pine", parent)
+	Build.rod(
+		base - Vector3.new(0, 0.5, 0),
+		base + Vector3.new(0, 4 * s, 0),
+		1.5 * s,
+		Palette.woodDark,
+		m
+	)
+	local tiers = { { 9, 5, 4.6 }, { 7.2, 4.6, 7.6 }, { 5.4, 4.2, 10.3 }, { 3.2, 3.4, 12.6 } }
+	-- each tier drifts a little so no two pines look stamped
+	local drift = horizontal(gen.next() * math.pi * 2) * 0.35 * s
+	for i, t in tiers do
+		local color = if i % 2 == 1 then Palette.pine else Palette.pineDark
+		if i == #tiers then
+			color = Palette.leaf
+		end
+		Build.ellipsoid(
+			Vector3.new(t[1], t[2], t[1]) * s,
+			CFrame.new(base + Vector3.new(0, t[3] * s, 0) + drift * (i - 1)),
+			color,
+			m,
+			LEAF
+		)
+	end
+	return m
+end
+
+-- Palm with a curved, banded trunk and drooping fronds.
+function Props.palm(base: Vector3, s: number, gen: Gen, parent: Instance): Model
+	local m = Build.model("Palm", parent)
+	local lean = horizontal(gen.next() * math.pi * 2)
+	local bend = between(gen, 3, 6.5) * s
+	local segments = 6
+	local length = between(gen, 2.4, 2.9) * s
+	local previous = base - Vector3.new(0, 0.6, 0)
+	for i = 1, segments do
+		local t = i / segments
+		local point = base + Vector3.new(0, i * length, 0) + lean * bend * t * t
+		local color = if i % 2 == 0 then Palette.woodLight else Palette.wood
+		Build.rod(previous, point, (1.9 - 0.5 * t) * s, color, m, { name = "Trunk" })
+		previous = point
+	end
+	local crown = previous
+	Build.ball(1.9 * s, crown, Palette.leafDark, m, LEAF)
+	local fronds = 7
+	local spin = gen.next() * math.pi * 2
+	for i = 1, fronds do
+		local a = spin + i * (2 * math.pi / fronds)
+		local droop = math.rad(between(gen, 14, 30))
+		local dir = horizontal(a) * math.cos(droop) - Vector3.new(0, math.sin(droop), 0)
+		local center = crown + dir * 3.8 * s + Vector3.new(0, 0.3 * s, 0)
+		Build.ellipsoid(
+			Vector3.new(2.6, 0.35, 8.4) * s,
+			Frames.alongZ(center, dir),
+			if i % 2 == 0 then Palette.leaf else Palette.leafLight,
+			m,
+			LEAF
+		)
+	end
+	for i = 1, 3 do
+		local a = spin + i * 2.1
+		Build.ball(
+			1.15 * s,
+			crown + Vector3.new(math.sin(a) * 0.9, -1.1, math.cos(a) * 0.9) * s,
+			Palette.woodDark,
+			m,
+			SMALL
+		)
+	end
+	return m
+end
+
+-- Prehistoric fern: a fountain of long leaves.
+function Props.fern(base: Vector3, s: number, gen: Gen, parent: Instance): Model
+	local m = Build.model("Fern", parent)
+	local leaves = 7
+	local spin = gen.next() * math.pi * 2
+	for i = 1, leaves do
+		local a = spin + i * (2 * math.pi / leaves)
+		local rise = math.rad(between(gen, 30, 48))
+		local dir = horizontal(a) * math.cos(rise) + Vector3.new(0, math.sin(rise), 0)
+		Build.ellipsoid(
+			Vector3.new(1.5, 0.3, 6) * s,
+			Frames.alongZ(base + dir * 2.7 * s + Vector3.new(0, 0.2, 0), dir),
+			if i % 2 == 0 then Palette.leafDark else Palette.leaf,
+			m,
+			SMALL
+		)
+	end
+	Build.ball(1.4 * s, base + Vector3.new(0, 0.4 * s, 0), Palette.leafDark, m, SMALL)
+	return m
+end
+
+function Props.bush(base: Vector3, s: number, gen: Gen, parent: Instance): Model
+	local m = Build.model("Bush", parent)
+	local yaw = CFrame.Angles(0, gen.next() * math.pi * 2, 0)
+	local function blob(size: Vector3, offset: Vector3, color: Color3)
+		Build.ellipsoid(
+			size * s,
+			CFrame.new(base + yaw:VectorToWorldSpace(offset * s)),
+			color,
+			m,
+			LEAF
+		)
+	end
+	blob(Vector3.new(5, 4, 5), Vector3.new(0, 1.5, 0), Palette.leaf)
+	blob(Vector3.new(3.6, 3, 3.6), Vector3.new(2.3, 1, 0.8), Palette.leafDark)
+	blob(Vector3.new(3.4, 2.8, 3.4), Vector3.new(-2.1, 0.9, -0.9), Palette.leafDark)
+	blob(Vector3.new(3, 2.6, 3), Vector3.new(0.4, 2.8, -0.3), Palette.leafLight)
+	if gen.next() < 0.45 then
+		local berry = if gen.next() < 0.5 then Palette.pink else Palette.red
+		for i = 1, 4 do
+			local a = i * 1.7 + gen.next()
+			local p = base
+				+ yaw:VectorToWorldSpace(
+					Vector3.new(math.sin(a) * 2.4, 1.6 + math.cos(a * 3) * 0.8, math.cos(a) * 2.4)
+						* s
+				)
+			Build.ball(0.6 * s, p, berry, m, SMALL)
+		end
+	end
+	return m
+end
+
+function Props.flowers(base: Vector3, s: number, gen: Gen, parent: Instance): Model
+	local m = Build.model("Flowers", parent)
+	Build.ellipsoid(Vector3.new(4.4, 0.7, 4.4) * s, CFrame.new(base), Palette.grassDeep, m, SMALL)
+	local color = pick(gen, Palette.FLOWERS)
+	for i = 1, 5 do
+		local a = i * 1.26 + gen.next() * 0.5
+		local r = between(gen, 0.4, 1.7) * s
+		local foot = base + Vector3.new(math.sin(a) * r, 0, math.cos(a) * r)
+		local height = between(gen, 0.9, 1.5) * s
+		local head = foot + Vector3.new(0, height, 0)
+		Build.rod(foot, head, 0.18 * s, Palette.grassDeep, m, SMALL)
+		local petals = if gen.next() < 0.75 then color else pick(gen, Palette.FLOWERS)
+		Build.ellipsoid(Vector3.new(1.2, 0.45, 1.2) * s, CFrame.new(head), petals, m, SMALL)
+		local middle = if petals == Palette.yellow then Palette.orange else Palette.yellow
+		Build.ball(0.45 * s, head + Vector3.new(0, 0.18 * s, 0), middle, m, SMALL)
+	end
+	return m
+end
+
+function Props.rock(base: Vector3, s: number, gen: Gen, parent: Instance): Model
+	local m = Build.model("Rock", parent)
+	local yaw = CFrame.Angles(0, gen.next() * math.pi * 2, 0)
+	Build.ellipsoid(
+		Vector3.new(4.4, 2.8, 3.6) * s,
+		CFrame.new(base + Vector3.new(0, 0.7 * s, 0)) * yaw,
+		Palette.stone,
+		m,
+		{ decor = true }
+	)
+	Build.ellipsoid(
+		Vector3.new(2.6, 2, 2.4) * s,
+		CFrame.new(base + yaw:VectorToWorldSpace(Vector3.new(2, 0.4, 0.9) * s)) * yaw,
+		Palette.stoneDark,
+		m,
+		{ decor = true, collide = false }
+	)
+	Build.ellipsoid(
+		Vector3.new(2.6, 1, 2.2) * s,
+		CFrame.new(base + Vector3.new(-0.3, 1.8, -0.2) * s) * yaw,
+		Palette.stoneLight,
+		m,
+		SMALL
+	)
+	return m
+end
+
+local CAP_COLORS = { Palette.red, Palette.purple, Palette.orange, Palette.pink }
+
+function Props.mushroom(base: Vector3, s: number, gen: Gen, parent: Instance): Model
+	local m = Build.model("Mushroom", parent)
+	local height = between(gen, 2, 2.8) * s
+	local top = base + Vector3.new(0, height, 0)
+	Build.rod(base - Vector3.new(0, 0.3, 0), top, 1.1 * s, Palette.cream, m, { decor = true })
+	local cap = Vector3.new(3.6, 2, 3.6) * s
+	local center = top + Vector3.new(0, 0.2 * s, 0)
+	Build.ellipsoid(cap, CFrame.new(center), pick(gen, CAP_COLORS), m, { decor = true })
+	local spin = gen.next() * math.pi * 2
+	for i = 1, 4 do
+		local a = spin + i * (math.pi / 2)
+		local e = math.rad(if i % 2 == 0 then 35 else 60)
+		local p = center
+			+ Vector3.new(
+				math.cos(e) * math.sin(a) * cap.X / 2,
+				math.sin(e) * cap.Y / 2,
+				math.cos(e) * math.cos(a) * cap.Z / 2
+			)
+		Build.ellipsoid(Vector3.new(0.9, 0.35, 0.9) * s, CFrame.new(p), Palette.white, m, SMALL)
+	end
+	return m
+end
+
+-- Street lamp; its light switches on at night (see NIGHT_LIGHT_TAG).
+function Props.lamp(base: Vector3, s: number, parent: Instance, glow: Color3?): Model
+	local m = Build.model("Lamp", parent)
+	local dark = Color3.fromRGB(88, 76, 104)
+	Build.disc(1.8 * s, 0.8 * s, CFrame.new(base + Vector3.new(0, 0.4 * s, 0)), dark, m)
+	local top = base + Vector3.new(0, 8.5 * s, 0)
+	Build.rod(base, top, 0.55 * s, dark, m)
+	local bulb =
+		Build.ball(1.7 * s, top + Vector3.new(0, 0.9 * s, 0), glow or Palette.lampGlow, m, {
+			name = "Bulb",
+			material = Enum.Material.Neon,
+			decor = true,
+			shadow = false,
+		})
+	Build.disc(
+		2.6 * s,
+		0.5 * s,
+		CFrame.new(top + Vector3.new(0, 2 * s, 0)),
+		dark,
+		m,
+		{ decor = true }
+	)
+	Build.ball(0.7 * s, top + Vector3.new(0, 2.5 * s, 0), dark, m, SMALL)
+	local light = Instance.new("PointLight")
+	light.Color = glow or Palette.lampGlow
+	light.Range = 22 * s
+	light.Brightness = 1.6
+	light.Shadows = false
+	light.Enabled = false
+	light.Parent = bulb
+	CollectionService:AddTag(light, Props.NIGHT_LIGHT_TAG)
+	return m
+end
+
+function Props.cloud(center: Vector3, s: number, gen: Gen, parent: Instance): Model
+	local m = Build.model("Cloud", parent)
+	local options = { decor = true, collide = false, shadow = false }
+	local yaw = CFrame.Angles(0, gen.next() * math.pi * 2, 0)
+	local puffs = {
+		{ Vector3.new(26, 13, 18), Vector3.new(0, 0, 0) },
+		{ Vector3.new(18, 12, 15), Vector3.new(-12, -1.5, 2) },
+		{ Vector3.new(17, 11, 14), Vector3.new(12, -2, -1) },
+		{ Vector3.new(15, 12, 13), Vector3.new(3, 4.5, 1) },
+		{ Vector3.new(30, 6, 20), Vector3.new(0, -4, 0) },
+	}
+	for _, puff in puffs do
+		Build.ellipsoid(
+			puff[1] * s,
+			CFrame.new(center + yaw:VectorToWorldSpace(puff[2] * s)) * yaw,
+			Palette.white,
+			m,
+			options
+		)
+	end
+	return m
+end
+
+-- Little pond with a stone rim, lily pads and reeds.
+function Props.pond(base: Vector3, s: number, gen: Gen, parent: Instance): Model
+	local m = Build.model("Pond", parent)
+	local radius = 6.5 * s
+	Build.disc(
+		radius * 2 + 0.6,
+		0.4,
+		CFrame.new(base + Vector3.new(0, -0.05, 0)),
+		Palette.sandDark,
+		m,
+		{
+			decor = true,
+			shadow = false,
+		}
+	)
+	Build.disc(
+		radius * 2 - 0.6,
+		0.4,
+		CFrame.new(base + Vector3.new(0, 0.02, 0)),
+		Palette.water,
+		m,
+		{
+			name = "Water",
+			decor = true,
+			shadow = false,
+		}
+	)
+	Build.disc(
+		radius * 1.2,
+		0.4,
+		CFrame.new(base + Vector3.new(0, 0.05, 0)),
+		Palette.waterDeep,
+		m,
+		{
+			decor = true,
+			shadow = false,
+		}
+	)
+	local stones = 14
+	for i = 0, stones - 1 do
+		local a = i * (2 * math.pi / stones) + gen.next() * 0.2
+		local size = Vector3.new(
+			between(gen, 1.8, 2.6),
+			between(gen, 0.9, 1.4),
+			between(gen, 1.4, 2)
+		) * s
+		Build.ellipsoid(
+			size,
+			CFrame.new(base + Vector3.new(math.sin(a) * radius, 0.25 * s, math.cos(a) * radius))
+				* CFrame.Angles(0, a, 0),
+			if i % 3 == 0 then Palette.stoneDark else Palette.stone,
+			m,
+			SMALL
+		)
+	end
+	for i = 1, 3 do
+		local a = i * 2.2 + gen.next()
+		local r = between(gen, 1.5, radius - 2.2)
+		local pad = base + Vector3.new(math.sin(a) * r, 0.3, math.cos(a) * r)
+		Build.disc(1.9 * s, 0.12, CFrame.new(pad), Palette.leaf, m, SMALL)
+		if i == 1 then
+			Build.ball(0.7 * s, pad + Vector3.new(0, 0.3, 0), Palette.pink, m, SMALL)
+		end
+	end
+	local reedAngle = gen.next() * math.pi * 2
+	for i = 0, 3 do
+		local a = reedAngle + i * 0.22
+		local foot = base
+			+ Vector3.new(math.sin(a) * (radius - 0.8), 0, math.cos(a) * (radius - 0.8))
+		local height = between(gen, 2.6, 3.6) * s
+		Build.rod(foot, foot + Vector3.new(0, height, 0), 0.22 * s, Palette.leafDark, m, SMALL)
+		Build.ellipsoid(
+			Vector3.new(0.5, 1.3, 0.5) * s,
+			CFrame.new(foot + Vector3.new(0, height, 0)),
+			Palette.woodDark,
+			m,
+			SMALL
+		)
+	end
+	return m
+end
+
+-- Three-toed dino footprint pressed into a path.
+function Props.footprint(
+	position: Vector3,
+	facing: number,
+	s: number,
+	color: Color3,
+	parent: Instance
+)
+	local frame = CFrame.new(position) * CFrame.Angles(0, facing, 0)
+	local options = { decor = true, collide = false, shadow = false }
+	Build.ellipsoid(Vector3.new(1.7, 0.1, 2) * s, frame, color, parent, options)
+	for i = -1, 1 do
+		local toe = frame * CFrame.Angles(0, -i * math.rad(28), 0) * CFrame.new(0, 0, -1.9 * s)
+		Build.ellipsoid(Vector3.new(0.6, 0.1, 1.6) * s, toe, color, parent, options)
+	end
+end
+
+-- A twig nest holding big spotted eggs (landmark decoration).
+function Props.eggNest(base: Vector3, s: number, gen: Gen, parent: Instance): Model
+	local m = Build.model("EggNest", parent)
+	for i = 0, 9 do
+		local a = i * (2 * math.pi / 10)
+		local cf = CFrame.new(base + Vector3.new(math.sin(a) * 4.4, 0.8, math.cos(a) * 4.4) * s)
+			* CFrame.Angles(0, a + math.pi / 2, 0)
+		Build.ellipsoid(
+			Vector3.new(1.6, 1.6, 3.6) * s,
+			cf,
+			if i % 2 == 0 then Palette.woodDark else Palette.wood,
+			m,
+			{
+				decor = true,
+			}
+		)
+	end
+	Build.disc(
+		8.6 * s,
+		0.6 * s,
+		CFrame.new(base + Vector3.new(0, 0.3 * s, 0)),
+		Palette.sandDark,
+		m,
+		SMALL
+	)
+	local eggs = {
+		{ offset = Vector3.new(-1.4, 0, -0.6), shell = Palette.mint, spots = Palette.teal },
+		{ offset = Vector3.new(1.5, 0, -0.9), shell = Palette.cream, spots = Palette.orange },
+		{ offset = Vector3.new(0, 0, 1.6), shell = Palette.purple, spots = Palette.pink },
+	}
+	for _, egg in eggs do
+		local size = Vector3.new(2.6, 3.4, 2.6) * s
+		local center = base + egg.offset * s + Vector3.new(0, size.Y / 2 + 0.2 * s, 0)
+		Build.ellipsoid(
+			size,
+			CFrame.new(center)
+				* CFrame.Angles(math.rad(between(gen, -12, 12)), 0, math.rad(between(gen, -12, 12))),
+			egg.shell,
+			m,
+			{
+				decor = true,
+			}
+		)
+		for k = 1, 3 do
+			local a = k * 2.2 + gen.next()
+			local p = center
+				+ Vector3.new(
+					math.sin(a) * size.X * 0.47,
+					between(gen, -0.6, 0.9) * s,
+					math.cos(a) * size.Z * 0.47
+				)
+			Build.ellipsoid(Vector3.new(0.8, 0.8, 0.8) * s, CFrame.new(p), egg.spots, m, SMALL)
+		end
+	end
+	return m
+end
+
+return Props
+]]></string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="42">
           <Properties>
             <string name="Name">Stats</string>
             <string name="Source"><![CDATA[--!strict
@@ -3133,11 +4809,11 @@ return Stats
           </Properties>
         </Item>
       </Item>
-      <Item class="Folder" referent="31">
+      <Item class="Folder" referent="43">
         <Properties>
           <string name="Name">Systems</string>
         </Properties>
-        <Item class="ModuleScript" referent="32">
+        <Item class="ModuleScript" referent="44">
           <Properties>
             <string name="Name">Analytics</string>
             <string name="Source"><![CDATA[--!strict
@@ -3213,7 +4889,7 @@ return Analytics
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="33">
+        <Item class="ModuleScript" referent="45">
           <Properties>
             <string name="Name">Cheats</string>
             <string name="Source"><![CDATA[--!strict
@@ -3399,7 +5075,7 @@ return Cheats
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="34">
+        <Item class="ModuleScript" referent="46">
           <Properties>
             <string name="Name">Coins</string>
             <string name="Source"><![CDATA[--!strict
@@ -3516,7 +5192,7 @@ return Coins
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="35">
+        <Item class="ModuleScript" referent="47">
           <Properties>
             <string name="Name">Data</string>
             <string name="Source"><![CDATA[--!strict
@@ -3876,7 +5552,7 @@ return Data
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="36">
+        <Item class="ModuleScript" referent="48">
           <Properties>
             <string name="Name">Dinos</string>
             <string name="Source"><![CDATA[--!strict
@@ -4159,7 +5835,7 @@ return Dinos
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="37">
+        <Item class="ModuleScript" referent="49">
           <Properties>
             <string name="Name">Eggs</string>
             <string name="Source"><![CDATA[--!strict
@@ -4538,7 +6214,7 @@ return Eggs
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="38">
+        <Item class="ModuleScript" referent="50">
           <Properties>
             <string name="Name">Lifecycle</string>
             <string name="Source"><![CDATA[--!strict
@@ -4667,7 +6343,7 @@ return Lifecycle
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="39">
+        <Item class="ModuleScript" referent="51">
           <Properties>
             <string name="Name">Monetization</string>
             <string name="Source"><![CDATA[--!strict
@@ -5043,7 +6719,7 @@ return Monetization
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="40">
+        <Item class="ModuleScript" referent="52">
           <Properties>
             <string name="Name">Nest</string>
             <string name="Source"><![CDATA[--!strict
@@ -5253,7 +6929,7 @@ return Nest
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="41">
+        <Item class="ModuleScript" referent="53">
           <Properties>
             <string name="Name">Plots</string>
             <string name="Source"><![CDATA[--!strict
@@ -5776,7 +7452,7 @@ return Plots
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="42">
+        <Item class="ModuleScript" referent="54">
           <Properties>
             <string name="Name">Progress</string>
             <string name="Source"><![CDATA[--!strict
@@ -6042,7 +7718,7 @@ return Progress
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="43">
+        <Item class="ModuleScript" referent="55">
           <Properties>
             <string name="Name">Prompts</string>
             <string name="Source"><![CDATA[--!strict
@@ -6163,7 +7839,7 @@ return Prompts
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="44">
+        <Item class="ModuleScript" referent="56">
           <Properties>
             <string name="Name">Raids</string>
             <string name="Source"><![CDATA[--!strict
@@ -6606,7 +8282,7 @@ return Raids
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="45">
+        <Item class="ModuleScript" referent="57">
           <Properties>
             <string name="Name">Sessions</string>
             <string name="Source"><![CDATA[--!strict
@@ -6703,7 +8379,7 @@ return Sessions
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="46">
+        <Item class="ModuleScript" referent="58">
           <Properties>
             <string name="Name">Social</string>
             <string name="Source"><![CDATA[--!strict
@@ -6873,7 +8549,7 @@ return Social
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="47">
+        <Item class="ModuleScript" referent="59">
           <Properties>
             <string name="Name">State</string>
             <string name="Source"><![CDATA[--!strict
@@ -6982,7 +8658,7 @@ return State
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="48">
+        <Item class="ModuleScript" referent="60">
           <Properties>
             <string name="Name">Upgrades</string>
             <string name="Source"><![CDATA[--!strict
@@ -7047,7 +8723,7 @@ return Upgrades
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="49">
+        <Item class="ModuleScript" referent="61">
           <Properties>
             <string name="Name">Weather</string>
             <string name="Source"><![CDATA[--!strict
@@ -7146,23 +8822,27 @@ return Weather
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="50">
+        <Item class="ModuleScript" referent="62">
           <Properties>
             <string name="Name">World</string>
             <string name="Source"><![CDATA[--!strict
--- Builds the island at server start: ocean, hub with the egg shop, paths, trees,
--- a volcano landmark, and 8 player nests (plots). Everything is generated in
--- code so the place works with no hand-built map; decorate freely in Studio
--- (anything you add to Workspace yourself is left alone).
+-- Builds the world at server start: the island scenery (Lib/Island) and 8
+-- player nests (plots). Everything is generated in code so the place works
+-- with no hand-built map; decorate freely in Studio (anything you add to
+-- Workspace yourself is left alone).
 --
 -- Plot space: origin at the plot's center on the ground, -Z faces the hub.
 
+local CollectionService = game:GetService("CollectionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 
 local Config = require(ReplicatedStorage.Shared.Config)
-local EggData = require(ReplicatedStorage.Shared.Data.EggData)
-local EggModel = require(ReplicatedStorage.Shared.Visual.EggModel)
+local Palette = require(ReplicatedStorage.Shared.Palette)
+local Rng = require(ReplicatedStorage.Shared.Util.Rng)
+local Build = require(script.Parent.Parent.Lib.Build)
+local Island = require(script.Parent.Parent.Lib.Island)
+local Props = require(script.Parent.Parent.Lib.Props)
 local Prompts = require(script.Parent.Prompts)
 
 local World = {}
@@ -7172,6 +8852,7 @@ export type PlotInfo = {
 	model: Model,
 	cframe: CFrame,
 	floorTop: number,
+	accent: Color3,
 	incubators: { BasePart }, -- pedestal tops, index = slot
 	incubatorLocks: { BillboardGui },
 	incubatorRings: { BasePart },
@@ -7181,6 +8862,7 @@ export type PlotInfo = {
 	signName: TextLabel,
 	signInfo: TextLabel,
 	signPart: BasePart,
+	ownerTag: TextLabel,
 	barrier: { BasePart },
 	spawn: SpawnLocation,
 	homeSpots: { CFrame },
@@ -7191,96 +8873,12 @@ export type PlotInfo = {
 
 local HALF = Config.PLOT_SIZE / 2
 local FLOOR_TOP = 1
+local GATE_GAP = 11
 
-local PLOT_COLORS = {
-	Color3.fromRGB(150, 210, 120),
-	Color3.fromRGB(120, 200, 150),
-	Color3.fromRGB(175, 205, 110),
-	Color3.fromRGB(135, 195, 125),
-	Color3.fromRGB(160, 215, 135),
-	Color3.fromRGB(125, 190, 140),
-	Color3.fromRGB(165, 200, 115),
-	Color3.fromRGB(140, 205, 120),
-}
-
-local WOOD = Color3.fromRGB(150, 105, 65)
-local STONE = Color3.fromRGB(165, 160, 150)
+local GOLD = Color3.fromRGB(255, 205, 60)
+local GOLD_DARK = Color3.fromRGB(226, 156, 38)
 
 World.plots = {} :: { PlotInfo }
-
-type PartProps = {
-	name: string?,
-	size: Vector3,
-	cframe: CFrame,
-	color: Color3,
-	material: Enum.Material?,
-	shape: Enum.PartType?,
-	transparency: number?,
-	canCollide: boolean?,
-	parent: Instance,
-}
-
-local function part(props: PartProps): Part
-	local p = Instance.new("Part")
-	p.Name = props.name or "Part"
-	p.Anchored = true
-	p.Size = props.size
-	p.CFrame = props.cframe
-	p.Color = props.color
-	p.Material = props.material or Enum.Material.SmoothPlastic
-	if props.shape then
-		p.Shape = props.shape
-	end
-	p.Transparency = props.transparency or 0
-	p.CanCollide = if props.canCollide == nil then true else props.canCollide
-	p.TopSurface = Enum.SurfaceType.Smooth
-	p.BottomSurface = Enum.SurfaceType.Smooth
-	p.Parent = props.parent
-	return p
-end
-
--- Vertical cylinder (Roblox cylinders run along X, so rotate onto Y).
-local function disc(
-	name: string,
-	diameter: number,
-	height: number,
-	center: CFrame,
-	color: Color3,
-	parent: Instance,
-	material: Enum.Material?
-): Part
-	return part({
-		name = name,
-		size = Vector3.new(height, diameter, diameter),
-		cframe = center * CFrame.Angles(0, 0, math.rad(90)),
-		color = color,
-		material = material,
-		shape = Enum.PartType.Cylinder,
-		parent = parent,
-	})
-end
-
-local function ball(
-	name: string,
-	size: Vector3,
-	cframe: CFrame,
-	color: Color3,
-	parent: Instance,
-	material: Enum.Material?
-): Part
-	local p = part({
-		name = name,
-		size = size,
-		cframe = cframe,
-		color = color,
-		material = material,
-		parent = parent,
-	})
-	local mesh = Instance.new("SpecialMesh")
-	mesh.MeshType = Enum.MeshType.Sphere
-	mesh.Parent = p
-	return p
-end
 
 local function billboard(
 	parent: Instance,
@@ -7317,297 +8915,337 @@ local function label(
 	l.TextScaled = true
 	l.Font = Enum.Font.FredokaOne
 	l.TextColor3 = color or Color3.new(1, 1, 1)
-	l.TextStrokeTransparency = 0.3
+	local stroke = Instance.new("UIStroke")
+	stroke.Color = Color3.fromRGB(43, 33, 64)
+	stroke.Thickness = 2.5
+	stroke.Parent = l
 	l.Parent = parent
 	return l
 end
 
-local function tree(position: Vector3, height: number, parent: Instance)
-	local model = Instance.new("Model")
-	model.Name = "Tree"
-	part({
-		name = "Trunk",
-		size = Vector3.new(height, 1.6, 1.6),
-		cframe = CFrame.new(position + Vector3.new(0, height / 2, 0))
-			* CFrame.Angles(0, 0, math.rad(90)),
-		color = WOOD,
-		material = Enum.Material.Wood,
-		shape = Enum.PartType.Cylinder,
-		parent = model,
+-- ===== Nest pieces =====
+
+-- Chunky wooden fence along a side of the plot; posts get the nest's colour.
+local function fenceSegment(model: Model, cf: CFrame, a: Vector3, b: Vector3, accent: Color3)
+	local length = (b - a).Magnitude
+	local direction = (b - a).Unit
+	local posts = math.max(1, math.floor(length / 8 + 0.5))
+	for i = 0, posts do
+		local p = a + direction * (length * i / posts)
+		Build.block(
+			Vector3.new(1.4, 4.4, 1.4),
+			cf * CFrame.new(p + Vector3.new(0, FLOOR_TOP + 2.2, 0)),
+			Palette.wood,
+			model,
+			{ name = "Post" }
+		)
+		Build.ball(
+			1.9,
+			(cf * CFrame.new(p + Vector3.new(0, FLOOR_TOP + 4.6, 0))).Position,
+			accent,
+			model,
+			{
+				name = "PostCap",
+				decor = true,
+				shadow = false,
+			}
+		)
+	end
+	for _, height in { 1.7, 3.3 } do
+		local lift = Vector3.new(0, FLOOR_TOP + height, 0)
+		Build.beam(
+			(cf * CFrame.new(a + lift)).Position,
+			(cf * CFrame.new(b + lift)).Position,
+			0.5,
+			0.75,
+			Palette.woodLight,
+			model,
+			{
+				name = "Rail",
+			}
+		)
+	end
+end
+
+-- Lantern hanging from a bracket on the outside of a gate pillar.
+local function lantern(model: Model, position: Vector3, outward: Vector3, accent: Color3)
+	local tip = position + outward * 2.6
+	Build.beam(position, tip, 0.45, 0.45, Palette.woodDark, model, { decor = true, shadow = false })
+	local options = { decor = true, shadow = false, collide = false }
+	Build.rod(tip, tip - Vector3.new(0, 0.6, 0), 0.15, Palette.woodDark, model, options)
+	Build.disc(1.6, 0.35, CFrame.new(tip - Vector3.new(0, 0.75, 0)), accent, model, options)
+	local bulb = Build.ball(1.25, tip - Vector3.new(0, 1.5, 0), Palette.lampGlow, model, {
+		name = "Lantern",
+		material = Enum.Material.Neon,
+		decor = true,
+		shadow = false,
+		collide = false,
 	})
-	local leafColor = Color3.fromRGB(70, 160, 70)
-	ball(
-		"Leaves",
-		Vector3.new(9, 6, 9),
-		CFrame.new(position + Vector3.new(0, height, 0)),
-		leafColor,
-		model,
-		Enum.Material.Grass
-	)
-	ball(
-		"Leaves",
-		Vector3.new(6, 5, 6),
-		CFrame.new(position + Vector3.new(2, height + 2.5, 1)),
-		leafColor:Lerp(Color3.new(1, 1, 0.6), 0.15),
-		model,
-		Enum.Material.Grass
-	)
-	ball(
-		"Leaves",
-		Vector3.new(5, 4, 5),
-		CFrame.new(position + Vector3.new(-2, height + 1.5, -1.5)),
-		leafColor:Lerp(Color3.new(0, 0.3, 0), 0.2),
-		model,
-		Enum.Material.Grass
-	)
-	model.Parent = parent
+	local light = Instance.new("PointLight")
+	light.Color = Palette.lampGlow
+	light.Range = 16
+	light.Brightness = 1.4
+	light.Shadows = false
+	light.Enabled = false
+	light.Parent = bulb
+	CollectionService:AddTag(light, Props.NIGHT_LIGHT_TAG)
 end
 
-local function buildTerrain(map: Folder)
-	part({
-		name = "Ocean",
-		size = Vector3.new(3000, 2, 3000),
-		cframe = CFrame.new(0, -2.5, 0),
-		color = Color3.fromRGB(70, 160, 225),
-		material = Enum.Material.SmoothPlastic,
-		transparency = 0.1,
-		parent = map,
-	}).Reflectance =
-		0.15
-	disc(
-		"Sand",
-		460,
-		4,
-		CFrame.new(0, -2.6, 0),
-		Color3.fromRGB(235, 215, 160),
-		map,
-		Enum.Material.Sand
-	)
-	disc(
-		"Island",
-		420,
-		6,
-		CFrame.new(0, -3, 0),
-		Color3.fromRGB(110, 185, 90),
-		map,
-		Enum.Material.Grass
+local function buildGate(model: Model, cf: CFrame, accent: Color3)
+	local top = FLOOR_TOP + 11
+	for _, side in { -1, 1 } do
+		local foot = (cf * CFrame.new(side * GATE_GAP, FLOOR_TOP - 0.5, -HALF)).Position
+		local head = (cf * CFrame.new(side * GATE_GAP, top, -HALF)).Position
+		Build.rod(foot, head, 2.6, Palette.woodDark, model, { name = "GatePillar" })
+		Build.disc(
+			3.1,
+			0.7,
+			CFrame.new(head - Vector3.new(0, 1.4, 0)),
+			accent,
+			model,
+			{ decor = true }
+		)
+		Build.ball(
+			3.4,
+			head + Vector3.new(0, 0.9, 0),
+			accent,
+			model,
+			{ name = "GateCap", decor = true }
+		)
+		local outward = cf:VectorToWorldSpace(Vector3.new(0, 0, -1))
+		lantern(
+			model,
+			(cf * CFrame.new(side * GATE_GAP, FLOOR_TOP + 7.5, -HALF)).Position,
+			outward,
+			accent
+		)
+	end
+	-- log arch between the pillars
+	local left = (cf * CFrame.new(-GATE_GAP, top - 0.6, -HALF)).Position
+	local right = (cf * CFrame.new(GATE_GAP, top - 0.6, -HALF)).Position
+	Build.rod(left, right, 1.6, Palette.woodLight, model, { name = "GateArch", decor = true })
+	-- ramp up onto the raised nest floor
+	Build.wedge(
+		Vector3.new(GATE_GAP * 2, FLOOR_TOP, 3),
+		cf * CFrame.new(0, FLOOR_TOP / 2, -HALF - 1.5),
+		Palette.path,
+		model,
+		{ name = "Ramp" }
 	)
 end
 
-local function buildHub(map: Folder)
-	local hub = Instance.new("Model")
-	hub.Name = "Hub"
-	disc(
-		"Plaza",
-		78,
-		0.8,
-		CFrame.new(0, 0, 0),
-		Color3.fromRGB(205, 195, 175),
-		hub,
-		Enum.Material.Cobblestone
+-- Name board beside the gate (outside the fence, facing the paths).
+local function buildSign(model: Model, cf: CFrame, accent: Color3): (BasePart, TextLabel, TextLabel)
+	local center = cf * CFrame.new(-GATE_GAP - 10.5, 5.6, -HALF - 3.2)
+	for _, x in { -4.6, 4.6 } do
+		local foot = (center * CFrame.new(x, -5.6, 0)).Position
+		Build.rod(
+			foot,
+			foot + Vector3.new(0, 3.5, 0),
+			0.9,
+			Palette.woodDark,
+			model,
+			{ decor = true }
+		)
+	end
+	local board =
+		Build.block(Vector3.new(13, 6, 0.8), center, Palette.wood, model, { name = "Sign" })
+	Build.block(
+		Vector3.new(13.8, 1, 1.1),
+		center * CFrame.new(0, 3.3, 0),
+		accent,
+		model,
+		{ decor = true }
 	)
+	Build.block(
+		Vector3.new(12, 5, 0.2),
+		center * CFrame.new(0, -0.2, 0),
+		Palette.woodLight,
+		model,
+		{
+			decor = true,
+			shadow = false,
+		}
+	)
+	local surface = Instance.new("SurfaceGui")
+	surface.Face = Enum.NormalId.Front
+	surface.LightInfluence = 0
+	surface.PixelsPerStud = 40
+	surface.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
+	surface.Parent = board
+	local signName = label(
+		surface,
+		"OwnerName",
+		"Empty Nest",
+		UDim2.fromScale(0.9, 0.5),
+		UDim2.fromScale(0.05, 0.1)
+	)
+	local signInfo = label(
+		surface,
+		"Info",
+		"Walk in to claim!",
+		UDim2.fromScale(0.9, 0.3),
+		UDim2.fromScale(0.05, 0.62),
+		Color3.fromRGB(255, 236, 170)
+	)
+	local inside = surface:Clone()
+	inside.Face = Enum.NormalId.Back
+	inside.Parent = board
+	return board, signName, signInfo
+end
 
-	-- Egg shop kiosk
-	disc("Counter", 18, 4, CFrame.new(0, 2.4, 0), WOOD, hub, Enum.Material.Wood)
-	for i = 0, 3 do
-		local angle = math.rad(45 + i * 90)
-		part({
-			name = "Pillar",
-			size = Vector3.new(10, 1.2, 1.2),
-			cframe = CFrame.new(math.cos(angle) * 8.2, 9.4, math.sin(angle) * 8.2)
-				* CFrame.Angles(0, 0, math.rad(90)),
-			color = Color3.fromRGB(240, 240, 240),
-			shape = Enum.PartType.Cylinder,
-			parent = hub,
+-- Floating name over the gate so friends can find each other's nests.
+local function buildOwnerTag(model: Model, cf: CFrame): TextLabel
+	local anchor = Build.block(
+		Vector3.new(1, 1, 1),
+		cf * CFrame.new(0, FLOOR_TOP + 14.5, -HALF),
+		Palette.white,
+		model,
+		{
+			name = "OwnerTagAnchor",
+			transparency = 1,
+			collide = false,
+			decor = true,
+		}
+	)
+	local gui = billboard(anchor, "OwnerTag", UDim2.fromOffset(260, 46), Vector3.zero, 220)
+	return label(gui, "Name", "Empty Nest", UDim2.fromScale(1, 1), UDim2.fromScale(0, 0))
+end
+
+local function buildIncubator(
+	model: Model,
+	base: CFrame,
+	slot: number,
+	accent: Color3
+): (BasePart, BillboardGui, BasePart)
+	Build.disc(6.4, 0.6, base * CFrame.new(0, 0.3, 0), Palette.stoneDark, model, { decor = true })
+	local pedestal = Build.disc(
+		5.2,
+		2,
+		base * CFrame.new(0, 1, 0),
+		Palette.stone,
+		model,
+		{ name = "Incubator" .. slot }
+	)
+	pedestal:SetAttribute("Slot", slot)
+	Build.disc(
+		5.5,
+		0.5,
+		base * CFrame.new(0, 1.2, 0),
+		accent,
+		model,
+		{ decor = true, shadow = false }
+	)
+	-- straw nest around the egg spot
+	for i = 0, 7 do
+		local a = i * (2 * math.pi / 8)
+		local cf = base
+			* CFrame.new(math.sin(a) * 2.25, 2.2, math.cos(a) * 2.25)
+			* CFrame.Angles(0, a + math.pi / 2, 0)
+		Build.ellipsoid(
+			Vector3.new(1, 0.9, 2.3),
+			cf,
+			if i % 2 == 0 then Palette.sandDark else Palette.woodLight,
+			model,
+			{
+				decor = true,
+				shadow = false,
+				collide = false,
+			}
+		)
+	end
+	local ring = Build.disc(6, 0.3, base * CFrame.new(0, 2.1, 0), Palette.orange, model, {
+		name = "HeatRing" .. slot,
+		material = Enum.Material.Neon,
+		collide = false,
+		decor = true,
+		shadow = false,
+	})
+	local lock = billboard(pedestal, "Lock", UDim2.fromOffset(140, 56), Vector3.new(0, 3.5, 0), 60)
+	label(lock, "Text", "🔒 Upgrade", UDim2.fromScale(1, 1), UDim2.fromScale(0, 0))
+	lock.Enabled = false
+	return pedestal, lock, ring
+end
+
+local function buildTray(model: Model, center: CFrame): { CFrame }
+	Build.disc(
+		9.2,
+		0.4,
+		center * CFrame.new(0, 0.2, 0),
+		Palette.sandLight,
+		model,
+		{ name = "Tray", decor = true }
+	)
+	for i = 0, 9 do
+		local a = i * math.rad(36)
+		local cf = center
+			* CFrame.new(math.cos(a) * 4.3, 0.55, math.sin(a) * 4.3)
+			* CFrame.Angles(0, -a, 0)
+		Build.ellipsoid(
+			Vector3.new(1.5, 1.1, 2.8),
+			cf,
+			if i % 2 == 0 then Palette.woodDark else Palette.wood,
+			model,
+			{
+				name = "Twig",
+				decor = true,
+			}
+		)
+	end
+	local spots: { CFrame } = {}
+	for i = 0, Config.TRAY_CAPACITY - 1 do
+		local a = i * (2 * math.pi / Config.TRAY_CAPACITY)
+		table.insert(spots, center * CFrame.new(math.cos(a) * 2.4, 0.4, math.sin(a) * 2.4))
+	end
+	local labelPart =
+		Build.block(Vector3.new(1, 1, 1), center * CFrame.new(0, 1, 0), Palette.white, model, {
+			name = "TrayLabel",
+			transparency = 1,
+			collide = false,
+			decor = true,
 		})
-	end
-	disc("Roof", 26, 1, CFrame.new(0, 14.6, 0), Color3.fromRGB(230, 70, 70), hub)
-	disc("Roof", 19, 1, CFrame.new(0, 15.6, 0), Color3.fromRGB(250, 250, 250), hub)
-	disc("Roof", 12, 1, CFrame.new(0, 16.6, 0), Color3.fromRGB(230, 70, 70), hub)
-	disc("Roof", 5, 1.4, CFrame.new(0, 17.6, 0), Color3.fromRGB(255, 205, 60), hub)
+	local gui = billboard(labelPart, "Label", UDim2.fromOffset(160, 40), Vector3.new(0, 4, 0), 60)
+	label(gui, "Text", "🥚 Laid Eggs", UDim2.fromScale(1, 1), UDim2.fromScale(0, 0))
+	return spots
+end
 
-	-- Display eggs on the counter
-	for i, egg in EggData.LIST do
-		local angle = math.rad((i - 1) * 90)
-		local model = EggModel.build(EggModel.lookForShopEgg(egg.id), 2.8, true)
-		model.Name = egg.id .. "Display"
-		model:PivotTo(CFrame.new(math.cos(angle) * 6, 4.4, math.sin(angle) * 6))
-		model.Parent = hub
-	end
-
-	-- Invisible prompt target
-	local promptPart = part({
-		name = "ShopPrompt",
-		size = Vector3.new(4, 4, 4),
-		cframe = CFrame.new(0, 3, 0),
-		color = Color3.new(1, 1, 1),
-		transparency = 1,
-		canCollide = false,
-		parent = hub,
+local function buildCoinPad(model: Model, center: CFrame): (BasePart, TextLabel)
+	Build.disc(9.4, 0.4, center * CFrame.new(0, 0.2, 0), GOLD_DARK, model, { decor = true })
+	local pad = Build.disc(8, 0.5, center * CFrame.new(0, 0.35, 0), GOLD, model, {
+		name = "CoinPad",
+		reflectance = 0.2,
 	})
-	Prompts.create(promptPart, {
-		action = "OpenUI",
-		openUI = "Shop",
-		text = "Egg Shop",
-		objectText = "🥚",
-		audience = "All",
-		distance = 16,
-	})
-
-	local gui = billboard(
-		promptPart,
-		"ShopBillboard",
-		UDim2.fromOffset(260, 110),
-		Vector3.new(0, 19, 0),
-		250
-	)
-	label(
+	-- a little stack of coins beside the pad
+	for i = 0, 2 do
+		Build.disc(
+			2,
+			0.45,
+			center * CFrame.new(4.8, 0.25 + i * 0.5, 2.4),
+			if i % 2 == 0 then GOLD else GOLD_DARK,
+			model,
+			{
+				decor = true,
+				shadow = false,
+			}
+		)
+	end
+	local gui = billboard(pad, "Coins", UDim2.fromOffset(180, 60), Vector3.new(0, 4, 0), 80)
+	local padLabel = label(
 		gui,
-		"Title",
-		"🥚 EGG SHOP",
-		UDim2.fromScale(1, 0.6),
+		"Amount",
+		"💰 0",
+		UDim2.fromScale(1, 1),
 		UDim2.fromScale(0, 0),
 		Color3.fromRGB(255, 230, 120)
 	)
-	label(gui, "Restock", "Restock in 5:00", UDim2.fromScale(1, 0.4), UDim2.fromScale(0, 0.6))
-
-	hub.Parent = map
-end
-
-local function buildVolcano(map: Folder)
-	local angle = math.rad(22.5)
-	local base = Vector3.new(math.sin(angle) * 188, 0, math.cos(angle) * 188)
-	local volcano = Instance.new("Model")
-	volcano.Name = "Volcano"
-	local tiers = { { 60, 10 }, { 46, 10 }, { 34, 10 }, { 24, 9 } }
-	local y = 0
-	for i, tier in tiers do
-		local diameter, height = tier[1], tier[2]
-		disc(
-			"Rock" .. i,
-			diameter,
-			height,
-			CFrame.new(base + Vector3.new(0, y + height / 2, 0)),
-			Color3.fromRGB(110 - i * 8, 90 - i * 8, 80 - i * 8),
-			volcano,
-			Enum.Material.Rock
-		)
-		y += height
-	end
-	local crater = disc(
-		"Lava",
-		16,
-		0.6,
-		CFrame.new(base + Vector3.new(0, y + 0.1, 0)),
-		Color3.fromRGB(255, 110, 30),
-		volcano,
-		Enum.Material.Neon
-	)
-	local smoke = Instance.new("ParticleEmitter")
-	smoke.Color = ColorSequence.new(Color3.fromRGB(90, 90, 90))
-	smoke.Size = NumberSequence.new(4, 10)
-	smoke.Transparency = NumberSequence.new(0.4, 1)
-	smoke.Lifetime = NumberRange.new(4, 7)
-	smoke.Speed = NumberRange.new(4, 7)
-	smoke.Rate = 4
-	smoke.Rotation = NumberRange.new(0, 360)
-	smoke.SpreadAngle = Vector2.new(15, 15)
-	smoke.Parent = crater
-	volcano.Parent = map
-end
-
-local function buildDecorations(map: Folder)
-	local decor = Instance.new("Folder")
-	decor.Name = "Decorations"
-	local count = Config.PLOT_COUNT
-	for i = 1, count do
-		local angle = (i - 0.5) * (2 * math.pi / count)
-		for _, radius in { 110, 158 } do
-			tree(
-				Vector3.new(math.sin(angle) * radius, 0, math.cos(angle) * radius),
-				10 + (i % 3) * 2,
-				decor
-			)
-		end
-	end
-	for i = 0, 23 do
-		local angle = i * math.rad(15)
-		local diff = math.abs(((angle - math.rad(22.5)) + math.pi) % (2 * math.pi) - math.pi)
-		if diff > math.rad(14) then
-			local radius = 196 + (i % 2) * 6
-			tree(
-				Vector3.new(math.sin(angle) * radius, 0, math.cos(angle) * radius),
-				12 + (i % 4) * 2,
-				decor
-			)
-		end
-	end
-	for i = 0, 11 do
-		local angle = i * math.rad(30) + 0.3
-		local radius = 176
-		ball(
-			"Rock",
-			Vector3.new(6 + i % 3 * 2, 4 + i % 2 * 2, 5 + i % 4),
-			CFrame.new(math.sin(angle) * radius, 0.8, math.cos(angle) * radius),
-			Color3.fromRGB(140, 135, 125),
-			decor,
-			Enum.Material.Rock
-		)
-	end
-	decor.Parent = map
-end
-
-local function buildPath(map: Folder, angle: number)
-	local inner, outer = 39, Config.PLOT_RING_RADIUS - HALF
-	local length = outer - inner
-	local mid = (inner + outer) / 2
-	local center = Vector3.new(math.sin(angle) * mid, 0.05, math.cos(angle) * mid)
-	part({
-		name = "Path",
-		size = Vector3.new(10, 0.3, length + 2),
-		cframe = CFrame.lookAt(center, Vector3.new(0, 0.05, 0)),
-		color = Color3.fromRGB(225, 200, 145),
-		material = Enum.Material.Sand,
-		parent = map,
-	})
-end
-
-local function fenceSegment(model: Model, cf: CFrame, a: Vector3, b: Vector3)
-	local length = (b - a).Magnitude
-	local direction = (b - a).Unit
-	local posts = math.max(1, math.floor(length / 8))
-	for i = 0, posts do
-		local p = a + direction * (length * i / posts)
-		part({
-			name = "Post",
-			size = Vector3.new(1, 4, 1),
-			cframe = cf * CFrame.new(p + Vector3.new(0, FLOOR_TOP + 2, 0)),
-			color = WOOD,
-			material = Enum.Material.Wood,
-			parent = model,
-		})
-	end
-	for _, height in { 1.8, 3.2 } do
-		local mid = (a + b) / 2 + Vector3.new(0, FLOOR_TOP + height, 0)
-		part({
-			name = "Rail",
-			size = Vector3.new(0.4, 0.5, length),
-			cframe = cf * CFrame.lookAt(mid, mid + direction),
-			color = WOOD,
-			material = Enum.Material.Wood,
-			parent = model,
-		})
-	end
+	return pad, padLabel
 end
 
 local function buildPlot(index: number, plotsFolder: Folder): PlotInfo
 	local angle = (index - 1) * (2 * math.pi / Config.PLOT_COUNT)
-	local position = Vector3.new(
-		math.sin(angle) * Config.PLOT_RING_RADIUS,
-		0,
-		math.cos(angle) * Config.PLOT_RING_RADIUS
-	)
+	local position = Build.polar(angle, Config.PLOT_RING_RADIUS)
 	local cf = CFrame.lookAt(position, Vector3.new(0, 0, 0))
+	local accent = Palette.NEST_ACCENTS[(index - 1) % #Palette.NEST_ACCENTS + 1]
 
 	local model = Instance.new("Model")
 	model.Name = "Plot" .. index
@@ -7616,167 +9254,78 @@ local function buildPlot(index: number, plotsFolder: Folder): PlotInfo
 	model:SetAttribute("LockedUntil", 0)
 	model:SetAttribute("ShieldUntil", 0)
 
-	part({
-		name = "Floor",
-		size = Vector3.new(Config.PLOT_SIZE, 1, Config.PLOT_SIZE),
-		cframe = cf * CFrame.new(0, FLOOR_TOP - 0.5, 0),
-		color = PLOT_COLORS[(index - 1) % #PLOT_COLORS + 1],
-		material = Enum.Material.Grass,
-		parent = model,
-	})
-
-	-- Fence with an entrance gap toward the hub
-	local gap = 11
-	fenceSegment(model, cf, Vector3.new(-HALF, 0, HALF), Vector3.new(HALF, 0, HALF))
-	fenceSegment(model, cf, Vector3.new(-HALF, 0, -HALF), Vector3.new(-HALF, 0, HALF))
-	fenceSegment(model, cf, Vector3.new(HALF, 0, -HALF), Vector3.new(HALF, 0, HALF))
-	fenceSegment(model, cf, Vector3.new(-HALF, 0, -HALF), Vector3.new(-gap, 0, -HALF))
-	fenceSegment(model, cf, Vector3.new(gap, 0, -HALF), Vector3.new(HALF, 0, -HALF))
-
-	-- Gate pillars + name sign
-	for _, side in { -1, 1 } do
-		part({
-			name = "GatePillar",
-			size = Vector3.new(2, 12, 2),
-			cframe = cf * CFrame.new(side * gap, FLOOR_TOP + 6, -HALF),
-			color = STONE,
-			material = Enum.Material.Cobblestone,
-			parent = model,
-		})
-	end
-	local signPart = part({
-		name = "Sign",
-		size = Vector3.new(24, 4.5, 0.8),
-		cframe = cf * CFrame.new(0, FLOOR_TOP + 11, -HALF),
-		color = WOOD,
-		material = Enum.Material.Wood,
-		parent = model,
-	})
-	local surface = Instance.new("SurfaceGui")
-	surface.Face = Enum.NormalId.Front
-	surface.LightInfluence = 0
-	surface.PixelsPerStud = 40
-	surface.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
-	surface.Parent = signPart
-	local signName = label(
-		surface,
-		"OwnerName",
-		"Empty Nest",
-		UDim2.fromScale(0.96, 0.62),
-		UDim2.fromScale(0.02, 0.04)
+	-- raised garden-bed floor in a wooden frame
+	Build.block(
+		Vector3.new(Config.PLOT_SIZE + 2.4, 1.4, Config.PLOT_SIZE + 2.4),
+		cf * CFrame.new(0, 0, 0),
+		Palette.wood,
+		model,
+		{
+			name = "Frame",
+			decor = true,
+		}
 	)
-	local signInfo = label(
-		surface,
-		"Info",
-		"Walk in to claim!",
-		UDim2.fromScale(0.96, 0.32),
-		UDim2.fromScale(0.02, 0.64),
-		Color3.fromRGB(255, 230, 160)
+	Build.block(
+		Vector3.new(Config.PLOT_SIZE, 1, Config.PLOT_SIZE),
+		cf * CFrame.new(0, FLOOR_TOP - 0.5, 0),
+		Palette.grassLight,
+		model,
+		{
+			name = "Floor",
+		}
 	)
-	-- Same text on the inside of the sign
-	local inside = surface:Clone()
-	inside.Face = Enum.NormalId.Back
-	inside.Parent = signPart
 
-	-- Incubators
+	local gate = GATE_GAP
+	fenceSegment(model, cf, Vector3.new(-HALF, 0, HALF), Vector3.new(HALF, 0, HALF), accent)
+	fenceSegment(model, cf, Vector3.new(-HALF, 0, -HALF), Vector3.new(-HALF, 0, HALF), accent)
+	fenceSegment(model, cf, Vector3.new(HALF, 0, -HALF), Vector3.new(HALF, 0, HALF), accent)
+	fenceSegment(
+		model,
+		cf,
+		Vector3.new(-HALF, 0, -HALF),
+		Vector3.new(-gate - 1.3, 0, -HALF),
+		accent
+	)
+	fenceSegment(model, cf, Vector3.new(gate + 1.3, 0, -HALF), Vector3.new(HALF, 0, -HALF), accent)
+	buildGate(model, cf, accent)
+	local signPart, signName, signInfo = buildSign(model, cf, accent)
+	local ownerTag = buildOwnerTag(model, cf)
+
+	-- incubators along the back
 	local incubators: { BasePart } = {}
 	local incubatorLocks: { BillboardGui } = {}
 	local incubatorRings: { BasePart } = {}
 	for slot = 1, Config.MAX_INCUBATORS do
 		local x = -24 + (slot - 1) * 12
-		local base = cf * CFrame.new(x, FLOOR_TOP, 24)
-		local pedestal = disc(
-			"Incubator" .. slot,
-			5.5,
-			2,
-			base * CFrame.new(0, 1, 0),
-			STONE,
-			model,
-			Enum.Material.Slate
-		)
-		pedestal:SetAttribute("Slot", slot)
-		local ring = disc(
-			"HeatRing" .. slot,
-			6,
-			0.3,
-			base * CFrame.new(0, 2.1, 0),
-			Color3.fromRGB(255, 140, 40),
-			model,
-			Enum.Material.Neon
-		)
-		ring.CanCollide = false
-		local lock =
-			billboard(pedestal, "Lock", UDim2.fromOffset(140, 60), Vector3.new(0, 3.5, 0), 60)
-		label(lock, "Text", "🔒 Upgrade", UDim2.fromScale(1, 1), UDim2.fromScale(0, 0))
-		lock.Enabled = false
+		local pedestal, lock, ring =
+			buildIncubator(model, cf * CFrame.new(x, FLOOR_TOP, 24), slot, accent)
 		incubators[slot] = pedestal
 		incubatorLocks[slot] = lock
 		incubatorRings[slot] = ring
 	end
 
-	-- Laid-egg tray (the nest thieves raid at night)
-	local trayCenter = cf * CFrame.new(18, FLOOR_TOP, -22)
-	disc(
-		"Tray",
-		9,
-		0.4,
-		trayCenter * CFrame.new(0, 0.2, 0),
-		Color3.fromRGB(220, 190, 110),
-		model,
-		Enum.Material.Grass
-	)
-	for i = 0, 9 do
-		local a = i * math.rad(36)
-		ball(
-			"Twig",
-			Vector3.new(1.4, 1, 2.6),
-			trayCenter
-				* CFrame.new(math.cos(a) * 4.2, 0.5, math.sin(a) * 4.2)
-				* CFrame.Angles(0, -a, 0),
-			Color3.fromRGB(130, 95, 55),
-			model,
-			Enum.Material.Wood
+	local traySpots = buildTray(model, cf * CFrame.new(18, FLOOR_TOP, -22))
+	local pad, padLabel = buildCoinPad(model, cf * CFrame.new(-18, FLOOR_TOP, -22))
+
+	-- greenery in the corners (clear of the dinos' wander area)
+	local gen = Rng.new(index * 17)
+	for _, corner in { Vector3.new(-28.5, 0, 28.8), Vector3.new(28.5, 0, 28.8) } do
+		Props.fern(
+			(cf * CFrame.new(corner + Vector3.new(0, FLOOR_TOP, 0))).Position,
+			0.75,
+			gen,
+			model
 		)
 	end
-	local traySpots: { CFrame } = {}
-	for i = 0, Config.TRAY_CAPACITY - 1 do
-		local a = i * (2 * math.pi / Config.TRAY_CAPACITY)
-		table.insert(traySpots, trayCenter * CFrame.new(math.cos(a) * 2.4, 0.4, math.sin(a) * 2.4))
+	for _, corner in { Vector3.new(-28.6, 0, -28.6), Vector3.new(28.6, 0, -28.6) } do
+		Props.flowers(
+			(cf * CFrame.new(corner + Vector3.new(0, FLOOR_TOP, 0))).Position,
+			0.8,
+			gen,
+			model
+		)
 	end
-	local trayLabelPart = part({
-		name = "TrayLabel",
-		size = Vector3.new(1, 1, 1),
-		cframe = trayCenter * CFrame.new(0, 1, 0),
-		color = Color3.new(1, 1, 1),
-		transparency = 1,
-		canCollide = false,
-		parent = model,
-	})
-	local trayGui =
-		billboard(trayLabelPart, "Label", UDim2.fromOffset(160, 40), Vector3.new(0, 4, 0), 60)
-	label(trayGui, "Text", "🥚 Laid Eggs", UDim2.fromScale(1, 1), UDim2.fromScale(0, 0))
 
-	-- Coin pad
-	local pad = disc(
-		"CoinPad",
-		8,
-		0.5,
-		cf * CFrame.new(-18, FLOOR_TOP + 0.25, -22),
-		Color3.fromRGB(255, 200, 50),
-		model
-	)
-	pad.Reflectance = 0.25
-	local padGui = billboard(pad, "Coins", UDim2.fromOffset(180, 60), Vector3.new(0, 4, 0), 80)
-	local padLabel = label(
-		padGui,
-		"Amount",
-		"💰 0",
-		UDim2.fromScale(1, 1),
-		UDim2.fromScale(0, 0),
-		Color3.fromRGB(255, 230, 120)
-	)
-
-	-- Spawn
 	local spawn = Instance.new("SpawnLocation")
 	spawn.Name = "Spawn"
 	spawn.Anchored = true
@@ -7804,18 +9353,19 @@ local function buildPlot(index: number, plotsFolder: Folder): PlotInfo
 		{ Vector3.new(0.6, wallHeight, Config.PLOT_SIZE), Vector3.new(HALF + 0.4, 0, 0) },
 	}
 	for _, wall in walls do
-		local p = part({
-			name = "Barrier",
-			size = wall[1],
-			cframe = cf * CFrame.new(wall[2] + Vector3.new(0, FLOOR_TOP + wallHeight / 2, 0)),
-			color = Color3.fromRGB(255, 80, 80),
-			material = Enum.Material.ForceField,
-			transparency = 1,
-			canCollide = false,
-			parent = model,
-		})
-		p.CanQuery = false
-		p.CanTouch = false
+		local p = Build.block(
+			wall[1],
+			cf * CFrame.new(wall[2] + Vector3.new(0, FLOOR_TOP + wallHeight / 2, 0)),
+			Palette.red,
+			model,
+			{
+				name = "Barrier",
+				material = Enum.Material.ForceField,
+				transparency = 1,
+				collide = false,
+				decor = true,
+			}
+		)
 		table.insert(barrier, p)
 	end
 
@@ -7844,6 +9394,7 @@ local function buildPlot(index: number, plotsFolder: Folder): PlotInfo
 		model = model,
 		cframe = cf,
 		floorTop = FLOOR_TOP,
+		accent = accent,
 		incubators = incubators,
 		incubatorLocks = incubatorLocks,
 		incubatorRings = incubatorRings,
@@ -7853,6 +9404,7 @@ local function buildPlot(index: number, plotsFolder: Folder): PlotInfo
 		signName = signName,
 		signInfo = signInfo,
 		signPart = signPart,
+		ownerTag = ownerTag,
 		barrier = barrier,
 		spawn = spawn,
 		homeSpots = homeSpots,
@@ -7861,6 +9413,37 @@ local function buildPlot(index: number, plotsFolder: Folder): PlotInfo
 		trayFolder = trayFolder,
 	}
 end
+
+-- ===== Shop =====
+
+local function setUpShop(promptPart: BasePart)
+	Prompts.create(promptPart, {
+		action = "OpenUI",
+		openUI = "Shop",
+		text = "Egg Shop",
+		objectText = "🥚",
+		audience = "All",
+		distance = 16,
+	})
+	local gui = billboard(
+		promptPart,
+		"ShopBillboard",
+		UDim2.fromOffset(260, 110),
+		Vector3.new(0, 30, 0),
+		250
+	)
+	label(
+		gui,
+		"Title",
+		"🥚 EGG SHOP",
+		UDim2.fromScale(1, 0.6),
+		UDim2.fromScale(0, 0),
+		Color3.fromRGB(255, 230, 120)
+	)
+	label(gui, "Restock", "New stock in 5:00", UDim2.fromScale(1, 0.4), UDim2.fromScale(0, 0.6))
+end
+
+-- ===== API =====
 
 function World.getPlot(index: number): PlotInfo?
 	return World.plots[index]
@@ -7886,7 +9469,7 @@ function World.outsideGate(index: number): CFrame
 	return plot.cframe * CFrame.new(0, FLOOR_TOP + 3, -HALF - 10)
 end
 
--- Set a text on both faces of the sign.
+-- Set the owner text on the sign (both faces) and the floating name tag.
 function World.setSign(plot: PlotInfo, name: string, info: string)
 	for _, surface in plot.signPart:GetChildren() do
 		if surface:IsA("SurfaceGui") then
@@ -7900,6 +9483,7 @@ function World.setSign(plot: PlotInfo, name: string, info: string)
 			end
 		end
 	end
+	plot.ownerTag.Text = name
 end
 
 function World.init()
@@ -7911,13 +9495,8 @@ function World.init()
 
 	local map = Instance.new("Folder")
 	map.Name = "Map"
-	buildTerrain(map)
-	buildHub(map)
-	buildVolcano(map)
-	buildDecorations(map)
-	for i = 1, Config.PLOT_COUNT do
-		buildPath(map, (i - 1) * (2 * math.pi / Config.PLOT_COUNT))
-	end
+	local shopPrompt = Island.build(map)
+	setUpShop(shopPrompt)
 	map.Parent = Workspace
 
 	local plotsFolder = Instance.new("Folder")
@@ -7935,15 +9514,15 @@ return World
       </Item>
     </Item>
   </Item>
-  <Item class="StarterPlayer" referent="51">
+  <Item class="StarterPlayer" referent="63">
     <Properties>
       <string name="Name">StarterPlayer</string>
     </Properties>
-    <Item class="StarterPlayerScripts" referent="52">
+    <Item class="StarterPlayerScripts" referent="64">
       <Properties>
         <string name="Name">StarterPlayerScripts</string>
       </Properties>
-      <Item class="LocalScript" referent="53">
+      <Item class="LocalScript" referent="65">
         <Properties>
           <string name="Name">Client</string>
           <string name="Source"><![CDATA[--!strict
@@ -7983,11 +9562,11 @@ end
 print("[RaiseADino] client started")
 ]]></string>
         </Properties>
-        <Item class="Folder" referent="54">
+        <Item class="Folder" referent="66">
           <Properties>
             <string name="Name">Controllers</string>
           </Properties>
-          <Item class="ModuleScript" referent="55">
+          <Item class="ModuleScript" referent="67">
             <Properties>
               <string name="Name">ClientState</string>
               <string name="Source"><![CDATA[--!strict
@@ -8057,7 +9636,7 @@ return ClientState
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="56">
+          <Item class="ModuleScript" referent="68">
             <Properties>
               <string name="Name">DevPanel</string>
               <string name="Source"><![CDATA[--!strict
@@ -8159,7 +9738,7 @@ return DevPanel
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="57">
+          <Item class="ModuleScript" referent="69">
             <Properties>
               <string name="Name">DexUI</string>
               <string name="Source"><![CDATA[--!strict
@@ -8320,7 +9899,7 @@ return DexUI
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="58">
+          <Item class="ModuleScript" referent="70">
             <Properties>
               <string name="Name">DinoPanel</string>
               <string name="Source"><![CDATA[--!strict
@@ -8586,7 +10165,7 @@ return DinoPanel
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="59">
+          <Item class="ModuleScript" referent="71">
             <Properties>
               <string name="Name">Effects</string>
               <string name="Source"><![CDATA[--!strict
@@ -8955,7 +10534,7 @@ return Effects
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="60">
+          <Item class="ModuleScript" referent="72">
             <Properties>
               <string name="Name">Hud</string>
               <string name="Source"><![CDATA[--!strict
@@ -9457,7 +11036,7 @@ return Hud
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="61">
+          <Item class="ModuleScript" referent="73">
             <Properties>
               <string name="Name">PromptVisibility</string>
               <string name="Source"><![CDATA[--!strict
@@ -9576,7 +11155,7 @@ return PromptVisibility
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="62">
+          <Item class="ModuleScript" referent="74">
             <Properties>
               <string name="Name">RewardsUI</string>
               <string name="Source"><![CDATA[--!strict
@@ -9772,7 +11351,7 @@ return RewardsUI
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="63">
+          <Item class="ModuleScript" referent="75">
             <Properties>
               <string name="Name">ShopUI</string>
               <string name="Source"><![CDATA[--!strict
@@ -10258,7 +11837,7 @@ return ShopUI
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="64">
+          <Item class="ModuleScript" referent="76">
             <Properties>
               <string name="Name">StoreUI</string>
               <string name="Source"><![CDATA[--!strict
@@ -10518,7 +12097,7 @@ return StoreUI
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="65">
+          <Item class="ModuleScript" referent="77">
             <Properties>
               <string name="Name">Toasts</string>
               <string name="Source"><![CDATA[--!strict
@@ -10621,7 +12200,7 @@ return Toasts
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="66">
+          <Item class="ModuleScript" referent="78">
             <Properties>
               <string name="Name">Tutorial</string>
               <string name="Source"><![CDATA[--!strict
@@ -10955,7 +12534,7 @@ return Tutorial
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="67">
+          <Item class="ModuleScript" referent="79">
             <Properties>
               <string name="Name">WorldFx</string>
               <string name="Source"><![CDATA[--!strict
@@ -10974,6 +12553,7 @@ local Clock = require(ReplicatedStorage.Shared.Util.Clock)
 local Cycle = require(ReplicatedStorage.Shared.Util.Cycle)
 local DinoModel = require(ReplicatedStorage.Shared.Visual.DinoModel)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
+local Tags = require(ReplicatedStorage.Shared.Tags)
 
 local WorldFx = {}
 
@@ -11104,23 +12684,53 @@ local stormEmitter: ParticleEmitter
 local lastNight: boolean? = nil
 local lastStorm = ""
 
+-- Bright cartoon day; a blue, readable night lit by lamps.
+local DAY = {
+	lighting = {
+		ClockTime = 14.2,
+		Brightness = 2.6,
+		Ambient = Color3.fromRGB(115, 112, 128),
+		OutdoorAmbient = Color3.fromRGB(148, 148, 163),
+		ColorShift_Top = Color3.fromRGB(255, 242, 220),
+	},
+	atmosphere = {
+		Density = 0.28,
+		Color = Color3.fromRGB(199, 230, 255),
+		Decay = Color3.fromRGB(122, 178, 242),
+	},
+}
+local NIGHT = {
+	lighting = {
+		ClockTime = 0.6,
+		Brightness = 1.3,
+		Ambient = Color3.fromRGB(82, 86, 140),
+		OutdoorAmbient = Color3.fromRGB(98, 104, 170),
+		ColorShift_Top = Color3.fromRGB(150, 170, 255),
+	},
+	atmosphere = {
+		Density = 0.32,
+		Color = Color3.fromRGB(64, 74, 132),
+		Decay = Color3.fromRGB(38, 44, 98),
+	},
+}
+
+local function setNightLights(on: boolean)
+	for _, light in CollectionService:GetTagged(Tags.NIGHT_LIGHT) do
+		if light:IsA("Light") then
+			light.Enabled = on
+		end
+	end
+end
+
 local function setLighting(isNight: boolean)
 	local info = TweenInfo.new(6, Enum.EasingStyle.Sine)
-	if isNight then
-		TweenService:Create(Lighting, info, {
-			ClockTime = 0.3,
-			Brightness = 1.2,
-			Ambient = Color3.fromRGB(70, 75, 120),
-			OutdoorAmbient = Color3.fromRGB(80, 85, 140),
-		}):Play()
-	else
-		TweenService:Create(Lighting, info, {
-			ClockTime = 14.2,
-			Brightness = 2.4,
-			Ambient = Color3.fromRGB(110, 110, 110),
-			OutdoorAmbient = Color3.fromRGB(140, 140, 140),
-		}):Play()
+	local look = if isNight then NIGHT else DAY
+	TweenService:Create(Lighting, info, look.lighting):Play()
+	local atmosphere = Lighting:FindFirstChildOfClass("Atmosphere")
+	if atmosphere then
+		TweenService:Create(atmosphere, info, look.atmosphere):Play()
 	end
+	setNightLights(isNight)
 end
 
 local STORM_LOOKS: { [string]: { tint: Color3, particles: Color3, rate: number, speed: number } } =
@@ -11224,6 +12834,11 @@ function WorldFx.init()
 		onDinoAdded(instance)
 	end
 	CollectionService:GetInstanceAddedSignal(DinoModel.TAG):Connect(onDinoAdded)
+	CollectionService:GetInstanceAddedSignal(Tags.NIGHT_LIGHT):Connect(function(instance)
+		if instance:IsA("Light") then
+			instance.Enabled = lastNight == true
+		end
+	end)
 	CollectionService:GetInstanceRemovedSignal(DinoModel.TAG):Connect(function(instance)
 		if instance:IsA("Model") then
 			active[instance] = nil
@@ -11251,11 +12866,11 @@ return WorldFx
             </Properties>
           </Item>
         </Item>
-        <Item class="Folder" referent="68">
+        <Item class="Folder" referent="80">
           <Properties>
             <string name="Name">Lib</string>
           </Properties>
-          <Item class="ModuleScript" referent="69">
+          <Item class="ModuleScript" referent="81">
             <Properties>
               <string name="Name">Panels</string>
               <string name="Source"><![CDATA[--!strict
@@ -11435,7 +13050,7 @@ return Panels
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="70">
+          <Item class="ModuleScript" referent="82">
             <Properties>
               <string name="Name">UI</string>
               <string name="Source"><![CDATA[--!strict
@@ -11711,13 +13326,13 @@ return UI
       </Item>
     </Item>
   </Item>
-  <Item class="Workspace" referent="71">
+  <Item class="Workspace" referent="83">
     <Properties>
       <string name="Name">Workspace</string>
       <bool name="NeedsPivotMigration">false</bool>
       <bool name="StreamingEnabled">false</bool>
     </Properties>
-    <Item class="Part" referent="72">
+    <Item class="Part" referent="84">
       <Properties>
         <string name="Name">PressPlay</string>
         <bool name="Anchored">true</bool>
@@ -11728,7 +13343,7 @@ return UI
           <Z>24</Z>
         </Vector3>
       </Properties>
-      <Item class="BillboardGui" referent="73">
+      <Item class="BillboardGui" referent="85">
         <Properties>
           <string name="Name">Sign</string>
           <bool name="AlwaysOnTop">true</bool>
@@ -11744,7 +13359,7 @@ return UI
             <Z>0</Z>
           </Vector3>
         </Properties>
-        <Item class="TextLabel" referent="74">
+        <Item class="TextLabel" referent="86">
           <Properties>
             <string name="Name">Text</string>
             <float name="BackgroundTransparency">1</float>
