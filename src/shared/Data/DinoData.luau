@@ -21,6 +21,8 @@ export type Feature =
 	| "spikes"
 	| "beakCrest"
 	| "tailFin"
+	| "spots"
+	| "armor"
 
 export type BodyKind = "biped" | "quad" | "flyer" | "swimmer"
 
@@ -170,7 +172,7 @@ local LIST: { Species } = {
 			tailLength = 2.6,
 			tailThickness = 0.6,
 			arms = true,
-			features = {},
+			features = { "spots" },
 		},
 		blurb = "The speediest runner on the island.",
 	}),
@@ -308,7 +310,7 @@ local LIST: { Species } = {
 			tailLength = 2.6,
 			tailThickness = 0.7,
 			arms = false,
-			features = { "club", "spikes" },
+			features = { "club", "armor" },
 		},
 		blurb = "A walking tank with a club for a tail.",
 	}),
@@ -321,7 +323,7 @@ local LIST: { Species } = {
 		colors = { main = { 200, 110, 140 }, belly = { 250, 225, 230 }, accent = { 120, 80, 150 } },
 		plan = {
 			kind = "flyer",
-			body = { 1, 1, 1.8 },
+			body = { 1.2, 1.2, 1.9 },
 			legHeight = 0.8,
 			legThickness = 0.25,
 			head = { 0.6, 0.6, 1.6 },
@@ -347,14 +349,14 @@ local LIST: { Species } = {
 			body = { 2.8, 2.6, 4.2 },
 			legHeight = 2.4,
 			legThickness = 0.9,
-			head = { 0.9, 0.8, 1.2 },
+			head = { 1.1, 1, 1.4 },
 			neckLength = 4.5,
 			neckAngle = 65,
 			neckThickness = 0.9,
 			tailLength = 4,
 			tailThickness = 1,
 			arms = false,
-			features = {},
+			features = { "spots" },
 		},
 		blurb = "So tall it eats clouds for breakfast.",
 	}),

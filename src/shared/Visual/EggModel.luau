@@ -4,6 +4,7 @@
 
 local DinoData = require(script.Parent.Parent.Data.DinoData)
 local EggData = require(script.Parent.Parent.Data.EggData)
+local Frames = require(script.Parent.Parent.Util.Frames)
 
 local EggModel = {}
 
@@ -98,37 +99,59 @@ function EggModel.build(look: Look, size: number, static: boolean?): Model
 		return p
 	end
 
+	-- Egg silhouette: a squashed base under a taller, slightly narrower cap.
+	-- The two ellipsoids are tangent (solved numerically), so the shell reads
+	-- as one smooth egg that is widest a little below the middle.
 	local a, b = size * 0.38, size * 0.5 -- radii (width, height)
-	local center = Vector3.new(0, b, 0)
-	local shell = make("Shell", look.main, Vector3.new(a * 2, b * 2, a * 2), center)
+	local shells = {
+		make("Shell", look.main, Vector3.new(a * 2, b * 1.68, a * 2), Vector3.new(0, b * 0.84, 0)),
+		make(
+			"ShellTop",
+			look.main,
+			Vector3.new(a * 1.986, b * 2.18, a * 1.986),
+			Vector3.new(0, b * 0.91, 0)
+		),
+	}
 	if look.material == Enum.Material.Glass then
-		shell.Transparency = 0.25
-		local core = make("Core", look.spots, Vector3.new(a, b, a), center)
+		for _, shell in shells do
+			shell.Transparency = 0.25
+		end
+		local core = make("Core", look.spots, Vector3.new(a, b, a), Vector3.new(0, b, 0))
 		core.Material = Enum.Material.Neon
 	end
 
-	-- Spots on the shell surface at fixed angles (deterministic look).
-	local spotAngles = {
-		{ 0.4, 1.0 },
-		{ 1.9, 0.7 },
-		{ 3.1, 1.3 },
-		{ 4.3, 0.9 },
-		{ 5.4, 1.6 },
-		{ 2.6, 2.1 },
-		{ 0.9, 2.3 },
+	-- Shell radius at a height (the larger of the two shapes there).
+	local function radiusAt(y: number): number
+		local function r(cy: number, ry: number, rx: number): number
+			local t = (y - cy) / ry
+			return if math.abs(t) >= 1 then 0 else rx * math.sqrt(1 - t * t)
+		end
+		return math.max(r(b * 0.84, b * 0.84, a), r(b * 0.91, b * 1.09, a * 0.993))
+	end
+
+	-- Painted spots at fixed spots on the shell (deterministic look).
+	local spots = {
+		{ 0.4, 0.62, 0.22 },
+		{ 1.9, 0.75, 0.16 },
+		{ 3.1, 0.45, 0.24 },
+		{ 4.3, 0.68, 0.15 },
+		{ 5.4, 0.36, 0.2 },
+		{ 2.6, 0.24, 0.17 },
+		{ 0.9, 0.22, 0.14 },
+		{ 5.0, 0.86, 0.12 },
 	}
-	for _, angles in spotAngles do
-		local theta, phi = angles[1], angles[2]
-		local position = center
-			+ Vector3.new(
-				a * math.cos(theta) * math.sin(phi),
-				b * math.cos(phi),
-				a * math.sin(theta) * math.sin(phi)
-			)
-		local spotSize = size * 0.16
-		local spot = make("Spot", look.spots, Vector3.new(spotSize, spotSize, spotSize), position)
+	for _, spot in spots do
+		local theta, height, spotSize = spot[1], spot[2] * b * 2, spot[3] * size
+		local r = radiusAt(height)
+		local outward = Vector3.new(math.cos(theta), 0, math.sin(theta))
+		local slope = (radiusAt(height - 0.05) - radiusAt(height + 0.05)) / 0.1
+		local normal = (outward + Vector3.new(0, slope, 0)).Unit
+		local position = outward * r + Vector3.new(0, height, 0)
+		local p =
+			make("Spot", look.spots, Vector3.new(spotSize, spotSize, spotSize * 0.22), position)
+		p.CFrame = Frames.alongZ(position - normal * spotSize * 0.04, normal)
 		if look.glow then
-			spot.Material = Enum.Material.Neon
+			p.Material = Enum.Material.Neon
 		end
 	end
 

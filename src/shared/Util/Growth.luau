@@ -15,7 +15,7 @@ Growth.GIANT = 4
 
 -- Per-stage multipliers (index = stage).
 Growth.INCOME = { 0.25, 0.5, 1, 2 }
-Growth.SIZE = { 0.45, 0.7, 1, 1.6 }
+Growth.SIZE = { 0.5, 0.72, 1, 1.45 }
 Growth.SELL = { 0.3, 0.6, 1, 2 }
 
 -- thresholds = ages (seconds) to reach Juvenile, Adult, Giant.
