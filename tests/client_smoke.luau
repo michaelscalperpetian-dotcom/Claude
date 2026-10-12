@@ -203,6 +203,36 @@ step("stud overlays cover panels, cards and buttons without joining layouts", fu
 	assert(count > 20, `expected studs on many panels, got {count}`)
 end)
 
+step("each storm has its own effects and clearing the sky stops them", function()
+	local WorldFx = require("./loader").load("src/client/Controllers/WorldFx")
+	local camera = env.workspace.CurrentCamera
+	local above = camera:FindFirstChild("StormAbove")
+	local below = camera:FindFirstChild("StormBelow")
+	assert(above and below, "storm emitter parts")
+	local function enabled(): { [string]: number }
+		local counts = {}
+		for _, part in { above, below } do
+			for _, emitter in part:GetChildren() do
+				if emitter.Enabled then
+					counts[emitter.Name] = (counts[emitter.Name] or 0) + 1
+				end
+			end
+		end
+		return counts
+	end
+	for _, kind in { "Frost", "Cosmic", "Lava", "Rainbow" } do
+		WorldFx.setStorm(kind)
+		local counts = enabled()
+		assert(counts[kind] == 2, `{kind} has 2 layers on`)
+		for name in counts do
+			assert(name == kind, `{name} still on during {kind}`)
+		end
+	end
+	assert(#below:GetChildren() == 1, "only lava embers rise")
+	WorldFx.setStorm("")
+	assert(next(enabled()) == nil, "clear sky")
+end)
+
 print(`\n{passed} passed, {failed} failed`)
 if failed > 0 then
 	process.exit(1)

@@ -225,8 +225,10 @@ end
 -- ===== Lighting =====
 
 local colorCorrection: ColorCorrectionEffect
-local stormPart: Part
-local stormEmitter: ParticleEmitter
+local stormAbove: Part -- falling weather, above the camera
+local stormBelow: Part -- rising weather (embers), around the player
+local stormEmitters: { [string]: { ParticleEmitter } } = {}
+local stormActive = false
 local lastNight: boolean? = nil
 local lastStorm = ""
 
@@ -279,57 +281,252 @@ local function setLighting(isNight: boolean)
 	setNightLights(isNight)
 end
 
-local STORM_LOOKS: { [string]: { tint: Color3, particles: Color3, rate: number, speed: number } } =
-	{
-		Lava = {
-			tint = Color3.fromRGB(255, 200, 170),
-			particles = Color3.fromRGB(255, 120, 40),
-			rate = 60,
-			speed = 10,
+-- Each storm has its own look: a sky tint plus one or two particle layers.
+type EmitterLook = {
+	rises: boolean?, -- emitted around the player and floating up (else falls from above)
+	color: ColorSequence,
+	rate: number,
+	speed: NumberRange,
+	size: NumberSequence,
+	lifetime: NumberRange,
+	acceleration: Vector3,
+	spread: Vector2,
+	light: number,
+	transparency: NumberSequence?,
+	rotSpeed: NumberRange?,
+	streak: boolean?, -- stretched along its motion, like a shooting star
+}
+
+type StormLook = { tint: Color3, saturation: number, emitters: { EmitterLook } }
+
+local function seq(...: number): NumberSequence
+	local values = { ... }
+	if #values == 1 then
+		return NumberSequence.new(values[1])
+	end
+	local keys = {}
+	for i, v in values do
+		table.insert(keys, NumberSequenceKeypoint.new((i - 1) / (#values - 1), v))
+	end
+	return NumberSequence.new(keys)
+end
+
+local function colors(...: Color3): ColorSequence
+	local values = { ... }
+	if #values == 1 then
+		return ColorSequence.new(values[1])
+	end
+	local keys = {}
+	for i, c in values do
+		table.insert(keys, ColorSequenceKeypoint.new((i - 1) / (#values - 1), c))
+	end
+	return ColorSequence.new(keys)
+end
+
+local STORM_LOOKS: { [string]: StormLook } = {
+	-- Blizzard: thick snow blowing sideways and quick white gusts.
+	Frost = {
+		tint = Color3.fromRGB(205, 228, 255),
+		saturation = -0.15,
+		emitters = {
+			{
+				color = colors(Color3.new(1, 1, 1)),
+				rate = 180,
+				speed = NumberRange.new(6, 10),
+				size = seq(0.25, 0.35, 0.3),
+				lifetime = NumberRange.new(6, 9),
+				acceleration = Vector3.new(9, -2, 3),
+				spread = Vector2.new(35, 35),
+				light = 0.3,
+				rotSpeed = NumberRange.new(-90, 90),
+			},
+			{
+				color = colors(Color3.fromRGB(220, 240, 255)),
+				rate = 35,
+				speed = NumberRange.new(12, 18),
+				size = seq(0.7, 0),
+				lifetime = NumberRange.new(3, 4),
+				acceleration = Vector3.new(22, 0, 6),
+				spread = Vector2.new(50, 50),
+				light = 0.5,
+				transparency = seq(0.3, 1),
+			},
 		},
-		Frost = {
-			tint = Color3.fromRGB(200, 225, 255),
-			particles = Color3.fromRGB(255, 255, 255),
-			rate = 120,
-			speed = 8,
+	},
+	-- Meteor Shower: shooting stars streaking across a purple sky, plus stardust.
+	Cosmic = {
+		tint = Color3.fromRGB(215, 195, 255),
+		saturation = 0.1,
+		emitters = {
+			{
+				color = colors(
+					Color3.new(1, 1, 1),
+					Color3.fromRGB(190, 150, 255),
+					Color3.fromRGB(90, 220, 255)
+				),
+				rate = 7,
+				speed = NumberRange.new(90, 130),
+				size = seq(1.1, 0.2),
+				lifetime = NumberRange.new(0.9, 1.4),
+				acceleration = Vector3.new(60, 0, 25),
+				spread = Vector2.new(5, 5),
+				light = 1,
+				streak = true,
+			},
+			{
+				color = colors(Color3.fromRGB(200, 160, 255), Color3.fromRGB(150, 230, 255)),
+				rate = 70,
+				speed = NumberRange.new(3, 6),
+				size = seq(0, 0.4, 0),
+				lifetime = NumberRange.new(4, 6),
+				acceleration = Vector3.new(0, -1, 0),
+				spread = Vector2.new(60, 60),
+				light = 1,
+			},
 		},
-		Cosmic = {
-			tint = Color3.fromRGB(215, 190, 255),
-			particles = Color3.fromRGB(190, 140, 255),
-			rate = 50,
-			speed = 30,
+	},
+	-- Lava Storm: glowing embers floating up around you and grey ash drifting down.
+	Lava = {
+		tint = Color3.fromRGB(255, 214, 185),
+		saturation = 0.05,
+		emitters = {
+			{
+				rises = true,
+				color = colors(
+					Color3.fromRGB(255, 220, 120),
+					Color3.fromRGB(255, 110, 30),
+					Color3.fromRGB(200, 40, 20)
+				),
+				rate = 70,
+				speed = NumberRange.new(3, 7),
+				size = seq(0.35, 0.05),
+				lifetime = NumberRange.new(3, 5),
+				acceleration = Vector3.new(2, 5, 1),
+				spread = Vector2.new(40, 40),
+				light = 1,
+				transparency = seq(0, 0.2, 1),
+			},
+			{
+				color = colors(Color3.fromRGB(95, 85, 85)),
+				rate = 60,
+				speed = NumberRange.new(4, 7),
+				size = seq(0.3),
+				lifetime = NumberRange.new(6, 8),
+				acceleration = Vector3.new(3, -1, 2),
+				spread = Vector2.new(40, 40),
+				light = 0,
+				rotSpeed = NumberRange.new(-60, 60),
+			},
 		},
-		Rainbow = {
-			tint = Color3.fromRGB(255, 225, 245),
-			particles = Color3.fromRGB(255, 150, 220),
-			rate = 90,
-			speed = 12,
+	},
+	-- Rainbow Mega Storm: rainbow confetti and twinkles.
+	Rainbow = {
+		tint = Color3.fromRGB(255, 228, 246),
+		saturation = 0.25,
+		emitters = {
+			{
+				color = colors(
+					Color3.fromRGB(255, 90, 90),
+					Color3.fromRGB(255, 230, 90),
+					Color3.fromRGB(90, 220, 255),
+					Color3.fromRGB(200, 120, 255)
+				),
+				rate = 110,
+				speed = NumberRange.new(8, 12),
+				size = seq(0.45),
+				lifetime = NumberRange.new(5, 7),
+				acceleration = Vector3.new(2, -2, 1),
+				spread = Vector2.new(30, 30),
+				light = 0.6,
+				rotSpeed = NumberRange.new(-180, 180),
+			},
+			{
+				color = colors(Color3.new(1, 1, 1), Color3.fromRGB(255, 170, 230)),
+				rate = 50,
+				speed = NumberRange.new(2, 4),
+				size = seq(0, 0.5, 0),
+				lifetime = NumberRange.new(3, 5),
+				acceleration = Vector3.zero,
+				spread = Vector2.new(60, 60),
+				light = 1,
+			},
 		},
-	}
+	},
+}
+
+local function hostPart(name: string, size: Vector3): Part
+	local part = Instance.new("Part")
+	part.Name = name
+	part.Anchored = true
+	part.CanCollide = false
+	part.CanQuery = false
+	part.CanTouch = false
+	part.CastShadow = false
+	part.Transparency = 1
+	part.Size = size
+	part.Parent = Workspace.CurrentCamera or Workspace
+	return part
+end
+
+local function buildStormEmitters()
+	stormAbove = hostPart("StormAbove", Vector3.new(160, 1, 160))
+	stormBelow = hostPart("StormBelow", Vector3.new(90, 1, 90))
+	for kind, look in STORM_LOOKS do
+		local list = {}
+		for _, e in look.emitters do
+			local emitter = Instance.new("ParticleEmitter")
+			emitter.Name = kind
+			emitter.EmissionDirection = if e.rises then Enum.NormalId.Top else Enum.NormalId.Bottom
+			emitter.Color = e.color
+			emitter.Rate = e.rate
+			emitter.Speed = e.speed
+			emitter.Size = e.size
+			emitter.Lifetime = e.lifetime
+			emitter.Acceleration = e.acceleration
+			emitter.SpreadAngle = e.spread
+			emitter.LightEmission = e.light
+			if e.transparency then
+				emitter.Transparency = e.transparency
+			end
+			if e.rotSpeed then
+				emitter.RotSpeed = e.rotSpeed
+				emitter.Rotation = NumberRange.new(0, 360)
+			end
+			if e.streak then
+				emitter.Orientation = Enum.ParticleOrientation.VelocityParallel
+				emitter.Squash = NumberSequence.new(-3)
+			end
+			emitter.Enabled = false
+			emitter.Parent = if e.rises then stormBelow else stormAbove
+			table.insert(list, emitter)
+		end
+		stormEmitters[kind] = list
+	end
+end
 
 local function setStorm(kind: string)
-	if kind == "" then
-		stormEmitter.Enabled = false
-		TweenService:Create(colorCorrection, TweenInfo.new(3), { TintColor = Color3.new(1, 1, 1) })
-			:Play()
-		return
+	for _, list in stormEmitters do
+		for _, emitter in list do
+			emitter.Enabled = false
+		end
 	end
 	local look = STORM_LOOKS[kind]
+	stormActive = look ~= nil
 	if not look then
+		TweenService:Create(colorCorrection, TweenInfo.new(3), {
+			TintColor = Color3.new(1, 1, 1),
+			Saturation = 0,
+		}):Play()
 		return
 	end
-	stormEmitter.Color = if kind == "Rainbow"
-		then ColorSequence.new({
-			ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 90, 90)),
-			ColorSequenceKeypoint.new(0.33, Color3.fromRGB(255, 230, 90)),
-			ColorSequenceKeypoint.new(0.66, Color3.fromRGB(90, 220, 255)),
-			ColorSequenceKeypoint.new(1, Color3.fromRGB(200, 120, 255)),
-		})
-		else ColorSequence.new(look.particles)
-	stormEmitter.Rate = look.rate
-	stormEmitter.Speed = NumberRange.new(look.speed, look.speed * 1.4)
-	stormEmitter.Enabled = true
-	TweenService:Create(colorCorrection, TweenInfo.new(3), { TintColor = look.tint }):Play()
+	local emitters: { ParticleEmitter } = stormEmitters[kind] or {}
+	for _, emitter in emitters do
+		emitter.Enabled = true
+	end
+	TweenService:Create(colorCorrection, TweenInfo.new(3), {
+		TintColor = look.tint,
+		Saturation = look.saturation,
+	}):Play()
 end
 
 local function weatherStep()
@@ -349,32 +546,21 @@ end
 
 local function followCamera()
 	local camera = Workspace.CurrentCamera
-	if camera and stormEmitter.Enabled then
-		stormPart.CFrame = CFrame.new(camera.CFrame.Position + Vector3.new(0, 40, 0))
+	if camera and stormActive then
+		stormAbove.CFrame = CFrame.new(camera.CFrame.Position + Vector3.new(0, 40, 0))
+		stormBelow.CFrame = CFrame.new(camera.Focus.Position - Vector3.new(0, 3, 0))
 	end
 end
+
+-- Switch the storm look directly ("" = clear sky). Used by tests.
+WorldFx.setStorm = setStorm
 
 function WorldFx.init()
 	colorCorrection = Instance.new("ColorCorrectionEffect")
 	colorCorrection.Name = "StormTint"
 	colorCorrection.Parent = Lighting
 
-	stormPart = Instance.new("Part")
-	stormPart.Name = "StormEmitter"
-	stormPart.Anchored = true
-	stormPart.CanCollide = false
-	stormPart.CanQuery = false
-	stormPart.CanTouch = false
-	stormPart.Transparency = 1
-	stormPart.Size = Vector3.new(160, 1, 160)
-	stormPart.Parent = Workspace.CurrentCamera or Workspace
-	stormEmitter = Instance.new("ParticleEmitter")
-	stormEmitter.EmissionDirection = Enum.NormalId.Bottom
-	stormEmitter.Lifetime = NumberRange.new(4, 6)
-	stormEmitter.Size = NumberSequence.new(0.6)
-	stormEmitter.LightEmission = 0.6
-	stormEmitter.Enabled = false
-	stormEmitter.Parent = stormPart
+	buildStormEmitters()
 
 	for _, instance in CollectionService:GetTagged(DinoModel.TAG) do
 		onDinoAdded(instance)

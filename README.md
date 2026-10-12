@@ -93,7 +93,7 @@ Purchases follow the rules in the plan (section 2.5):
 | **Eggs & hatching** | 6 shop eggs (Jungle, Swamp, Volcano, Crystal, Glacier, Abyss) with limited stock that restocks every 5 minutes. Tap eggs to warm them (2× faster), and friends standing nearby warm them too. |
 | **21 dinos** | From tiny Compsognathus to the huge Giganotosaurus, plus 2 secrets: Mosasaurus and Cryolophosaurus. Each grows Baby → Juvenile → Adult → Giant in real time, even while you're offline. |
 | **Coins** | Dinos earn coins onto your gold pad. Offline earnings are waiting when you come back. |
-| **Mutations** | Glossy, Lava, Frost, Cosmic, Rainbow (1.5×–8× coins). There's a storm every 30 minutes, and a **Rainbow Mega Storm every Saturday at 17:00 UTC**. |
+| **Mutations** | Glossy, Lava, Frost, Cosmic, Rainbow (1.5×–8× coins). There's a storm every 30 minutes, each with its own look: a ❄️ Blizzard with blowing snow (Frost), a 🌠 Meteor Shower with shooting stars (Cosmic) and a 🌋 Lava Storm with floating embers and ash (Lava). A **Rainbow Mega Storm** with rainbow confetti comes **every Saturday at 17:00 UTC**. |
 | **Night raids** | At night, visitors can steal *laid* eggs (never your dinos). You get a free gate lock with a cooldown, a 24-hour shield for new players, and you can tag a thief to get your egg back. Grown dinos roar thieves away. Raids are off in private servers. |
 | **Tutorial** | A guided first 3 minutes: hatch → collect → buy → gift egg → lock your gate. Each step is logged as an onboarding funnel in Creator Analytics. |
 | **Progression** | Dino-Dex (with mutations) with prizes at 3, 6, 9 and all 21 species, a 7-day login streak, slot and incubator upgrades bought with coins, and selling dinos and eggs. |
