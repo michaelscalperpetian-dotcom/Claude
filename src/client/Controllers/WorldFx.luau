@@ -20,10 +20,12 @@ local WorldFx = {}
 
 local EGG_TAG = "IncubatorEgg"
 local WANDER_RADIUS = 7
+local WALK_DISTANCE = 16
 
 -- ===== Dino wandering =====
--- Each dino strolls around its home spot: it turns toward a new spot, hops
--- along with a little waddle, then rests and breathes before the next walk.
+-- Each dino roams its whole pen: it turns toward a random nearby spot inside
+-- the fence, hops along with a little waddle, then rests and breathes before
+-- the next walk.
 -- Simulated per frame on the client (pure decoration), skipped when far away.
 
 type Walker = {
@@ -37,6 +39,8 @@ type Walker = {
 	hop: number,
 	speed: number,
 	rng: Random,
+	floor: BasePart?, -- the pen's floor; walks stay inside it
+	margin: number, -- distance kept from the fence
 }
 
 local walkers: { [Model]: Walker } = {}
@@ -59,6 +63,8 @@ local function addWalker(model: Model)
 	local height = model:GetAttribute("Height")
 	local h = if typeof(height) == "number" then height else 4
 	local rng = Random.new()
+	local plot = model.Parent and model.Parent.Parent
+	local floor = plot and plot:FindFirstChild("Floor")
 	walkers[model] = {
 		root = root,
 		home = home.Position,
@@ -70,7 +76,32 @@ local function addWalker(model: Model)
 		hop = math.clamp(h * 0.06, 0.12, 1.2),
 		speed = math.clamp(2.5 + h * 0.35, 2.5, 8),
 		rng = rng,
+		floor = if floor and floor:IsA("BasePart") then floor else nil,
+		margin = math.clamp(h * 0.6, 4, 10),
 	}
+end
+
+-- A random spot a short walk away, kept inside the pen (or near home if the
+-- pen's floor can't be found).
+local function pickTarget(w: Walker): Vector3
+	local angle = w.rng:NextNumber(0, math.pi * 2)
+	local floor = w.floor
+	if not floor or not floor.Parent then
+		local radius = w.rng:NextNumber(1, WANDER_RADIUS)
+		return w.home + Vector3.new(math.cos(angle) * radius, 0, math.sin(angle) * radius)
+	end
+	local radius = w.rng:NextNumber(4, WALK_DISTANCE)
+	local goal = w.position + Vector3.new(math.cos(angle) * radius, 0, math.sin(angle) * radius)
+	local localGoal = floor.CFrame:PointToObjectSpace(goal)
+	local halfX = math.max(floor.Size.X / 2 - w.margin, 0)
+	local halfZ = math.max(floor.Size.Z / 2 - w.margin, 0)
+	local inside = Vector3.new(
+		math.clamp(localGoal.X, -halfX, halfX),
+		0,
+		math.clamp(localGoal.Z, -halfZ, halfZ)
+	)
+	local world = floor.CFrame:PointToWorldSpace(inside)
+	return Vector3.new(world.X, w.home.Y, world.Z)
 end
 
 local function stepWalkers(dt: number)
@@ -109,9 +140,7 @@ local function stepWalkers(dt: number)
 				end
 			end
 		elseif now >= w.waitUntil then
-			local angle = w.rng:NextNumber(0, math.pi * 2)
-			local radius = w.rng:NextNumber(1, WANDER_RADIUS)
-			w.target = w.home + Vector3.new(math.cos(angle) * radius, 0, math.sin(angle) * radius)
+			w.target = pickTarget(w)
 		end
 		w.phase += dt * (if moving then 4 + w.speed * 1.5 else 2)
 		local lift = if moving
