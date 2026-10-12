@@ -10728,16 +10728,27 @@ local loaded: { [string]: Controller } = {}
 local order: { string } = {}
 for _, child in Controllers:GetChildren() do
 	if child:IsA("ModuleScript") then
-		loaded[child.Name] = require(child) :: any
-		table.insert(order, child.Name)
+		-- One broken controller must not stop the others from loading.
+		local ok, result = pcall(require, child)
+		if ok then
+			loaded[child.Name] = result :: any
+			table.insert(order, child.Name)
+		else
+			warn(`[RaiseADino] {child.Name} failed to load: {result}`)
+		end
 	end
 end
 table.sort(order)
 
 for _, name in order do
-	local controller = loaded[name]
-	if controller.init then
-		controller.init()
+	local init = loaded[name].init
+	if init then
+		local ok, err = pcall(function()
+			init()
+		end)
+		if not ok then
+			warn(`[RaiseADino] {name}.init failed: {err}`)
+		end
 	end
 end
 
@@ -15139,13 +15150,18 @@ local function flatten(v: Vector3, fallback: Vector3): Vector3
 	return if flat.Magnitude > 1e-4 then flat.Unit else fallback
 end
 
-local function addWalker(model: Model)
-	if walkers[model] then
+local function addWalker(model: Model, tries: number?)
+	if walkers[model] or not model.Parent then
 		return
 	end
 	local root = model.PrimaryPart
 	local home = model:GetAttribute("Home")
 	if not root or typeof(home) ~= "CFrame" then
+		-- Its parts can arrive a moment after the model itself; try again.
+		local attempt = (tries or 0) + 1
+		if attempt <= 20 then
+			task.delay(0.25, addWalker, model, attempt)
+		end
 		return
 	end
 	local height = model:GetAttribute("Height")

@@ -51,13 +51,18 @@ local function flatten(v: Vector3, fallback: Vector3): Vector3
 	return if flat.Magnitude > 1e-4 then flat.Unit else fallback
 end
 
-local function addWalker(model: Model)
-	if walkers[model] then
+local function addWalker(model: Model, tries: number?)
+	if walkers[model] or not model.Parent then
 		return
 	end
 	local root = model.PrimaryPart
 	local home = model:GetAttribute("Home")
 	if not root or typeof(home) ~= "CFrame" then
+		-- Its parts can arrive a moment after the model itself; try again.
+		local attempt = (tries or 0) + 1
+		if attempt <= 20 then
+			task.delay(0.25, addWalker, model, attempt)
+		end
 		return
 	end
 	local height = model:GetAttribute("Height")

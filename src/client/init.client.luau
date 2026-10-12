@@ -18,16 +18,27 @@ local loaded: { [string]: Controller } = {}
 local order: { string } = {}
 for _, child in Controllers:GetChildren() do
 	if child:IsA("ModuleScript") then
-		loaded[child.Name] = require(child) :: any
-		table.insert(order, child.Name)
+		-- One broken controller must not stop the others from loading.
+		local ok, result = pcall(require, child)
+		if ok then
+			loaded[child.Name] = result :: any
+			table.insert(order, child.Name)
+		else
+			warn(`[RaiseADino] {child.Name} failed to load: {result}`)
+		end
 	end
 end
 table.sort(order)
 
 for _, name in order do
-	local controller = loaded[name]
-	if controller.init then
-		controller.init()
+	local init = loaded[name].init
+	if init then
+		local ok, err = pcall(function()
+			init()
+		end)
+		if not ok then
+			warn(`[RaiseADino] {name}.init failed: {err}`)
+		end
 	end
 end
 
