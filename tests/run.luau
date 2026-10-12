@@ -62,15 +62,15 @@ describe("DinoData", function()
 			ok(s.growth[1] < s.growth[2] and s.growth[2] < s.growth[3], s.id .. " increasing")
 		end
 	end)
-	it("has 12 dinos plus 1 secret", function()
+	it("has 19 dinos plus 2 secrets", function()
 		local secrets = 0
 		for _, s in DinoData.LIST do
 			if s.rarity == "Secret" then
 				secrets += 1
 			end
 		end
-		eq(#DinoData.LIST, 13, "species count")
-		eq(secrets, 1, "secret count")
+		eq(#DinoData.LIST, 21, "species count")
+		eq(secrets, 2, "secret count")
 	end)
 end)
 

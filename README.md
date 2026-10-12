@@ -88,13 +88,13 @@ Purchases follow the rules in the plan (section 2.5):
 
 | Feature | Details |
 |---|---|
-| **Eggs & hatching** | 4 shop eggs with limited stock that restocks every 5 minutes. Tap eggs to warm them (2× faster), and friends standing nearby warm them too. |
-| **13 dinos** | Raptor → T-Rex, plus a secret Mosasaurus. Each grows Baby → Juvenile → Adult → Giant in real time, even while you're offline. |
+| **Eggs & hatching** | 6 shop eggs (Jungle, Swamp, Volcano, Crystal, Glacier, Abyss) with limited stock that restocks every 5 minutes. Tap eggs to warm them (2× faster), and friends standing nearby warm them too. |
+| **21 dinos** | From tiny Compsognathus to the huge Giganotosaurus, plus 2 secrets: Mosasaurus and Cryolophosaurus. Each grows Baby → Juvenile → Adult → Giant in real time, even while you're offline. |
 | **Coins** | Dinos earn coins onto your gold pad. Offline earnings are waiting when you come back. |
 | **Mutations** | Glossy, Lava, Frost, Cosmic, Rainbow (1.5×–8× coins). There's a storm every 30 minutes, and a **Rainbow Mega Storm every Saturday at 17:00 UTC**. |
 | **Night raids** | At night, visitors can steal *laid* eggs (never your dinos). You get a free gate lock with a cooldown, a 24-hour shield for new players, and you can tag a thief to get your egg back. Grown dinos roar thieves away. Raids are off in private servers. |
 | **Tutorial** | A guided first 3 minutes: hatch → collect → buy → gift egg → lock your gate. Each step is logged as an onboarding funnel in Creator Analytics. |
-| **Progression** | Dino-Dex (with mutations) with prizes at 3, 6, 9 and all 13 species, a 7-day login streak, slot and incubator upgrades bought with coins, and selling dinos and eggs. |
+| **Progression** | Dino-Dex (with mutations) with prizes at 3, 6, 9 and all 21 species, a 7-day login streak, slot and incubator upgrades bought with coins, and selling dinos and eggs. |
 | **Daily quests** | Three fresh quests every day (hatch eggs, buy eggs, collect coins, roar...), each with a coin or boost reward, plus a bonus for finishing all three. |
 | **Codes** | A code box in ⚙️ Settings. Codes are listed in `src/server/Lib/CodeData.luau` (server only, so nobody can read them early): add a NAME in capitals, a reward, and optionally an `expires` time. Each player can use each code once. Starts with `DINO`, `RAWR` and `EGGCELLENT`. |
 | **Dino buddy** | Pick any of your dinos as a buddy and it follows you around the island. |

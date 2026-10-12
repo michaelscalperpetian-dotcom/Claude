@@ -75,7 +75,9 @@ end
 
 -- r must be in [0, 1). Returns the species whose bp range contains r.
 function Odds.roll(chances: { Chance }, r: number): string
-	local target = math.floor(math.clamp(r, 0, 0.99999999) * Odds.TOTAL_BP)
+	-- (the tiny nudge stops 0.1415 * 10000 = 1414.9999... landing one bp early)
+	local target =
+		math.min(math.floor(math.clamp(r, 0, 1) * Odds.TOTAL_BP + 1e-6), Odds.TOTAL_BP - 1)
 	local cumulative = 0
 	for _, c in chances do
 		cumulative += c.bp
@@ -89,7 +91,9 @@ end
 -- Generic weighted pick over keys with bp values (used for mutations).
 -- `none` is returned when r lands outside every listed bp range.
 function Odds.pick<T>(entries: { { key: T, bp: number } }, r: number): T?
-	local target = math.floor(math.clamp(r, 0, 0.99999999) * Odds.TOTAL_BP)
+	-- (the tiny nudge stops 0.1415 * 10000 = 1414.9999... landing one bp early)
+	local target =
+		math.min(math.floor(math.clamp(r, 0, 1) * Odds.TOTAL_BP + 1e-6), Odds.TOTAL_BP - 1)
 	local cumulative = 0
 	for _, e in entries do
 		cumulative += e.bp
