@@ -80,7 +80,7 @@ local function ensureGift(player: Player, profile: Types.Profile)
 end
 
 -- Tutorial events: "hatch_starter", "collect", "buy_egg", "hatch_gift", "hatch",
--- "chased", "finish".
+-- "finish".
 function Progress.event(player: Player, name: string)
 	local profile = Data.get(player)
 	if not profile or profile.tutorial == TutorialData.DONE or profile.tutorial == 0 then
@@ -98,9 +98,7 @@ function Progress.event(player: Player, name: string)
 		setStep(player, profile, 5)
 	elseif name == "hatch" and step == 4 then
 		ensureGift(player, profile)
-	elseif name == "chased" and step == 5 then
-		setStep(player, profile, 6)
-	elseif name == "finish" and step == 6 then
+	elseif name == "finish" and step == #TutorialData.STEPS then
 		setStep(player, profile, TutorialData.DONE)
 		Notify.send(
 			player,
@@ -220,6 +218,10 @@ function Progress.onJoin(player: Player)
 		return
 	end
 	Coins.setDexCount(player, dexCount(profile))
+	if profile.tutorial > #TutorialData.STEPS and profile.tutorial ~= TutorialData.DONE then
+		-- Saved during an older, longer tutorial: resume on the last step.
+		setStep(player, profile, #TutorialData.STEPS)
+	end
 	if profile.tutorial == 0 then
 		giveStarterEgg(player, profile)
 		setStep(player, profile, 1)
@@ -248,9 +250,7 @@ function Progress.init()
 		claimClub(player)
 	end)
 	Net.on("TutorialAction", 2, 4, function(player: Player, action: unknown)
-		if action == "ChasedThief" then
-			Progress.event(player, "chased")
-		elseif action == "Finish" then
+		if action == "Finish" then
 			Progress.event(player, "finish")
 		end
 	end)

@@ -3,7 +3,7 @@
 -- hint and an arrow toward the target. Designed so a new player hatches a dino
 -- in under 30 seconds and gets a rare one before 2 minutes.
 
-export type Target = "Incubator" | "Pad" | "Shop" | "Thief" | "Lock" | "None"
+export type Target = "Incubator" | "Pad" | "Shop" | "Lock" | "None"
 
 export type Step = {
 	text: string,
@@ -35,12 +35,7 @@ local TutorialData = {
 			funnelName = "HatchGiftEgg",
 		},
 		{
-			text = "Night raid practice! Tap the sneaky raptor to chase it off 🦖",
-			target = "Thief",
-			funnelName = "RaidPractice",
-		},
-		{
-			text = "At night, lock your gate 🔒 to keep thieves out. Your dinos grow even while you're away!",
+			text = "At night, sneaky players can steal laid eggs, so lock your gate 🔒 to keep them out. Your dinos grow even while you're away!",
 			target = "Lock",
 			funnelName = "LockGate",
 		},

@@ -165,9 +165,9 @@ step("hatching the gift egg gives a Glossy Parasaur", function()
 	eq(profile.tutorial, 5, "tutorial step")
 end)
 
-step("finishing the raid practice completes the tutorial", function()
-	handlers.TutorialAction(alice, "ChasedThief")
-	eq(profileOf(alice).tutorial, 6, "after chase")
+step("the last step (lock your gate) completes the tutorial", function()
+	handlers.TutorialAction(alice, "ChasedThief") -- old step, ignored now
+	eq(profileOf(alice).tutorial, 5, "still on the last step")
 	handlers.TutorialAction(alice, "Finish")
 	eq(profileOf(alice).tutorial, 99, "done")
 end)

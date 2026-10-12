@@ -93,7 +93,7 @@ Purchases follow the rules in the plan (section 2.5):
 | **Coins** | Dinos earn coins onto your gold pad. Offline earnings are waiting when you come back. |
 | **Mutations** | Glossy, Lava, Frost, Cosmic, Rainbow (1.5×–8× coins). There's a storm every 30 minutes, and a **Rainbow Mega Storm every Saturday at 17:00 UTC**. |
 | **Night raids** | At night, visitors can steal *laid* eggs (never your dinos). You get a free gate lock with a cooldown, a 24-hour shield for new players, and you can tag a thief to get your egg back. Grown dinos roar thieves away. Raids are off in private servers. |
-| **Tutorial** | A guided first 3 minutes: hatch → collect → buy → gift egg → raid practice → lock. Each step is logged as an onboarding funnel in Creator Analytics. |
+| **Tutorial** | A guided first 3 minutes: hatch → collect → buy → gift egg → lock your gate. Each step is logged as an onboarding funnel in Creator Analytics. |
 | **Progression** | Dino-Dex (with mutations) with prizes at 3, 6, 9 and all 13 species, a 7-day login streak, slot and incubator upgrades bought with coins, and selling dinos and eggs. |
 | **Daily quests** | Three fresh quests every day (hatch eggs, buy eggs, collect coins, roar...), each with a coin or boost reward, plus a bonus for finishing all three. |
 | **Codes** | A code box in ⚙️ Settings. Codes are listed in `src/server/Lib/CodeData.luau` (server only, so nobody can read them early): add a NAME in capitals, a reward, and optionally an `expires` time. Each player can use each code once. Starts with `DINO`, `RAWR` and `EGGCELLENT`. |

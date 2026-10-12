@@ -77,7 +77,7 @@ step("policy-restricted players don't see coin packs or luck", function()
 end)
 
 step("tutorial walks through every step", function()
-	for tutorialStep = 1, 6 do
+	for tutorialStep = 1, 5 do
 		listeners.State(snapshot({ tutorial = tutorialStep }))
 		taskLib.wait(0.05)
 	end

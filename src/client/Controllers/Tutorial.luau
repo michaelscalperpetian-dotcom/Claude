@@ -1,7 +1,7 @@
 --!strict
--- First-session tutorial on the client: a hint banner, a glowing beam from the
--- player to the next thing to do, and the "sneaky raptor" raid practice.
--- The server decides the step (and logs the onboarding funnel).
+-- First-session tutorial on the client: a hint banner and a glowing beam from
+-- the player to the next thing to do. The server decides the step (and logs
+-- the onboarding funnel).
 
 local ExperienceNotificationService = game:GetService("ExperienceNotificationService")
 local Players = game:GetService("Players")
@@ -9,7 +9,6 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 local Workspace = game:GetService("Workspace")
 
-local DinoModel = require(ReplicatedStorage.Shared.Visual.DinoModel)
 local Net = require(ReplicatedStorage.Shared.Net)
 local TutorialData = require(ReplicatedStorage.Shared.Data.TutorialData)
 local Types = require(ReplicatedStorage.Shared.Types)
@@ -29,7 +28,6 @@ local targetPart: Part
 local targetAttachment: Attachment
 local beam: Beam
 local playerAttachment: Attachment? = nil
-local npc: Model? = nil
 
 local function myPlot(): Model?
 	return ClientState.myPlot()
@@ -70,9 +68,6 @@ local function targetPosition(step: number): Vector3?
 		local hub = map and map:FindFirstChild("Hub")
 		local shop = hub and hub:FindFirstChild("ShopPrompt")
 		return if shop and shop:IsA("BasePart") then shop.CFrame.Position else nil
-	elseif info.target == "Thief" then
-		local model = npc
-		return if model then model:GetPivot().Position + Vector3.new(0, 2, 0) else nil
 	end
 	return nil
 end
@@ -95,86 +90,6 @@ local function attachToCharacter()
 	beam.Attachment0 = playerAttachment
 end
 
--- ===== Sneaky raptor (client-only practice thief) =====
-
-local function removeNpc()
-	if npc then
-		npc:Destroy()
-		npc = nil
-	end
-end
-
-local function spawnNpc()
-	removeNpc()
-	local plot = myPlot()
-	if not plot then
-		return
-	end
-	local floor = plot:FindFirstChild("Floor")
-	local tray = plot:FindFirstChild("Tray")
-	if not floor or not floor:IsA("BasePart") or not tray or not tray:IsA("BasePart") then
-		return
-	end
-	local model = DinoModel.build("Raptor", 2, nil, "Static")
-	model.Name = "SneakyRaptor"
-	local startPosition = (floor.CFrame * CFrame.new(0, floor.Size.Y / 2, -40)).Position
-	local trayPosition =
-		Vector3.new(tray.CFrame.Position.X, startPosition.Y, tray.CFrame.Position.Z)
-	local direction = (trayPosition - startPosition).Unit
-	local start = CFrame.lookAt(startPosition, startPosition + direction)
-	model:PivotTo(start)
-	model.Parent = Workspace.CurrentCamera or Workspace
-
-	local root = model.PrimaryPart :: BasePart
-	local gui = Instance.new("BillboardGui")
-	gui.Size = UDim2.fromOffset(200, 40)
-	gui.StudsOffsetWorldSpace = Vector3.new(0, 6, 0)
-	gui.AlwaysOnTop = true
-	gui.LightInfluence = 0
-	UI.text({
-		text = "😈 Sneaky Raptor!",
-		size = UDim2.fromScale(1, 1),
-		color = UI.Theme.orange,
-		outlineThickness = 3,
-		parent = gui,
-	})
-	gui.Parent = root
-
-	local prompt = Instance.new("ProximityPrompt")
-	prompt.ActionText = "Chase away!"
-	prompt.ObjectText = "Thief"
-	prompt.RequiresLineOfSight = false
-	prompt.MaxActivationDistance = 16
-	prompt.Parent = root
-
-	-- sneak toward the egg tray
-	local value = Instance.new("CFrameValue")
-	value.Value = start
-	value.Changed:Connect(function(cf: CFrame)
-		if model.Parent then
-			model:PivotTo(cf)
-		end
-	end)
-	local goal = CFrame.lookAt(trayPosition - direction * 3, trayPosition)
-	TweenService:Create(value, TweenInfo.new(10, Enum.EasingStyle.Linear), { Value = goal }):Play()
-
-	prompt.Triggered:Connect(function()
-		prompt.Enabled = false
-		local away = model:GetPivot() * CFrame.Angles(0, math.pi, 0)
-		value.Value = away
-		TweenService:Create(value, TweenInfo.new(1.2, Enum.EasingStyle.Quad), {
-			Value = away * CFrame.new(0, 0, -40),
-		}):Play()
-		task.delay(1.3, function()
-			if npc == model then
-				removeNpc()
-			end
-		end)
-		Net.send("TutorialAction", "ChasedThief")
-	end)
-	npc = model
-end
-
 -- ===== Steps =====
 
 local function setStep(step: number)
@@ -189,11 +104,6 @@ local function setStep(step: number)
 		bannerText.Text = info.text
 		stepChip.label.Text = `STEP {step} / {#TutorialData.STEPS}`
 		UI.pop(banner)
-	end
-	if step == 5 then
-		spawnNpc()
-	else
-		removeNpc()
 	end
 end
 
