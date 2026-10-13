@@ -32,6 +32,7 @@ export type ClientEvent =
 	| "SetBuddy"
 	| "RenameDino"
 	| "FuseGolden"
+	| "Rebirth"
 
 export type ServerEvent = "State" | "Notify" | "Effect"
 
@@ -60,6 +61,7 @@ local CLIENT_EVENTS: { ClientEvent } = {
 	"SetBuddy",
 	"RenameDino",
 	"FuseGolden",
+	"Rebirth",
 }
 
 local SERVER_EVENTS: { ServerEvent } = { "State", "Notify", "Effect" }

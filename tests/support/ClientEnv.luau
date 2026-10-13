@@ -403,6 +403,7 @@ function ClientEnv.new(options: Options?)
 			dexClaimed = {},
 			settings = { music = true, sfx = true },
 			buddy = nil,
+			rebirths = 0,
 		}
 		for k, v in overrides or {} do
 			base[k] = v

@@ -12,6 +12,7 @@ export type MultiplierInput = {
 	club: boolean,
 	adBoost: boolean,
 	friends: number,
+	rebirths: number?,
 }
 
 -- Additive bonuses (friends, club) stack together, then multiplicative boosts apply.
@@ -29,7 +30,17 @@ function Economy.coinMultiplier(input: MultiplierInput): number
 	if input.vip then
 		multiplier *= Config.VIP_COIN_MULTIPLIER
 	end
-	return multiplier
+	return multiplier * Economy.rebirthMultiplier(input.rebirths or 0)
+end
+
+-- Permanent coin boost from rebirths.
+function Economy.rebirthMultiplier(rebirths: number): number
+	return 1 + rebirths * Config.REBIRTH_BONUS
+end
+
+-- Coins needed for the next rebirth after `rebirths` of them.
+function Economy.rebirthCost(rebirths: number): number
+	return math.floor(Config.REBIRTH_BASE_COST * Config.REBIRTH_COST_GROWTH ^ rebirths)
 end
 
 -- Coins from selling a dino.

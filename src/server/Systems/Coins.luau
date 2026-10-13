@@ -28,7 +28,19 @@ function Coins.setupLeaderstats(player: Player)
 	dex.Name = "Dex"
 	dex.Value = 0
 	dex.Parent = stats
+	local rebirths = Instance.new("IntValue")
+	rebirths.Name = "Rebirths"
+	rebirths.Value = if profile then profile.rebirths else 0
+	rebirths.Parent = stats
 	stats.Parent = player
+end
+
+function Coins.setRebirths(player: Player, count: number)
+	local stats = player:FindFirstChild("leaderstats")
+	local value = stats and stats:FindFirstChild("Rebirths")
+	if value and value:IsA("IntValue") then
+		value.Value = count
+	end
 end
 
 function Coins.setDexCount(player: Player, count: number)

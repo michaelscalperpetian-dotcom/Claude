@@ -548,6 +548,25 @@ describe("Square studs", function()
 	end)
 end)
 
+describe("Rebirth", function()
+	it("costs more each time and boosts coins for good", function()
+		eq(Economy.rebirthCost(0), Config.REBIRTH_BASE_COST)
+		eq(Economy.rebirthCost(2), Config.REBIRTH_BASE_COST * Config.REBIRTH_COST_GROWTH ^ 2)
+		eq(Economy.rebirthMultiplier(0), 1)
+		eq(Economy.rebirthMultiplier(2), 1 + 2 * Config.REBIRTH_BONUS)
+		local base = {
+			doubleCoins = true,
+			vip = false,
+			club = false,
+			adBoost = false,
+			friends = 0,
+		}
+		local without = Economy.coinMultiplier(base)
+		base.rebirths = 3
+		eq(Economy.coinMultiplier(base), without * Economy.rebirthMultiplier(3), "stacks on top")
+	end)
+end)
+
 describe("Golden dinos", function()
 	it("earn GOLDEN_MULTIPLIER x and cost a few minutes of income to make", function()
 		eq(Economy.goldenMultiplier(true), Config.GOLDEN_MULTIPLIER)

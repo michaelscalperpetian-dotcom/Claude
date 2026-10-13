@@ -293,6 +293,7 @@ local MENU = {
 	{ name = "Rewards", icon = "🎁", caption = "Daily", color = UI.Theme.orange },
 	{ name = "Quests", icon = "📜", caption = "Quests", color = UI.Theme.purple },
 	{ name = "Dex", icon = "📖", caption = "Dex", color = UI.Theme.pink },
+	{ name = "Rebirth", icon = "⭐", caption = "Rebirth", color = UI.Theme.gold },
 	{ name = "Settings", icon = "⚙️", caption = "Settings", color = UI.Theme.teal },
 }
 
@@ -301,8 +302,8 @@ local function buildMenu()
 		Name = "Menu",
 		BackgroundTransparency = 1,
 		AnchorPoint = Vector2.new(0, 0.5),
-		Position = UDim2.new(0, 16, 0.44, 0),
-		Size = UDim2.fromOffset(70 * 2 + 18, 3 * 70 + 2 * 34),
+		Position = UDim2.new(0, 16, 0.5, 0),
+		Size = UDim2.fromOffset(70 * 2 + 18, 4 * 70 + 3 * 34),
 		Parent = screen,
 	}, {
 		UI.new("UIGridLayout", {

@@ -64,6 +64,7 @@ local function defaultProfile(now: number): Profile
 		codes = {},
 		settings = { music = true, sfx = true },
 		nicknames = {},
+		rebirths = 0,
 	}
 end
 

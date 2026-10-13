@@ -49,6 +49,7 @@ function Stats.multiplier(profile: Profile, session: Session, now: number): numb
 		club = session.subscribed,
 		adBoost = profile.boosts.coinsUntil > now,
 		friends = Stats.friendsHere(session),
+		rebirths = profile.rebirths,
 	})
 end
 

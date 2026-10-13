@@ -637,6 +637,38 @@ step("three of a species fuse into one Golden dino", function()
 	eq(#profile.dinos, 2, "bad arguments ignored")
 end)
 
+step("rebirth trades all coins for a permanent boost and keeps the dinos", function()
+	local profile = profileOf(cara)
+	local session = S.Sessions.get(cara)
+	local cost = Economy.rebirthCost(0)
+	profile.coins = cost - 1
+	handlers.Rebirth(cara)
+	eq(profile.rebirths, 0, "not enough coins")
+
+	profile.coins = cost + 500
+	profile.pendingCoins = 77
+	local dinos = #profile.dinos
+	local now = Clock.now()
+	local before = Stats.multiplier(profile, session, now)
+	handlers.Rebirth(cara)
+	eq(profile.rebirths, 1, "rebirthed")
+	eq(profile.coins, 0, "wallet reset")
+	eq(profile.pendingCoins, 0, "coin pad reset")
+	eq(#profile.dinos, dinos, "dinos kept")
+	eq(
+		Stats.multiplier(profile, session, now),
+		before * Economy.rebirthMultiplier(1),
+		"coins boosted"
+	)
+	eq(cara.leaderstats.Rebirths.Value, 1, "leaderstats")
+	local snapshot = S.State.snapshot(cara)
+	eq(snapshot.rebirths, 1, "snapshot")
+
+	profile.coins = cost
+	handlers.Rebirth(cara)
+	eq(profile.rebirths, 1, "the next one costs more")
+end)
+
 step("leaving cleans up the nest and frees the plot", function()
 	local index = bobSession.plotIndex
 	S.Raids.onLeave(bob)

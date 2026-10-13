@@ -26,6 +26,10 @@ local Config = {
 	-- Golden dinos: fuse 3 of one species into a Golden one that earns this much more.
 	GOLDEN_MULTIPLIER = 3,
 	GOLDEN_FEE_SECONDS = 300, -- fee = this many seconds of the species' adult income
+	-- Rebirth: trade all your coins for +REBIRTH_BONUS coins forever (stacks).
+	REBIRTH_BASE_COST = 1000000,
+	REBIRTH_COST_GROWTH = 4, -- each rebirth costs this many times the last
+	REBIRTH_BONUS = 0.5,
 	PASS_EXTRA_SLOTS = 4,
 	TRAY_CAPACITY = 6,
 

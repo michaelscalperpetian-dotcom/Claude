@@ -106,7 +106,7 @@ taskLib.wait(0.05)
 capture("dino")
 env.pushState(base)
 
-for _, extra in { "Quests", "Codes", "Settings" } do
+for _, extra in { "Quests", "Codes", "Settings", "Rebirth" } do
 	if Panels.has and Panels.has(extra) then
 		Panels.open(extra)
 		taskLib.wait(0.05)

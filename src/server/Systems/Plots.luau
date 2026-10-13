@@ -123,7 +123,9 @@ function Plots.updateSign(player: Player)
 	end
 	local likes = if profile then profile.likes else 0
 	local shielded = profile ~= nil and Stats.shieldUntil(profile) > Clock.now()
-	local info = `❤ {Format.number(likes)} likes`
+	local rebirths = if profile then profile.rebirths else 0
+	local info = (if rebirths > 0 then `⭐{rebirths}  ` else "")
+		.. `❤ {Format.number(likes)} likes`
 		.. (if shielded then "  🛡 New Nest Shield" else "")
 	World.setSign(plot, `{player.DisplayName}'s Nest`, info)
 	if profile then

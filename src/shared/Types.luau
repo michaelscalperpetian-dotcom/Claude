@@ -62,6 +62,7 @@ export type Profile = {
 	settings: Settings,
 	buddy: string?, -- id of the dino following the player around
 	nicknames: { [string]: string }, -- dino id -> name as typed (server only, re-filtered on join)
+	rebirths: number,
 }
 
 -- Today's quest progress; reset when the UTC day changes.
@@ -111,6 +112,7 @@ export type Snapshot = {
 	dexClaimed: { [string]: boolean },
 	settings: Settings,
 	buddy: string?,
+	rebirths: number,
 }
 
 -- Tutorial steps (server is authoritative; client only renders hints).

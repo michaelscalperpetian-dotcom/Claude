@@ -71,6 +71,7 @@ function State.snapshot(player: Player): Types.Snapshot?
 		dexClaimed = profile.dexClaimed,
 		settings = profile.settings,
 		buddy = profile.buddy,
+		rebirths = profile.rebirths,
 	}
 end
 
