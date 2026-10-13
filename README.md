@@ -99,7 +99,7 @@ Purchases follow the rules in the plan (section 2.5):
 | **Progression** | Dino-Dex (with mutations) with prizes at 3, 6, 9 and all 21 species, a 7-day login streak, slot and incubator upgrades bought with coins, and selling dinos and eggs. |
 | **Daily quests** | Three fresh quests every day (hatch eggs, buy eggs, collect coins, roar...), each with a coin or boost reward, plus a bonus for finishing all three. |
 | **Codes** | A code box in ⚙️ Settings. Codes are listed in `src/server/Lib/CodeData.luau` (server only, so nobody can read them early): add a NAME in capitals, a reward, and optionally an `expires` time. Each player can use each code once. Starts with `DINO`, `RAWR` and `EGGCELLENT`. |
-| **Dino buddy** | Pick any of your dinos as a buddy and it follows you around the island. |
+| **Dino buddy & nicknames** | Pick any of your dinos as a buddy and it follows you around the island. Tap ✏️ in a dino's card to name it; names go through Roblox's text filter (and again every time you join) before anyone sees them. |
 | **Social (no chat needed)** | Friend coin boost (+10% each, up to +40%), likes on nest signs, a Roar emote, invites, and riding your dinos (with the pass). |
 | **Look & feel** | A cartoon island with square studs on every surface, a volcano, candy-striped hub, day/night lighting with glowing lamps, chunky rounded UI that scales for phones, tablets and PCs, a hatch reveal with light beams, coins that fly to your counter, and sound effects (switchable in ⚙️ Settings). |
 | **Saving** | Session-locked DataStore profiles with retries, autosave, save on leave and on shutdown, and schema versioning. |

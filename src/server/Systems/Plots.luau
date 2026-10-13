@@ -26,7 +26,13 @@ local Plots = {}
 
 Plots.EGG_TAG = "IncubatorEgg"
 
-type DinoRender = { model: Model, stage: number, mutation: string, home: number }
+type DinoRender = {
+	model: Model,
+	stage: number,
+	mutation: string,
+	home: number,
+	label: TextLabel,
+}
 type EggRender = { id: string, model: Model }
 
 type Render = {
@@ -150,6 +156,9 @@ local function labelFor(dino: Types.DinoRecord, stage: number): string
 	local name = if species then species.name else dino.species
 	local mutation = MutationData.get(dino.mutation)
 	local prefix = if mutation then mutation.emoji .. " " .. mutation.name .. " " else ""
+	if dino.name then
+		return `{prefix}{dino.name} • {Growth.stageName(stage)}`
+	end
 	return `{prefix}{name} • {Growth.stageName(stage)}`
 end
 
@@ -159,7 +168,7 @@ local function buildDino(
 	dino: Types.DinoRecord,
 	stage: number,
 	home: number
-): Model
+): (Model, TextLabel)
 	local model = DinoModel.build(dino.species, stage, dino.mutation, "World")
 	model.Name = "Dino_" .. dino.id
 	model:SetAttribute("DinoId", dino.id)
@@ -207,7 +216,7 @@ local function buildDino(
 
 	CollectionService:AddTag(model, DinoModel.TAG)
 	model.Parent = plot.dinoFolder
-	return model
+	return model, text
 end
 
 function Plots.syncDinos(player: Player)
@@ -229,10 +238,13 @@ function Plots.syncDinos(player: Player)
 			existing = nil
 		end
 		if not existing then
-			local model = buildDino(player, plot, dino, stage, home)
+			local model, label = buildDino(player, plot, dino, stage, home)
 			render.dinos[dino.id] =
-				{ model = model, stage = stage, mutation = mutation, home = home }
-		elseif existing.home ~= home then
+				{ model = model, stage = stage, mutation = mutation, home = home, label = label }
+		else
+			existing.label.Text = labelFor(dino, stage) -- picks up renames
+		end
+		if existing and existing.home ~= home then
 			local spot = plot.homeSpots[math.clamp(home, 1, #plot.homeSpots)]
 			existing.model:SetAttribute("Home", spot)
 			existing.model:PivotTo(spot)

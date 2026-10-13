@@ -155,11 +155,12 @@ function ServerEnv.new(options: Options?)
 				return roblox.Enum.ShowAdResult.ShowCompleted
 			end,
 		},
+		-- Hashes "badword" like Roblox's filter would.
 		TextService = {
 			FilterStringAsync = function(_, text)
 				return {
 					GetNonChatStringForBroadcastAsync = function()
-						return text
+						return (string.gsub(text, "badword", "#######"))
 					end,
 				}
 			end,

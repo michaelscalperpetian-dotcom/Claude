@@ -63,6 +63,7 @@ local function defaultProfile(now: number): Profile
 		dexClaimed = {},
 		codes = {},
 		settings = { music = true, sfx = true },
+		nicknames = {},
 	}
 end
 

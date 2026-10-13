@@ -548,6 +548,38 @@ step("snapshot has everything the HUD needs", function()
 	eq(snapshot.maxSlots, Config.BASE_DINO_SLOTS + 1, "slots include upgrade")
 end)
 
+step("dinos can be nicknamed through the text filter", function()
+	local profile = profileOf(alice)
+	local dino = profile.dinos[1]
+	handlers.RenameDino(alice, dino.id, "  Rex   the\nGreat ")
+	eq(dino.name, "Rex the Great", "filtered name shown")
+	eq(profile.nicknames[dino.id], "Rex the Great", "typed name kept on the server")
+	local label = S.Plots.dinoModel(alice, dino.id):FindFirstChild("Label", true)
+	assert(
+		label and string.find(label:FindFirstChildOfClass("TextLabel").Text, "Rex the Great"),
+		"nest label"
+	)
+
+	handlers.RenameDino(alice, dino.id, "my badword dino")
+	eq(dino.name, "Rex the Great", "blocked names aren't saved")
+	handlers.RenameDino(alice, dino.id, string.rep("a", Config.NICKNAME_MAX_LENGTH + 1))
+	eq(dino.name, "Rex the Great", "too long")
+	handlers.RenameDino(alice, dino.id, 42)
+	handlers.RenameDino(alice, "nope", "Ghost")
+	eq(dino.name, "Rex the Great", "bad arguments ignored")
+
+	S.Nicknames.refresh(alice)
+	eq(dino.name, "Rex the Great", "re-filtered on join")
+
+	handlers.RenameDino(alice, dino.id, "   ")
+	eq(dino.name, nil, "cleared")
+	eq(profile.nicknames[dino.id], nil, "cleared on the server")
+
+	handlers.RenameDino(alice, dino.id, "Chompy")
+	S.Nest.removeDino(alice, dino.id)
+	eq(profile.nicknames[dino.id], nil, "forgotten when the dino leaves")
+end)
+
 step("leaving cleans up the nest and frees the plot", function()
 	local index = bobSession.plotIndex
 	S.Raids.onLeave(bob)

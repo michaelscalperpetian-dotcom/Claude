@@ -96,6 +96,8 @@ function ClientEnv.new(options: Options?)
 		end
 	end
 	env.viewportListeners = {}
+	roblox.implementMethod("TextBox", "CaptureFocus", function() end)
+	roblox.implementMethod("TextBox", "ReleaseFocus", function() end)
 	roblox.implementMethod("Camera", "GetPropertyChangedSignal", function()
 		return {
 			Connect = function(_, fn)

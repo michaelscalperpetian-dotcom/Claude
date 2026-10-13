@@ -1,6 +1,7 @@
 --!strict
--- Info card for one of your dinos (opened from its "View" prompt): growth
--- progress, income, mutation, and Sell / Ride / Buddy buttons.
+-- Info card for one of your dinos (opened from its "View" prompt): its name
+-- (tap ✏️ to rename), growth progress, income, mutation, and Sell / Ride /
+-- Buddy buttons.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -25,6 +26,8 @@ local shownKey = ""
 local showcase: Frame
 local previewHolder: Frame
 local nameLabel: TextLabel
+local nameBox: TextBox
+local renameButton: UI.Button
 local rarityChip: UI.Chip
 local stageChip: UI.Chip
 local mutationChip: UI.Chip
@@ -79,7 +82,8 @@ local function refresh()
 			UI.lighten(if mutation then UI.rgb(mutation.color) else rarityColor, 0.65)
 	end
 
-	nameLabel.Text = species.name
+	Panels.setTitle("Dino", `🦖 {species.name}`)
+	nameLabel.Text = dino.name or species.name
 	rarityChip.label.Text = species.rarity
 	UI.setChipColor(rarityChip, rarityColor)
 	stageChip.label.Text = Growth.stageName(stage)
@@ -134,7 +138,27 @@ local function refresh()
 	)
 end
 
+local function stopRenaming()
+	nameBox.Visible = false
+	nameLabel.Visible = true
+	renameButton.root.Visible = true
+end
+
+local function startRenaming()
+	local snapshot = ClientState.get()
+	local dino = if snapshot and currentId then findDino(snapshot, currentId) else nil
+	if not dino then
+		return
+	end
+	nameBox.Text = dino.name or ""
+	nameLabel.Visible = false
+	renameButton.root.Visible = false
+	nameBox.Visible = true
+	nameBox:CaptureFocus()
+end
+
 function DinoPanel.open(dinoId: string)
+	stopRenaming()
 	currentId = dinoId
 	shownKey = ""
 	sellArmedUntil = 0
@@ -168,11 +192,54 @@ function DinoPanel.init()
 	}) :: Frame
 	nameLabel = UI.body({
 		text = "",
-		size = UDim2.new(1, 0, 0, 44),
+		size = UDim2.new(1, -60, 0, 44),
 		font = UI.Font,
 		align = Enum.TextXAlignment.Left,
 		maxTextSize = 38,
 		parent = right,
+	})
+	nameBox = UI.new("TextBox", {
+		Name = "NameBox",
+		Text = "",
+		PlaceholderText = "Give your dino a name!",
+		ClearTextOnFocus = false,
+		Visible = false,
+		Size = UDim2.new(1, -6, 0, 46),
+		BackgroundColor3 = UI.Theme.white,
+		TextColor3 = UI.Theme.ink,
+		PlaceholderColor3 = UI.Theme.grey,
+		Font = UI.Font,
+		TextScaled = true,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		ZIndex = 3,
+		Parent = right,
+	}, {
+		UI.corner(14),
+		UI.stroke(UI.Theme.ink, 3),
+		UI.padding(14, 8),
+		UI.new("UITextSizeConstraint", { MaxTextSize = 28 }),
+	}) :: TextBox
+	nameBox.FocusLost:Connect(function()
+		local id = currentId
+		local snapshot = ClientState.get()
+		local dino = if snapshot and id then findDino(snapshot, id) else nil
+		stopRenaming()
+		if id and dino and nameBox.Text ~= (dino.name or "") then
+			Net.send("RenameDino", id, nameBox.Text)
+		end
+	end)
+	renameButton = UI.button({
+		name = "Rename",
+		text = "✏️",
+		size = UDim2.fromOffset(50, 44),
+		position = UDim2.new(1, -6, 0, 0),
+		anchor = Vector2.new(1, 0),
+		color = UI.Theme.purple,
+		radius = 12,
+		depth = 4,
+		maxTextSize = 24,
+		parent = right,
+		onClick = startRenaming,
 	})
 	local tags = UI.new("Frame", {
 		Name = "Tags",

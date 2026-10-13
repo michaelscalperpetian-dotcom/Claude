@@ -8,6 +8,7 @@ export type DinoRecord = {
 	mutation: string?,
 	bornAt: number, -- unix seconds; stage is computed from age
 	lastLaidAt: number,
+	name: string?, -- nickname, already through Roblox's text filter
 }
 
 -- "shop": species rolled at hatch from the egg's odds
@@ -59,6 +60,7 @@ export type Profile = {
 	codes: { [string]: boolean }, -- redeemed codes
 	settings: Settings,
 	buddy: string?, -- id of the dino following the player around
+	nicknames: { [string]: string }, -- dino id -> name as typed (server only, re-filtered on join)
 }
 
 -- Today's quest progress; reset when the UTC day changes.
