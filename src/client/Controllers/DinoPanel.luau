@@ -1,7 +1,7 @@
 --!strict
 -- Info card for one of your dinos (opened from its "View" prompt): its name
 -- (tap ✏️ to rename), growth progress, income, mutation, Make Golden (fuse 3
--- of a species), and Sell / Ride / Buddy buttons.
+-- of a species), Feed (fruit from the fruit trees), and Sell / Ride / Buddy.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -11,6 +11,7 @@ local DinoData = require(ReplicatedStorage.Shared.Data.DinoData)
 local DinoModel = require(ReplicatedStorage.Shared.Visual.DinoModel)
 local Economy = require(ReplicatedStorage.Shared.Util.Economy)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
+local FruitData = require(ReplicatedStorage.Shared.Data.FruitData)
 local Growth = require(ReplicatedStorage.Shared.Util.Growth)
 local MutationData = require(ReplicatedStorage.Shared.Data.MutationData)
 local Net = require(ReplicatedStorage.Shared.Net)
@@ -41,6 +42,7 @@ local sellButton: UI.Button
 local rideButton: UI.Button
 local buddyButton: UI.Button
 local goldenButton: UI.Button
+local feedButton: UI.Button
 local sellArmedUntil = 0
 local goldenArmedUntil = 0
 
@@ -174,6 +176,23 @@ local function refresh()
 				enabled = true,
 			})
 		end
+	end
+
+	local fruitKind = FruitData.nextToFeed(snapshot.fruit)
+	if stage >= Growth.GIANT then
+		UI.setButton(
+			feedButton,
+			{ text = "🏆 Fully grown", color = UI.Theme.red, enabled = false }
+		)
+	elseif fruitKind then
+		local info = FruitData.FRUITS[fruitKind]
+		UI.setButton(feedButton, {
+			text = `{info.emoji} Feed ({snapshot.fruit[fruitKind]})`,
+			color = UI.Theme.red,
+			enabled = true,
+		})
+	else
+		UI.setButton(feedButton, { text = "🍎 No fruit", color = UI.Theme.red, enabled = true })
 	end
 
 	local isBuddy = snapshot.buddy == dino.id
@@ -407,6 +426,31 @@ function DinoPanel.init()
 			else
 				goldenArmedUntil = Clock.now() + 3
 				refresh()
+			end
+		end,
+	})
+
+	feedButton = UI.button({
+		name = "Feed",
+		text = "🍎 Feed",
+		size = UDim2.new(0.45, -5, 0, 58),
+		color = UI.Theme.red,
+		order = 2,
+		maxTextSize = 22,
+		parent = care,
+		onClick = function()
+			local id = currentId
+			local snapshot = ClientState.get()
+			if not id or not snapshot then
+				return
+			end
+			if FruitData.nextToFeed(snapshot.fruit) then
+				Net.send("FeedDino", id)
+			else
+				Toasts.show(
+					"Pick up fruit under the 🍎 fruit trees, then feed it here to grow your dino faster!",
+					"info"
+				)
 			end
 		end,
 	})

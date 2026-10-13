@@ -72,6 +72,7 @@ function State.snapshot(player: Player): Types.Snapshot?
 		settings = profile.settings,
 		buddy = profile.buddy,
 		rebirths = profile.rebirths,
+		fruit = profile.fruit,
 	}
 end
 

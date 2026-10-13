@@ -173,6 +173,35 @@ function Props.fern(base: Vector3, s: number, gen: Gen, parent: Instance): Model
 	return m
 end
 
+-- A round tree heavy with red apples, plus invisible "FruitSpot" markers on
+-- the ground around it where the Fruit system drops pickable fruit.
+function Props.fruitTree(base: Vector3, s: number, gen: Gen, parent: Instance): Model
+	local m = Props.tree(base, s, gen, parent)
+	m.Name = "FruitTree"
+	local canopy = base + Vector3.new(0, 9.5 * s, 0)
+	for i = 1, 7 do
+		local a = i * (math.pi * 2 / 7) + gen.next() * 0.4
+		local p = canopy
+			+ Vector3.new(math.sin(a) * 4.8, between(gen, -2.6, 1.2), math.cos(a) * 4.8) * s
+		Build.ball(0.95 * s, p, Palette.red, m, { decor = true, collide = false, shadow = false })
+	end
+	for i = 1, 3 do
+		local a = i * (math.pi * 2 / 3) + gen.next() * 0.6
+		local spot = Instance.new("Part")
+		spot.Name = "FruitSpot"
+		spot.Anchored = true
+		spot.CanCollide = false
+		spot.CanTouch = false
+		spot.CanQuery = false
+		spot.Transparency = 1
+		spot.Size = Vector3.new(1, 1, 1)
+		spot.CFrame =
+			CFrame.new(base + Vector3.new(math.sin(a) * 4.6 * s, 0.9, math.cos(a) * 4.6 * s))
+		spot.Parent = m
+	end
+	return m
+end
+
 function Props.bush(base: Vector3, s: number, gen: Gen, parent: Instance): Model
 	local m = Build.model("Bush", parent)
 	local yaw = CFrame.Angles(0, gen.next() * math.pi * 2, 0)

@@ -17,6 +17,14 @@ export type Quest = {
 
 local POOL: { Quest } = {
 	{
+		id = "feed",
+		event = "feed",
+		goal = 3,
+		text = "Feed your dinos 3 fruits",
+		emoji = "🍎",
+		reward = { kind = "coins", minutes = 10, minimum = 400, label = "Coins", emoji = "💰" },
+	},
+	{
 		id = "hatch",
 		event = "hatch",
 		goal = 3,

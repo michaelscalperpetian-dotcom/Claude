@@ -63,6 +63,7 @@ export type Profile = {
 	buddy: string?, -- id of the dino following the player around
 	nicknames: { [string]: string }, -- dino id -> name as typed (server only, re-filtered on join)
 	rebirths: number,
+	fruit: { [string]: number }, -- basket: FruitData kind -> count
 }
 
 -- Today's quest progress; reset when the UTC day changes.
@@ -113,6 +114,7 @@ export type Snapshot = {
 	settings: Settings,
 	buddy: string?,
 	rebirths: number,
+	fruit: { [string]: number },
 }
 
 -- Tutorial steps (server is authoritative; client only renders hints).

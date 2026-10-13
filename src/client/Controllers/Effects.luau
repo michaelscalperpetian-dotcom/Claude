@@ -12,6 +12,7 @@ local Workspace = game:GetService("Workspace")
 local DinoData = require(ReplicatedStorage.Shared.Data.DinoData)
 local DinoModel = require(ReplicatedStorage.Shared.Visual.DinoModel)
 local Economy = require(ReplicatedStorage.Shared.Util.Economy)
+local FruitData = require(ReplicatedStorage.Shared.Data.FruitData)
 local EggModel = require(ReplicatedStorage.Shared.Visual.EggModel)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
 local MutationData = require(ReplicatedStorage.Shared.Data.MutationData)
@@ -566,6 +567,16 @@ local function onEffect(kind: string, data: { [string]: any })
 				golden = true,
 			})
 			task.spawn(processQueue)
+		end
+	elseif kind == "Fruit" then
+		local info = if typeof(data.kind) == "string" then FruitData.get(data.kind) else nil
+		if info and typeof(data.position) == "Vector3" then
+			worldText(data.position, `+1 {info.emoji} ({data.count or 1})`, UI.rgb(info.color), 28)
+		end
+	elseif kind == "Feed" then
+		if typeof(data.position) == "Vector3" then
+			burst(data.position, UI.Theme.pink)
+			worldText(data.position, "Yum! 💕", UI.Theme.pink, 34)
 		end
 	elseif kind == "Roar" then
 		if typeof(data.position) == "Vector3" then

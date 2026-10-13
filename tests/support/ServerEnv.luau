@@ -44,6 +44,14 @@ function ServerEnv.new(options: Options?)
 
 	local friendships = {}
 	env.friendships = friendships
+	-- Touch events never fire under Lune; tests call the handlers directly.
+	roblox.implementProperty("Part", "Touched", function()
+		return {
+			Connect = function()
+				return { Disconnect = function() end }
+			end,
+		}
+	end)
 	roblox.implementMethod("Player", "IsFriendsWithAsync", function(player, userId)
 		return friendships[player.UserId .. ":" .. userId] == true
 	end)
@@ -153,6 +161,11 @@ function ServerEnv.new(options: Options?)
 			end,
 			ShowRewardedVideoAdAsync = function()
 				return roblox.Enum.ShowAdResult.ShowCompleted
+			end,
+		},
+		UserService = {
+			GetUserInfosByUserIdsAsync = function()
+				return {}
 			end,
 		},
 		-- Hashes "badword" like Roblox's filter would.

@@ -669,6 +669,78 @@ step("rebirth trades all coins for a permanent boost and keeps the dinos", funct
 	eq(profile.rebirths, 1, "the next one costs more")
 end)
 
+step("fruit grows under the trees and feeding a dino makes it grow", function()
+	local FruitData = Loader.load("src/shared/Data/FruitData")
+	local roblox = require("@lune/roblox")
+	S.Fruit.setup()
+	local spots = S.Fruit.spots()
+	eq(#spots, Loader.load("src/server/Lib/Island").FRUIT_TREES * 3, "three spots per fruit tree")
+	S.Fruit.spawnDue(Clock.now())
+	local spot = spots[1]
+	local fruit = spot.fruit
+	assert(fruit, "fruit grew")
+	local kind = fruit:GetAttribute("Kind")
+	local profile = profileOf(cara)
+	local here = fruit.CFrame.Position
+	env.moveTo(cara, here + roblox.Vector3.new(60, 0, 0))
+	eq(S.Fruit.collect(cara, fruit), false, "too far away")
+	env.moveTo(cara, here)
+	local before = profile.fruit[kind]
+	eq(S.Fruit.collect(cara, fruit), true, "picked")
+	eq(profile.fruit[kind], before + 1, "in the basket")
+	eq(spot.fruit, nil, "gone from the ground")
+	eq(S.Fruit.collect(cara, fruit), false, "can't pick it twice")
+	S.Fruit.spawnDue(Clock.now())
+	eq(spot.fruit, nil, "regrows later, not right away")
+
+	local other = spots[2].fruit
+	profile.fruit[other:GetAttribute("Kind")] = FruitData.get(other:GetAttribute("Kind")).cap
+	env.moveTo(cara, other.CFrame.Position)
+	eq(S.Fruit.collect(cara, other), false, "basket full")
+
+	local baby = S.Nest.addDino(cara, "Pachy", nil, 1)
+	profile.fruit.apple = 1
+	profile.fruit.golden = 1
+	local born = baby.bornAt
+	handlers.FeedDino(cara, baby.id)
+	eq(profile.fruit.apple, 0, "apples first")
+	eq(baby.bornAt, born - FruitData.FRUITS.apple.grows, "grew")
+	handlers.FeedDino(cara, baby.id)
+	eq(profile.fruit.golden, 0, "then golden apples")
+	eq(
+		baby.bornAt,
+		born - FruitData.FRUITS.apple.grows - FruitData.FRUITS.golden.grows,
+		"grew more"
+	)
+	handlers.FeedDino(cara, baby.id)
+	eq(
+		baby.bornAt,
+		born - FruitData.FRUITS.apple.grows - FruitData.FRUITS.golden.grows,
+		"no fruit left"
+	)
+	local giant = S.Nest.addDino(cara, "Compy", nil, 4)
+	profile.fruit.apple = 2
+	handlers.FeedDino(cara, giant.id)
+	eq(profile.fruit.apple, 2, "giants don't need feeding")
+	handlers.FeedDino(cara, 7)
+	eq(profile.fruit.apple, 2, "bad arguments ignored")
+end)
+
+step("the Hall of Fame shows the top players", function()
+	profileOf(alice).totalEarned = 5000
+	profileOf(bob).totalEarned = 9000
+	profileOf(cara).totalEarned = 100
+	S.Leaderboards.refresh()
+	assert(S.Leaderboards.isMock(), "no DataStores in tests")
+	local board = env.workspace.Map.HallOfFame.Earned.Face.Board
+	eq(board.Row1.Player.Text, bob.DisplayName, "richest first")
+	eq(board.Row2.Player.Text, alice.DisplayName, "second")
+	assert(string.find(board.Row1.Score.Text, "9"), "value shown")
+	eq(board.Row1.Rank.Text, "🥇", "gold medal")
+	local rebirths = env.workspace.Map.HallOfFame.Rebirths.Face.Board
+	eq(rebirths.Row1.Player.Text, cara.DisplayName, "most rebirths")
+end)
+
 step("leaving cleans up the nest and frees the plot", function()
 	local index = bobSession.plotIndex
 	S.Raids.onLeave(bob)

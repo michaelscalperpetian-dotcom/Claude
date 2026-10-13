@@ -13,6 +13,7 @@ local EggModel = require(ReplicatedStorage.Shared.Visual.EggModel)
 local DinoModel = require(ReplicatedStorage.Shared.Visual.DinoModel)
 local Palette = require(ReplicatedStorage.Shared.Palette)
 local Rng = require(ReplicatedStorage.Shared.Util.Rng)
+local BoardData = require(script.Parent.BoardData)
 local Build = require(script.Parent.Build)
 local Props = require(script.Parent.Props)
 
@@ -27,6 +28,10 @@ Island.PLAZA_RADIUS = 40
 Island.RING_PATH_RADIUS = 86
 Island.GATE_RADIUS = Config.PLOT_RING_RADIUS - HALF
 Island.VOLCANO_ANGLE = PLOT_ANGLE / 2
+-- Hall of Fame (leaderboards): between two paths, opposite the volcano.
+Island.HALL_ANGLE = PLOT_ANGLE * 4.5
+Island.HALL_RADIUS = 66
+Island.FRUIT_TREES = 8
 Island.VOLCANO_POSITION = Build.polar(PLOT_ANGLE / 2, 205)
 Island.VOLCANO_RADIUS = 46
 Island.SHOP_RADIUS = 15
@@ -574,6 +579,12 @@ local function scatter(map: Instance, landList: { Land })
 		if insidePlot(position, radius + 4) or nearPath(position, radius) then
 			return false
 		end
+		if
+			(position - Build.polar(Island.HALL_ANGLE, Island.HALL_RADIUS)).Magnitude
+			< radius + 20
+		then
+			return false
+		end
 		local volcano = Vector3.new(
 			position.X - Island.VOLCANO_POSITION.X,
 			0,
@@ -612,7 +623,7 @@ local function scatter(map: Instance, landList: { Land })
 	end
 
 	-- landmarks first: decorative egg nests and ponds in open meadows
-	for _, spot in { Build.polar(PLOT_ANGLE * 4.5, 62), Build.polar(PLOT_ANGLE * 6.5, 150) } do
+	for _, spot in { Build.polar(PLOT_ANGLE * 2.5, 62), Build.polar(PLOT_ANGLE * 6.5, 150) } do
 		if free(spot, 6) then
 			table.insert(taken, { position = spot, radius = 6 })
 			Props.eggNest(spot, 1.2, gen, folder)
@@ -621,6 +632,13 @@ local function scatter(map: Instance, landList: { Land })
 	place(2, 10, 60, 175, function(p)
 		Props.pond(p, 1 + gen.next() * 0.3, gen, folder)
 	end)
+	-- the fruit orchard, before the other trees so all of it fits
+	local orchard = Instance.new("Folder")
+	orchard.Name = "FruitTrees"
+	place(Island.FRUIT_TREES, 7, 55, 175, function(p)
+		Props.fruitTree(p, 1.05, gen, orchard)
+	end)
+	orchard.Parent = map
 	local reach = Island.LAND_RADIUS + 45 -- peninsulas reach past the main disc
 	place(40, 5, 50, reach, function(p)
 		Props.tree(p, 0.9 + gen.next() * 0.45, gen, folder)
@@ -708,6 +726,94 @@ local function buildIslets(map: Instance)
 end
 
 -- Builds everything and returns the shop's prompt part.
+-- Three leaderboards in an arc facing the hub. Each face has a SurfaceGui
+-- with a title and ROWS rows (Rank / Player / Score labels) to fill in.
+type Column = { name: string, x: number, width: number, align: Enum.TextXAlignment }
+local BOARD_COLUMNS: { Column } = {
+	{ name = "Rank", x = 0.02, width = 0.14, align = Enum.TextXAlignment.Center },
+	{ name = "Player", x = 0.17, width = 0.5, align = Enum.TextXAlignment.Left },
+	{ name = "Score", x = 0.67, width = 0.31, align = Enum.TextXAlignment.Right },
+}
+local function buildHallOfFame(map: Instance)
+	local hall = Build.model("HallOfFame", map)
+	local center = Vector3.new(0, 0, 0)
+	for i, board in BoardData.BOARDS do
+		local angle = Island.HALL_ANGLE + (i - 2) * math.rad(11)
+		local base = Build.polar(angle, Island.HALL_RADIUS)
+		local facing = CFrame.lookAt(base, Vector3.new(center.X, 0, center.Z))
+		local model = Build.model(board.key, hall)
+		for _, side in { -1, 1 } do
+			Build.block(
+				Vector3.new(1.2, 18, 1.2),
+				facing * CFrame.new(side * 5.4, 9, 0.8),
+				Palette.wood,
+				model,
+				{ name = "Post", shadow = false }
+			)
+		end
+		local face = Build.block(
+			Vector3.new(11.4, 15, 0.8),
+			facing * CFrame.new(0, 10, 0),
+			Color3.fromRGB(255, 248, 232),
+			model,
+			{ name = "Face", decor = true }
+		)
+		Build.block(
+			Vector3.new(12.4, 1.4, 1.6),
+			facing * CFrame.new(0, 18.1, 0.2),
+			board.color,
+			model,
+			{ name = "Cap", decor = true, shadow = false }
+		)
+
+		local gui = Instance.new("SurfaceGui")
+		gui.Name = "Board"
+		gui.Face = Enum.NormalId.Front
+		gui.LightInfluence = 0
+		gui.PixelsPerStud = 40
+		gui.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
+		gui.Parent = face
+		local title = Instance.new("TextLabel")
+		title.Name = "Title"
+		title.BackgroundColor3 = board.color
+		title.Size = UDim2.new(1, 0, 0.13, 0)
+		title.Font = Enum.Font.FredokaOne
+		title.Text = board.title
+		title.TextScaled = true
+		title.TextColor3 = Color3.new(1, 1, 1)
+		local titleStroke = Instance.new("UIStroke")
+		titleStroke.Color = Color3.fromRGB(43, 33, 64)
+		titleStroke.Thickness = 3
+		titleStroke.Parent = title
+		title.Parent = gui
+		local rowHeight = 0.85 / BoardData.ROWS
+		for row = 1, BoardData.ROWS do
+			local frame = Instance.new("Frame")
+			frame.Name = "Row" .. row
+			frame.BackgroundColor3 = if row % 2 == 0
+				then Color3.fromRGB(246, 236, 214)
+				else Color3.fromRGB(255, 250, 240)
+			frame.BorderSizePixel = 0
+			frame.Position = UDim2.fromScale(0, 0.14 + (row - 1) * rowHeight)
+			frame.Size = UDim2.fromScale(1, rowHeight)
+			frame.Parent = gui
+			for _, column in BOARD_COLUMNS do
+				local text = Instance.new("TextLabel")
+				text.Name = column.name
+				text.BackgroundTransparency = 1
+				text.Position = UDim2.fromScale(column.x, 0.12)
+				text.Size = UDim2.fromScale(column.width, 0.76)
+				text.Font = Enum.Font.FredokaOne
+				text.TextScaled = true
+				text.TextXAlignment = column.align
+				text.TextColor3 = Color3.fromRGB(43, 33, 64)
+				text.Text = if column.name == "Rank" then tostring(row) else ""
+				text.Parent = frame
+			end
+		end
+	end
+end
+
 function Island.build(map: Instance): BasePart
 	local landList = lands()
 	buildOcean(map)
@@ -716,6 +822,7 @@ function Island.build(map: Instance): BasePart
 	buildFootprints(map)
 	local _, shopPrompt = buildHub(map)
 	buildVolcano(map)
+	buildHallOfFame(map)
 	scatter(map, landList)
 	buildSky(map)
 	buildIslets(map)

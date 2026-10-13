@@ -404,6 +404,7 @@ function ClientEnv.new(options: Options?)
 			settings = { music = true, sfx = true },
 			buddy = nil,
 			rebirths = 0,
+			fruit = { apple = 3, golden = 1 },
 		}
 		for k, v in overrides or {} do
 			base[k] = v
