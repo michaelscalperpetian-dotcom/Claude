@@ -30,6 +30,7 @@ type DinoRender = {
 	model: Model,
 	stage: number,
 	mutation: string,
+	golden: boolean,
 	home: number,
 	label: TextLabel,
 }
@@ -155,7 +156,8 @@ local function labelFor(dino: Types.DinoRecord, stage: number): string
 	local species = DinoData.get(dino.species)
 	local name = if species then species.name else dino.species
 	local mutation = MutationData.get(dino.mutation)
-	local prefix = if mutation then mutation.emoji .. " " .. mutation.name .. " " else ""
+	local prefix = (if dino.golden then "⭐ " else "")
+		.. (if mutation then mutation.emoji .. " " .. mutation.name .. " " else "")
 	if dino.name then
 		return `{prefix}{dino.name} • {Growth.stageName(stage)}`
 	end
@@ -169,7 +171,7 @@ local function buildDino(
 	stage: number,
 	home: number
 ): (Model, TextLabel)
-	local model = DinoModel.build(dino.species, stage, dino.mutation, "World")
+	local model = DinoModel.build(dino.species, stage, dino.mutation, "World", dino.golden)
 	model.Name = "Dino_" .. dino.id
 	model:SetAttribute("DinoId", dino.id)
 	model:SetAttribute("OwnerId", player.UserId)
@@ -232,15 +234,29 @@ function Plots.syncDinos(player: Player)
 		seen[dino.id] = true
 		local stage = Stats.dinoStage(dino, now)
 		local mutation = dino.mutation or ""
+		local golden = dino.golden == true
 		local existing: DinoRender? = render.dinos[dino.id]
-		if existing and (existing.stage ~= stage or existing.mutation ~= mutation) then
+		if
+			existing
+			and (
+				existing.stage ~= stage
+				or existing.mutation ~= mutation
+				or existing.golden ~= golden
+			)
+		then
 			existing.model:Destroy()
 			existing = nil
 		end
 		if not existing then
 			local model, label = buildDino(player, plot, dino, stage, home)
-			render.dinos[dino.id] =
-				{ model = model, stage = stage, mutation = mutation, home = home, label = label }
+			render.dinos[dino.id] = {
+				model = model,
+				stage = stage,
+				mutation = mutation,
+				golden = golden,
+				home = home,
+				label = label,
+			}
 		else
 			existing.label.Text = labelFor(dino, stage) -- picks up renames
 		end

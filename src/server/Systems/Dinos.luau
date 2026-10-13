@@ -89,7 +89,7 @@ local function ride(player: Player, dinoId: string)
 	end
 	Dinos.dismount(player)
 
-	local mount = DinoModel.build(dino.species, stage, dino.mutation, "Mount")
+	local mount = DinoModel.build(dino.species, stage, dino.mutation, "Mount", dino.golden)
 	mount.Name = "Mount"
 	local height = mount:GetAttribute("Height")
 	local saddle = if typeof(height) == "number" then height * 0.55 else 3
@@ -128,7 +128,11 @@ local function sellDino(player: Player, dinoId: string)
 		Dinos.dismount(player)
 	end
 	local stage = Stats.dinoStage(dino, Clock.now())
-	local value = Economy.dinoValue(species.income, stage, MutationData.multiplier(dino.mutation))
+	local value = Economy.dinoValue(
+		species.income,
+		stage,
+		MutationData.multiplier(dino.mutation) * Economy.goldenMultiplier(dino.golden)
+	)
 	Nest.removeDino(player, dinoId)
 	profile.stats.sold += 1
 	local amount = Coins.add(player, value, "Gameplay", "SellDino")

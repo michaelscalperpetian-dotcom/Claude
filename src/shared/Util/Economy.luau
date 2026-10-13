@@ -37,6 +37,16 @@ function Economy.dinoValue(baseIncome: number, stage: number, mutationMultiplier
 	return math.floor(baseIncome * 300 * Growth.SELL[math.clamp(stage, 1, 4)] * mutationMultiplier)
 end
 
+-- Extra income/value multiplier for Golden dinos.
+function Economy.goldenMultiplier(golden: boolean?): number
+	return if golden then Config.GOLDEN_MULTIPLIER else 1
+end
+
+-- Coins it costs to fuse three dinos of a species into a Golden one.
+function Economy.goldenFee(baseIncome: number): number
+	return math.max(100, math.floor(baseIncome * Config.GOLDEN_FEE_SECONDS))
+end
+
 -- Coins from selling a laid egg from your tray.
 function Economy.trayEggValue(baseIncome: number): number
 	return math.max(1, math.floor(baseIncome * 120))

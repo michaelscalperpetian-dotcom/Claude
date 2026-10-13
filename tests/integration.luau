@@ -580,6 +580,63 @@ step("dinos can be nicknamed through the text filter", function()
 	eq(profile.nicknames[dino.id], nil, "forgotten when the dino leaves")
 end)
 
+-- ===== Golden dinos =====
+
+local cara = makePlayer("Cara")
+local Loader = require("./loader")
+local Stats = Loader.load("src/server/Lib/Stats")
+local Economy = Loader.load("src/shared/Util/Economy")
+local DinoData = Loader.load("src/shared/Data/DinoData")
+
+step("three of a species fuse into one Golden dino", function()
+	join(cara)
+	local profile = profileOf(cara)
+	profile.tutorial = 99
+	local now = Clock.now()
+	local a = S.Nest.addDino(cara, "Raptor", nil, 3)
+	local b = S.Nest.addDino(cara, "Raptor", nil, 1)
+	local c = S.Nest.addDino(cara, "Raptor", nil, 2)
+	S.Nest.addDino(cara, "Gallimimus", nil, 1)
+	assert(a and b and c, "three raptors")
+	c.mutation = "Lava"
+	b.bornAt = now - 100000 -- the oldest
+	local keepName = "Goldie"
+	a.name = keepName
+	local before = Stats.dinoIncome(a, now)
+
+	handlers.FuseGolden(cara, a.id)
+	eq(a.golden, nil, "not without the fee")
+	eq(#profile.dinos, 4, "nothing used up")
+
+	local fee = Economy.goldenFee(DinoData.get("Raptor").income)
+	profile.coins = fee + 10
+	handlers.FuseGolden(cara, a.id)
+	eq(a.golden, true, "golden")
+	eq(profile.coins, 10, "fee paid")
+	eq(#profile.dinos, 2, "two partners used up")
+	eq(a.mutation, "Lava", "best mutation kept")
+	eq(a.bornAt, now - 100000, "oldest age kept")
+	eq(a.name, keepName, "keeps its name")
+	assert(Stats.dinoIncome(a, now) > before * 2.9, "earns about 3x")
+	assert(profile.dex.Raptor.Golden, "Dex records golden")
+	assert(S.Plots.dinoModel(cara, a.id):GetAttribute("Golden"), "golden model in the nest")
+
+	profile.coins = 10 ^ 9
+	handlers.FuseGolden(cara, a.id)
+	eq(#profile.dinos, 2, "golden dinos don't fuse again")
+	local galli
+	for _, d in profile.dinos do
+		if d.species == "Gallimimus" then
+			galli = d
+		end
+	end
+	handlers.FuseGolden(cara, galli.id)
+	eq(galli.golden, nil, "needs three")
+	handlers.FuseGolden(cara, 12)
+	handlers.FuseGolden(cara, "missing")
+	eq(#profile.dinos, 2, "bad arguments ignored")
+end)
+
 step("leaving cleans up the nest and frees the plot", function()
 	local index = bobSession.plotIndex
 	S.Raids.onLeave(bob)

@@ -27,6 +27,7 @@ local COMMANDS = {
 	{ "resettime", "Normal time" },
 	{ "luck", "Luck 15m" },
 	{ "trex", "Add T-Rex" },
+	{ "raptors", "Add 3 Raptors" },
 	{ "noshield", "Remove shield" },
 	{ "skiptutorial", "Skip tutorial" },
 	{ "reset", "Reset save" },

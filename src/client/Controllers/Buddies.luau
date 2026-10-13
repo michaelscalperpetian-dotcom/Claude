@@ -43,13 +43,20 @@ end
 
 local function build(player: Player, look: string)
 	remove(player)
-	local species, mutation, stageText = string.match(look, "^([^|]+)|([^|]*)|(%d+)$")
+	local species, mutation, stageText, goldenText =
+		string.match(look, "^([^|]+)|([^|]*)|(%d+)|?(%a*)$")
 	if not species then
 		return
 	end
 	local stage = math.min(tonumber(stageText) or 1, MAX_STAGE)
 	local ok, model = pcall(function()
-		return DinoModel.build(species, stage, if mutation == "" then nil else mutation, "World")
+		return DinoModel.build(
+			species,
+			stage,
+			if mutation == "" then nil else mutation,
+			"World",
+			goldenText == "g"
+		)
 	end)
 	if not ok then
 		return

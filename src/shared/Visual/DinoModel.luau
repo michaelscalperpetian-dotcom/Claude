@@ -25,6 +25,11 @@ local EYE_WHITE = Color3.fromRGB(255, 255, 255)
 local PUPIL = Color3.fromRGB(28, 24, 40)
 local MOUTH = Color3.fromRGB(70, 35, 45)
 local CHEEK = Color3.fromRGB(255, 150, 175)
+local GOLD = {
+	main = Color3.fromRGB(255, 196, 46),
+	belly = Color3.fromRGB(255, 236, 150),
+	accent = Color3.fromRGB(214, 128, 24),
+}
 
 local function rgb(c: { number }): Color3
 	return Color3.fromRGB(c[1], c[2], c[3])
@@ -237,6 +242,47 @@ local function applyMutation(b: Builder, mutation: string?)
 		elseif mutation == "Glossy" then
 			addParticles(body, Color3.fromRGB(255, 255, 220), b.scale, 2)
 		end
+	end
+end
+
+-- Golden dinos wear a little crown and sparkle.
+local function addGoldenDetails(b: Builder)
+	local head = b.model:FindFirstChild("Head")
+	if head and head:IsA("BasePart") then
+		local top = head.CFrame.Position / b.scale + Vector3.new(0, head.Size.Y / b.scale * 0.42, 0)
+		local width = math.min(head.Size.X, head.Size.Z) / b.scale * 0.55
+		local band = cylinder(
+			b,
+			"Crown",
+			"detail",
+			GOLD.main,
+			top,
+			top + Vector3.new(0, width * 0.32, 0),
+			width
+		)
+		band.Reflectance = 0.25
+		for i = 0, 2 do
+			local angle = math.rad(-90 + i * 90)
+			local spot = top
+				+ Vector3.new(
+					math.cos(angle) * width * 0.36,
+					width * 0.42,
+					math.sin(angle) * width * 0.36
+				)
+			local jewel = ellipsoid(
+				b,
+				"CrownTip",
+				"detail",
+				if i == 1 then Color3.fromRGB(255, 80, 110) else GOLD.belly,
+				Vector3.new(width * 0.26, width * 0.26, width * 0.26),
+				CFrame.new(spot)
+			)
+			jewel.Reflectance = 0.2
+		end
+	end
+	local body = b.model:FindFirstChild("Body")
+	if body and body:IsA("BasePart") then
+		addParticles(body, Color3.fromRGB(255, 220, 90), b.scale, 4)
 	end
 end
 
@@ -886,11 +932,18 @@ function DinoModel.scaleFor(species: DinoData.Species, stage: number): number
 	return species.scale ^ 0.75 * Growth.SIZE[math.clamp(stage, 1, 4)] * DinoModel.BASE_UNIT
 end
 
--- Builds a dino model. `stage` is 1-4 (Baby..Giant).
+-- Builds a dino model. `stage` is 1-4 (Baby..Giant); `golden` paints it gold
+-- with a crown (mutations still apply on top).
 --   Static: every part anchored (UI previews)
 --   World: root anchored, everything else welded to it (move the root to move the dino)
 --   Mount: nothing anchored, welded to the root; caller welds the root to a character
-function DinoModel.build(speciesId: string, stage: number, mutation: string?, mode: Mode): Model
+function DinoModel.build(
+	speciesId: string,
+	stage: number,
+	mutation: string?,
+	mode: Mode,
+	golden: boolean?
+): Model
 	local species = DinoData.get(speciesId)
 	assert(species, `unknown species {speciesId}`)
 	stage = math.clamp(stage, 1, 4)
@@ -915,16 +968,22 @@ function DinoModel.build(speciesId: string, stage: number, mutation: string?, mo
 		model = model,
 		root = root,
 		scale = scale,
-		colors = {
-			main = rgb(species.colors.main),
-			belly = rgb(species.colors.belly),
-			accent = rgb(species.colors.accent),
-		},
+		colors = if golden
+			then { main = GOLD.main, belly = GOLD.belly, accent = GOLD.accent }
+			else {
+				main = rgb(species.colors.main),
+				belly = rgb(species.colors.belly),
+				accent = rgb(species.colors.accent),
+			},
 		parts = {},
 	}
 
 	buildBody(b, species, stage)
 	applyMutation(b, mutation)
+	if golden then
+		addGoldenDetails(b)
+		model:SetAttribute("Golden", true)
+	end
 
 	-- Prompt anchor at chest height
 	local top = 0

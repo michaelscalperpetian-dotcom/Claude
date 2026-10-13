@@ -68,6 +68,7 @@ function Stats.dinoIncome(dino: Types.DinoRecord, now: number): number
 	end
 	local stage = Growth.stageIndex(now - dino.bornAt, species.growth)
 	return Growth.income(species.income, stage, MutationData.multiplier(dino.mutation))
+		* Economy.goldenMultiplier(dino.golden)
 end
 
 function Stats.incomePerSecond(profile: Profile, session: Session, now: number): number

@@ -131,7 +131,7 @@ local function buildCard(grid: Instance, index: number, species: DinoData.Specie
 	}, {
 		UI.list(
 			Enum.FillDirection.Horizontal,
-			3,
+			2,
 			Enum.HorizontalAlignment.Center,
 			Enum.VerticalAlignment.Center
 		),
@@ -142,7 +142,7 @@ local function buildCard(grid: Instance, index: number, species: DinoData.Specie
 		if info then
 			local badge = UI.new("Frame", {
 				Name = mutationId,
-				Size = UDim2.fromOffset(24, 24),
+				Size = UDim2.fromOffset(21, 21),
 				BackgroundColor3 = UI.lighten(UI.rgb(info.color), 0.4),
 				LayoutOrder = order,
 				Parent = badgeRow,
@@ -158,6 +158,25 @@ local function buildCard(grid: Instance, index: number, species: DinoData.Specie
 			})
 			badges[mutationId] = badge
 		end
+	end
+	do
+		local badge = UI.new("Frame", {
+			Name = "Golden",
+			Size = UDim2.fromOffset(21, 21),
+			BackgroundColor3 = UI.lighten(UI.Theme.gold, 0.3),
+			LayoutOrder = #MutationData.ORDER + 1,
+			Parent = badgeRow,
+		}, { UI.round() }) :: Frame
+		UI.text({
+			text = "⭐",
+			size = UDim2.fromScale(0.8, 0.8),
+			position = UDim2.fromScale(0.5, 0.5),
+			anchor = Vector2.new(0.5, 0.5),
+			maxTextSize = 16,
+			noOutline = true,
+			parent = badge,
+		})
+		badges.Golden = badge
 	end
 	setSilhouette(viewport, true)
 	return {

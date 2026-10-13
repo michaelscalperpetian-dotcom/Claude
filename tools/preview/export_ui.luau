@@ -91,9 +91,20 @@ Panels.open("Rewards")
 taskLib.wait(0.05)
 capture("rewards")
 
+-- a named Golden dino
+local dinos = env.snapshot().dinos
+for _, dino in dinos do
+	if dino.id == "3" then
+		dino.golden = true
+		dino.name = "Sparkles"
+	end
+end
+env.pushState({ tutorial = 99, quests = base.quests, dinos = dinos })
+taskLib.wait(0.05)
 C.DinoPanel.open("3")
 taskLib.wait(0.05)
 capture("dino")
+env.pushState(base)
 
 for _, extra in { "Quests", "Codes", "Settings" } do
 	if Panels.has and Panels.has(extra) then

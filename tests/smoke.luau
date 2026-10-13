@@ -271,6 +271,10 @@ check("every dino and egg part wears the stud material", function()
 		for _, mutation in MutationData.ORDER do
 			DinoModel.build(species.id, 3, mutation, "Static").Parent = folder
 		end
+		local golden = DinoModel.build(species.id, 4, nil, "World", true)
+		assert(golden:GetAttribute("Golden"), "golden attribute")
+		assert(golden:FindFirstChild("Crown", true), `{species.id} golden crown`)
+		golden.Parent = folder
 	end
 	for _, egg in EggData.LIST do
 		EggModel.build(EggModel.lookForShopEgg(egg.id), 3, true).Parent = folder

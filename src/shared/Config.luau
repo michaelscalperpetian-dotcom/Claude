@@ -23,6 +23,9 @@ local Config = {
 	MAX_INCUBATORS = 5,
 	BASE_DINO_SLOTS = 8,
 	NICKNAME_MAX_LENGTH = 20,
+	-- Golden dinos: fuse 3 of one species into a Golden one that earns this much more.
+	GOLDEN_MULTIPLIER = 3,
+	GOLDEN_FEE_SECONDS = 300, -- fee = this many seconds of the species' adult income
 	PASS_EXTRA_SLOTS = 4,
 	TRAY_CAPACITY = 6,
 

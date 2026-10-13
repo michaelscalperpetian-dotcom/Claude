@@ -11,6 +11,7 @@ local Workspace = game:GetService("Workspace")
 
 local DinoData = require(ReplicatedStorage.Shared.Data.DinoData)
 local DinoModel = require(ReplicatedStorage.Shared.Visual.DinoModel)
+local Economy = require(ReplicatedStorage.Shared.Util.Economy)
 local EggModel = require(ReplicatedStorage.Shared.Visual.EggModel)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
 local MutationData = require(ReplicatedStorage.Shared.Data.MutationData)
@@ -26,7 +27,7 @@ Effects.onReveal = function(_rarity: string) end
 Effects.onCrack = function() end
 Effects.onCoins = function() end
 
-type Reveal = { species: string, mutation: string?, new: boolean }
+type Reveal = { species: string, mutation: string?, new: boolean, golden: boolean? }
 
 local screen: ScreenGui
 local revealQueue: { Reveal } = {}
@@ -250,7 +251,7 @@ local function reveal(item: Reveal)
 
 	-- 3. The dino pops out
 	local dinoViewport = UI.viewport(
-		DinoModel.build(item.species, 3, item.mutation, "Static"),
+		DinoModel.build(item.species, 3, item.mutation, "Static", item.golden),
 		UDim2.fromOffset(340, 340),
 		stage,
 		25
@@ -272,7 +273,9 @@ local function reveal(item: Reveal)
 	}, { UI.corner(20), UI.stroke(UI.darken(rarityColor, 0.5), 4), UI.shade(0.82) }) :: Frame
 	UI.text({
 		name = "Title",
-		text = (if m then m.emoji .. " " .. m.name .. " " else "") .. data.name .. "!",
+		text = (if item.golden then "⭐ GOLDEN " else "") .. (if m
+			then m.emoji .. " " .. m.name .. " "
+			else "") .. data.name .. "!",
 		size = UDim2.new(1, -30, 1, -14),
 		position = UDim2.fromOffset(15, 7),
 		maxTextSize = 46,
@@ -304,6 +307,17 @@ local function reveal(item: Reveal)
 			size = UDim2.fromOffset(150, 36),
 			color = UI.rgb(m.color),
 			order = 2,
+			maxTextSize = 22,
+			parent = tags,
+		})
+		chip.root.ZIndex = 15
+	end
+	if item.golden then
+		local chip = UI.chip({
+			text = `⭐ x{Economy.goldenMultiplier(true)} coins`,
+			size = UDim2.fromOffset(160, 36),
+			color = UI.Theme.gold,
+			order = 3,
 			maxTextSize = 22,
 			parent = tags,
 		})
@@ -540,6 +554,16 @@ local function onEffect(kind: string, data: { [string]: any })
 				species = data.species,
 				mutation = if typeof(data.mutation) == "string" then data.mutation else nil,
 				new = data.new == true,
+			})
+			task.spawn(processQueue)
+		end
+	elseif kind == "Golden" then
+		if typeof(data.species) == "string" then
+			table.insert(revealQueue, {
+				species = data.species,
+				mutation = if typeof(data.mutation) == "string" then data.mutation else nil,
+				new = false,
+				golden = true,
 			})
 			task.spawn(processQueue)
 		end

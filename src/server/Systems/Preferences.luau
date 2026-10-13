@@ -40,7 +40,7 @@ function Preferences.buddyLook(profile: Types.Profile): string?
 		return nil
 	end
 	local stage = Growth.progress(Clock.now() - dino.bornAt, species.growth)
-	return `{dino.species}|{dino.mutation or ""}|{stage}`
+	return `{dino.species}|{dino.mutation or ""}|{stage}|{if dino.golden then "g" else ""}`
 end
 
 function Preferences.syncBuddy(player: Player)

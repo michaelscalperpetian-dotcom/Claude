@@ -9,6 +9,7 @@ export type DinoRecord = {
 	bornAt: number, -- unix seconds; stage is computed from age
 	lastLaidAt: number,
 	name: string?, -- nickname, already through Roblox's text filter
+	golden: boolean?, -- fused from 3 of its species; earns Config.GOLDEN_MULTIPLIER x
 }
 
 -- "shop": species rolled at hatch from the egg's odds

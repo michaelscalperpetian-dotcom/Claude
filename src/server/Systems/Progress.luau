@@ -130,6 +130,10 @@ local function recordDex(player: Player, dino: Types.DinoRecord)
 		profile.dex[dino.species] = entry
 	end
 	local key = dino.mutation or "Normal"
+	if dino.golden and not entry.Golden then
+		entry.Golden = true
+		State.markDirty(player)
+	end
 	if entry[key] then
 		return
 	end

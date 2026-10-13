@@ -131,6 +131,15 @@ local commands: { [string]: (Player, string?) -> string } = {
 			then "adult T-Rex added"
 			else "nest full"
 	end,
+	raptors = function(player)
+		local added = 0
+		for _ = 1, 3 do
+			if Nest.addDino(player, "Raptor", nil, Growth.JUVENILE) then
+				added += 1
+			end
+		end
+		return `{added} Raptors added (fuse them into a Golden one!)`
+	end,
 	noshield = function(player)
 		local profile = Data.get(player)
 		if profile then

@@ -1,7 +1,7 @@
 --!strict
 -- Info card for one of your dinos (opened from its "View" prompt): its name
--- (tap ✏️ to rename), growth progress, income, mutation, and Sell / Ride /
--- Buddy buttons.
+-- (tap ✏️ to rename), growth progress, income, mutation, Make Golden (fuse 3
+-- of a species), and Sell / Ride / Buddy buttons.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -16,6 +16,7 @@ local MutationData = require(ReplicatedStorage.Shared.Data.MutationData)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Types = require(ReplicatedStorage.Shared.Types)
 local ClientState = require(script.Parent.ClientState)
+local Toasts = require(script.Parent.Toasts)
 local Panels = require(script.Parent.Parent.Lib.Panels)
 local UI = require(script.Parent.Parent.Lib.UI)
 
@@ -31,6 +32,7 @@ local renameButton: UI.Button
 local rarityChip: UI.Chip
 local stageChip: UI.Chip
 local mutationChip: UI.Chip
+local goldenChip: UI.Chip
 local growthLabel: TextLabel
 local growthBar: UI.Bar
 local incomeLabel: TextLabel
@@ -38,7 +40,9 @@ local extraLabel: TextLabel
 local sellButton: UI.Button
 local rideButton: UI.Button
 local buddyButton: UI.Button
+local goldenButton: UI.Button
 local sellArmedUntil = 0
+local goldenArmedUntil = 0
 
 local function findDino(snapshot: Types.Snapshot, id: string): Types.DinoRecord?
 	for _, dino in snapshot.dinos do
@@ -47,6 +51,17 @@ local function findDino(snapshot: Types.Snapshot, id: string): Types.DinoRecord?
 		end
 	end
 	return nil
+end
+
+-- Non-golden dinos of this species you own (the ones a fuse can use).
+local function fuseCount(snapshot: Types.Snapshot, speciesId: string): number
+	local count = 0
+	for _, dino in snapshot.dinos do
+		if dino.species == speciesId and not dino.golden then
+			count += 1
+		end
+	end
+	return count
 end
 
 local function refresh()
@@ -66,20 +81,23 @@ local function refresh()
 	local mutation = MutationData.get(dino.mutation)
 	local rarityColor = UI.rgb(DinoData.rarityInfo(species.rarity).color)
 
-	local key = `{dino.id}:{stage}:{dino.mutation or ""}`
+	local golden = dino.golden == true
+	local key = `{dino.id}:{stage}:{dino.mutation or ""}:{golden}`
 	if key ~= shownKey then
 		shownKey = key
 		for _, child in previewHolder:GetChildren() do
 			child:Destroy()
 		end
 		UI.viewport(
-			DinoModel.build(dino.species, stage, dino.mutation, "Static"),
+			DinoModel.build(dino.species, stage, dino.mutation, "Static", golden),
 			UDim2.fromScale(1, 1),
 			previewHolder,
 			30
 		)
-		showcase.BackgroundColor3 =
-			UI.lighten(if mutation then UI.rgb(mutation.color) else rarityColor, 0.65)
+		showcase.BackgroundColor3 = UI.lighten(
+			if golden then UI.Theme.gold elseif mutation then UI.rgb(mutation.color) else rarityColor,
+			0.65
+		)
 	end
 
 	Panels.setTitle("Dino", `🦖 {species.name}`)
@@ -92,6 +110,7 @@ local function refresh()
 		mutationChip.label.Text = `{mutation.emoji} {mutation.name} x{mutation.multiplier}`
 		UI.setChipColor(mutationChip, UI.rgb(mutation.color))
 	end
+	goldenChip.root.Visible = golden
 	if stage >= Growth.GIANT then
 		growthLabel.Text = "Fully grown GIANT! 🏆"
 		UI.setBar(growthBar, 1, "MAX")
@@ -100,15 +119,15 @@ local function refresh()
 			`Grows into a {Growth.stageName(stage + 1)} in {Format.time(secondsLeft)}`
 		UI.setBar(growthBar, fraction, `{math.floor(fraction * 100)}%`)
 	end
-	local income = Growth.income(species.income, stage, MutationData.multiplier(dino.mutation))
-		* snapshot.multiplier
+	local multiplier = MutationData.multiplier(dino.mutation) * Economy.goldenMultiplier(golden)
+	local income = Growth.income(species.income, stage, multiplier) * snapshot.multiplier
 	incomeLabel.Text = `+{Format.number(income)} / sec`
 	local lays = Growth.layInterval(stage, Config.LAY_INTERVAL_ADULT, Config.LAY_INTERVAL_GIANT)
 	extraLabel.Text = if lays
 		then `🥚 Lays an egg every {Format.duration(lays)}\n🛡 Guards your nest at night`
 		else "🍼 Too young to lay eggs or guard the nest yet"
 
-	local value = Economy.dinoValue(species.income, stage, MutationData.multiplier(dino.mutation))
+	local value = Economy.dinoValue(species.income, stage, multiplier)
 	if now < sellArmedUntil then
 		UI.setButton(sellButton, { text = "Sure? Tap again!", color = UI.Theme.red })
 	else
@@ -129,6 +148,32 @@ local function refresh()
 		UI.setButton(rideButton, { text = "Too small", color = UI.Theme.blue, enabled = false })
 	else
 		UI.setButton(rideButton, { text = "🦖 Ride!", color = UI.Theme.blue, enabled = true })
+	end
+
+	if golden then
+		UI.setButton(
+			goldenButton,
+			{ text = "⭐ Golden ✓", color = UI.Theme.gold, enabled = false }
+		)
+	else
+		local count = fuseCount(snapshot, dino.species)
+		if count < 3 then
+			UI.setButton(
+				goldenButton,
+				{ text = `⭐ Golden ({count}/3)`, color = UI.Theme.orange, enabled = true }
+			)
+		elseif now < goldenArmedUntil then
+			UI.setButton(
+				goldenButton,
+				{ text = "Fuse 3? Tap again!", color = UI.Theme.red, enabled = true }
+			)
+		else
+			UI.setButton(goldenButton, {
+				text = `⭐ Make Golden 💰{Format.number(Economy.goldenFee(species.income))}`,
+				color = UI.Theme.gold,
+				enabled = true,
+			})
+		end
 	end
 
 	local isBuddy = snapshot.buddy == dino.id
@@ -162,16 +207,17 @@ function DinoPanel.open(dinoId: string)
 	currentId = dinoId
 	shownKey = ""
 	sellArmedUntil = 0
+	goldenArmedUntil = 0
 	refresh()
 	Panels.open("Dino")
 end
 
 function DinoPanel.init()
 	local _, content =
-		Panels.window("Dino", "🦖 Your Dino", Vector2.new(820, 470), UI.Theme.green)
+		Panels.window("Dino", "🦖 Your Dino", Vector2.new(820, 540), UI.Theme.green)
 	showcase = UI.new("Frame", {
 		Name = "Showcase",
-		Size = UDim2.fromOffset(300, 362),
+		Size = UDim2.new(0, 300, 1, 0),
 		BackgroundColor3 = UI.Theme.panelDark,
 		Parent = content,
 	}, { UI.corner(22), UI.stroke(UI.Theme.cardEdge, 3), UI.shade(0.86) }) :: Frame
@@ -250,14 +296,14 @@ function DinoPanel.init()
 	}, { UI.list(Enum.FillDirection.Horizontal, 8, Enum.HorizontalAlignment.Left) }) :: Frame
 	rarityChip = UI.chip({
 		text = "",
-		size = UDim2.fromOffset(120, 32),
+		size = UDim2.fromOffset(110, 32),
 		order = 1,
 		maxTextSize = 18,
 		parent = tags,
 	})
 	stageChip = UI.chip({
 		text = "",
-		size = UDim2.fromOffset(110, 32),
+		size = UDim2.fromOffset(100, 32),
 		color = UI.Theme.teal,
 		order = 2,
 		maxTextSize = 18,
@@ -265,8 +311,16 @@ function DinoPanel.init()
 	})
 	mutationChip = UI.chip({
 		text = "",
-		size = UDim2.fromOffset(170, 32),
+		size = UDim2.fromOffset(150, 32),
 		order = 3,
+		maxTextSize = 18,
+		parent = tags,
+	})
+	goldenChip = UI.chip({
+		text = `⭐ x{Economy.goldenMultiplier(true)}`,
+		size = UDim2.fromOffset(78, 32),
+		color = UI.Theme.gold,
+		order = 4,
 		maxTextSize = 18,
 		parent = tags,
 	})
@@ -314,6 +368,47 @@ function DinoPanel.init()
 		valign = Enum.TextYAlignment.Top,
 		maxTextSize = 17,
 		parent = stats,
+	})
+
+	-- Care row: Make Golden (and Feed)
+	local care = UI.new("Frame", {
+		Name = "Care",
+		BackgroundTransparency = 1,
+		Size = UDim2.new(1, -6, 0, 60),
+		Position = UDim2.new(0, 0, 1, -134),
+		Parent = right,
+	}, { UI.list(Enum.FillDirection.Horizontal, 10, Enum.HorizontalAlignment.Left) }) :: Frame
+	goldenButton = UI.button({
+		name = "Golden",
+		text = "⭐ Golden",
+		size = UDim2.new(0.55, -5, 0, 58),
+		color = UI.Theme.gold,
+		order = 1,
+		maxTextSize = 22,
+		parent = care,
+		onClick = function()
+			local id = currentId
+			local snapshot = ClientState.get()
+			local dino = if snapshot and id then findDino(snapshot, id) else nil
+			local species = if dino then DinoData.get(dino.species) else nil
+			if not snapshot or not dino or not species or dino.golden then
+				return
+			end
+			if fuseCount(snapshot, dino.species) < 3 then
+				Toasts.show(
+					`Collect 3 {species.name}s, then fuse them into one ⭐ Golden dino that earns {Economy.goldenMultiplier(
+						true
+					)}x!`,
+					"info"
+				)
+			elseif Clock.now() < goldenArmedUntil then
+				goldenArmedUntil = 0
+				Net.send("FuseGolden", dino.id)
+			else
+				goldenArmedUntil = Clock.now() + 3
+				refresh()
+			end
+		end,
 	})
 
 	local buttons = UI.new("Frame", {
