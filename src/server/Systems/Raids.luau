@@ -222,12 +222,27 @@ local function steal(thief: Player, prompt: ProximityPrompt)
 		model = carried
 	end
 
+	-- The quickest a thief can walk home at carry speed (with some slack), so
+	-- teleporting or resetting home can't finish a steal.
+	local home = World.getPlot(thiefSession.plotIndex)
+	local trip = if home
+		then math.max(
+			0,
+			(Vector3.new(
+				home.cframe.Position.X - trayPosition.X,
+				0,
+				home.cframe.Position.Z - trayPosition.Z
+			)).Magnitude - Config.PLOT_SIZE / 2
+		)
+		else 0
+	local now = Clock.now()
 	thiefSession.carry = {
 		victim = owner,
 		eggId = eggId,
 		species = egg.species,
 		model = model,
-		startedAt = Clock.now(),
+		startedAt = now,
+		arriveAfter = now + trip / Config.CARRY_WALKSPEED * 0.7,
 	}
 	carriedEggs[carryKey(owner, eggId)] = thief
 	Plots.setTrayEggHidden(owner, eggId, true)
@@ -269,7 +284,11 @@ local function carryTick()
 				endCarry(thief, false, "caught")
 				stun(thief)
 			elseif World.isInside(session.plotIndex, root.CFrame.Position) then
-				endCarry(thief, true, nil)
+				if Clock.now() >= carry.arriveAfter then
+					endCarry(thief, true, nil)
+				else
+					endCarry(thief, false, nil) -- home impossibly fast
+				end
 			end
 		end
 	end
@@ -388,6 +407,14 @@ function Raids.superLock(player: Player)
 end
 
 -- Called by Lifecycle before a player's data is released.
+-- The thief died (or reset): the egg goes back to its nest.
+function Raids.dropCarry(player: Player)
+	local session = Sessions.get(player)
+	if session and session.carry then
+		endCarry(player, false, nil)
+	end
+end
+
 function Raids.onLeave(player: Player)
 	local session = Sessions.get(player)
 	if session and session.carry then

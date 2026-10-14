@@ -180,8 +180,10 @@ step("shop eggs hatch into species from the egg's odds table", function()
 			handlers.HatchEgg(alice, slot)
 		end
 	end
-	local allowed =
-		{ Raptor = true, Gallimimus = true, Pachy = true, Parasaur = true, Dilophosaurus = true }
+	local allowed = {}
+	for _, entry in require("./loader").load("src/shared/Data/EggData").get("Jungle").odds do
+		allowed[entry.species] = true
+	end
 	eq(#profile.dinos, 3, "three dinos")
 	assert(allowed[profile.dinos[3].species], "jungle species " .. profile.dinos[3].species)
 end)
@@ -350,16 +352,34 @@ step("stealing at night and carrying the egg home moves it to the thief", functi
 	local trayBefore = #profile.tray
 	local trayPrompt =
 		findPrompt(S.World.getPlot(aliceSession.plotIndex).trayFolder, "Steal", eggId)
+	local bobHome = S.World.getPlot(bobSession.plotIndex).pad.CFrame.Position
+		+ roblox.Vector3.new(0, 3, 0)
+	moveTo(alice, roblox.Vector3.new(0, 3, 0))
+
+	-- teleporting (or resetting) home doesn't count: the egg goes back
 	moveTo(bob, S.Plots.trayPosition(alice))
 	trigger(trayPrompt, bob)
 	assert(bobSession.carry ~= nil, "bob is carrying")
+	moveTo(bob, bobHome)
+	S.Raids.step()
+	eq(bobSession.carry, nil, "carry ended")
+	eq(#profile.tray, trayBefore, "home impossibly fast: egg went back")
+	local function stealPrompt()
+		return findPrompt(S.World.getPlot(aliceSession.plotIndex).trayFolder, "Steal", eggId)
+	end
+	moveTo(bob, S.Plots.trayPosition(alice))
+	trigger(stealPrompt(), bob)
+	S.Raids.dropCarry(bob)
+	eq(bobSession.carry, nil, "dropped when bob dies")
+	eq(#profile.tray, trayBefore, "egg went back")
+
+	moveTo(bob, S.Plots.trayPosition(alice))
+	trigger(stealPrompt(), bob)
+	assert(bobSession.carry ~= nil, "bob is carrying")
 	eq(#profile.tray, trayBefore, "egg stays in alice's save while carried")
-	-- run home
-	moveTo(
-		bob,
-		S.World.getPlot(bobSession.plotIndex).pad.CFrame.Position + roblox.Vector3.new(0, 3, 0)
-	)
-	moveTo(alice, roblox.Vector3.new(0, 3, 0))
+	-- run home (in a believable time)
+	advance(20)
+	moveTo(bob, bobHome)
 	S.Raids.step()
 	eq(bobSession.carry, nil, "carry finished")
 	eq(#profile.tray, trayBefore - 1, "alice lost the egg")
@@ -623,6 +643,7 @@ step("three of a species fuse into one Golden dino", function()
 	eq(a.mutation, "Lava", "best mutation kept")
 	eq(a.bornAt, now - 100000, "oldest age kept")
 	eq(a.name, keepName, "keeps its name")
+	assert(a.lastLaidAt >= now, "laying clock starts now (no egg backlog)")
 	assert(Stats.dinoIncome(a, now) > before * 2.9, "earns about 3x")
 	assert(profile.dex.Raptor.Golden, "Dex records golden")
 	assert(S.Plots.dinoModel(cara, a.id):GetAttribute("Golden"), "golden model in the nest")

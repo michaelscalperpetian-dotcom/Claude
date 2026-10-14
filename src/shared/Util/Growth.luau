@@ -16,7 +16,9 @@ Growth.GIANT = 4
 -- Per-stage multipliers (index = stage).
 Growth.INCOME = { 0.25, 0.5, 1, 2 }
 Growth.SIZE = { 0.5, 0.72, 1, 1.45 }
-Growth.SELL = { 0.3, 0.6, 1, 2 }
+-- Babies sell for very little, so buying cheap eggs and selling the babies
+-- straight away never makes coins (it did at 0.3: a 50-coin egg sold for 180+).
+Growth.SELL = { 0.02, 0.6, 1, 2 }
 
 -- thresholds = ages (seconds) to reach Juvenile, Adult, Giant.
 function Growth.stageIndex(ageSeconds: number, thresholds: { number }): number

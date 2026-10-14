@@ -3,6 +3,7 @@
 -- (batched, at most 5 times per second), plus a full snapshot when their
 -- client says it's ready. Clients render; they never compute anything that matters.
 
+local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Clock = require(ReplicatedStorage.Shared.Util.Clock)
@@ -88,10 +89,13 @@ function State.init()
 		clientReady[player] = true
 		send(player)
 	end)
-	Sessions.Leaving:connect(function(player: Player)
+	local function forget(player: Player)
 		dirty[player] = nil
 		clientReady[player] = nil
-	end)
+	end
+	Sessions.Leaving:connect(forget)
+	-- players kicked while joining never fire Leaving
+	Players.PlayerRemoving:Connect(forget)
 end
 
 function State.start()

@@ -222,32 +222,50 @@ local function tick(dt: number, withLaying: boolean)
 	end
 end
 
+local function collectPad(player: Player, plot: World.PlotInfo)
+	if Plots.ownerOf(plot.index) ~= player then
+		return
+	end
+	local now = os.clock()
+	if lastCollect[player] and now - lastCollect[player] < 0.5 then
+		return
+	end
+	lastCollect[player] = now
+	local amount = Coins.collect(player)
+	if amount > 0 then
+		Plots.updatePad(player, 0)
+		Notify.effect(player, "Collect", { amount = amount, position = plot.pad.CFrame.Position })
+		Quests.track(player, "collect")
+	end
+	-- Advance the tutorial even if the pad was nearly empty.
+	Progress.event(player, "collect")
+end
+
 local function hookCoinPads()
 	for _, plot in World.plots do
 		plot.pad.Touched:Connect(function(hit: BasePart)
 			local character = hit:FindFirstAncestorOfClass("Model")
 			local player = character and Players:GetPlayerFromCharacter(character)
-			if not player or Plots.ownerOf(plot.index) ~= player then
-				return
+			if player then
+				collectPad(player, plot)
 			end
-			local now = os.clock()
-			if lastCollect[player] and now - lastCollect[player] < 0.5 then
-				return
-			end
-			lastCollect[player] = now
-			local amount = Coins.collect(player)
-			if amount > 0 then
-				Plots.updatePad(player, 0)
-				Notify.effect(
-					player,
-					"Collect",
-					{ amount = amount, position = plot.pad.CFrame.Position }
-				)
-				Quests.track(player, "collect")
-			end
-			-- Advance the tutorial even if the pad was nearly empty.
-			Progress.event(player, "collect")
 		end)
+	end
+end
+
+-- Riders float above the pad (their feet never touch it), so collect by
+-- distance while riding.
+function Dinos.collectForRiders()
+	for _, session in Sessions.ready() do
+		local plot = if session.riding then World.getPlot(session.plotIndex) else nil
+		local character = session.player.Character
+		local root = character and character:FindFirstChild("HumanoidRootPart")
+		if plot and root and root:IsA("BasePart") then
+			local offset = root.CFrame.Position - plot.pad.CFrame.Position
+			if Vector3.new(offset.X, 0, offset.Z).Magnitude <= 5 and math.abs(offset.Y) <= 14 then
+				collectPad(session.player, plot)
+			end
+		end
 	end
 end
 
@@ -281,6 +299,7 @@ function Dinos.start()
 		local dt = task.wait(1)
 		ticks += 1
 		tick(dt, ticks % 5 == 0)
+		Dinos.collectForRiders()
 	end
 end
 

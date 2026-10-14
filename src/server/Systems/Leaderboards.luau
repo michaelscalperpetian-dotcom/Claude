@@ -3,11 +3,13 @@
 -- Dex and most rebirths. Scores go to OrderedDataStores every few minutes
 -- (and when a player leaves); the top 10 are read back and shown on the
 -- boards. Without DataStore access (Studio before publishing) the boards
--- show the players in this server instead.
+-- show the players in this server instead. Studio test sessions never write
+-- (the dev panel's cheats would otherwise reach the real boards).
 
 local DataStoreService = game:GetService("DataStoreService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 local UserService = game:GetService("UserService")
 local Workspace = game:GetService("Workspace")
 
@@ -68,7 +70,7 @@ end
 
 -- Saves a player's scores (only the ones that changed since last time).
 local function write(player: Player, profile: Types.Profile)
-	if mock then
+	if mock or RunService:IsStudio() then
 		return
 	end
 	local written = lastWritten[player] or {}
@@ -189,8 +191,9 @@ end
 -- One full pass: save everyone's scores, then redraw every board.
 function Leaderboards.refresh()
 	for _, session in Sessions.ready() do
+		-- (earlier writes yield; skip anyone who left meanwhile)
 		local profile = Data.get(session.player)
-		if profile then
+		if profile and session.ready and session.player.Parent ~= nil then
 			write(session.player, profile)
 		end
 	end
@@ -213,6 +216,11 @@ function Leaderboards.init()
 			task.spawn(write, player, profile)
 		end
 		lastWritten[player] = nil
+	end)
+	Players.PlayerRemoving:Connect(function(player: Player)
+		task.defer(function()
+			lastWritten[player] = nil
+		end)
 	end)
 end
 

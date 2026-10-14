@@ -6,6 +6,8 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local Clock = require(ReplicatedStorage.Shared.Util.Clock)
+local Cycle = require(ReplicatedStorage.Shared.Util.Cycle)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Data = require(script.Parent.Data)
 local Monetization = require(script.Parent.Monetization)
@@ -110,15 +112,22 @@ local function like(player: Player, prompt: ProximityPrompt)
 	then
 		return
 	end
-	if session.liked[owner.UserId] then
+	local likerProfile = Data.get(player)
+	local profile = Data.get(owner)
+	if not likerProfile or not profile then
+		return
+	end
+	-- remembered in the liker's save, so rejoining doesn't allow another like
+	local today = Cycle.dayNumber(Clock.now())
+	if likerProfile.liked.day ~= today then
+		likerProfile.liked = { day = today, owners = {} }
+	end
+	local ownerKey = tostring(owner.UserId)
+	if likerProfile.liked.owners[ownerKey] then
 		Notify.send(player, "You already liked this nest today ❤", "info")
 		return
 	end
-	local profile = Data.get(owner)
-	if not profile then
-		return
-	end
-	session.liked[owner.UserId] = true
+	likerProfile.liked.owners[ownerKey] = true
 	profile.likes += 1
 	Plots.updateSign(owner)
 	State.markDirty(owner)

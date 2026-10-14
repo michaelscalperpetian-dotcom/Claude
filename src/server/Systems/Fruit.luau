@@ -184,7 +184,9 @@ local function feed(player: Player, dinoId: string)
 	if not dino or not species then
 		return
 	end
-	if Stats.dinoStage(dino, Clock.now()) >= Growth.GIANT then
+	local now = Clock.now()
+	local stageBefore = Stats.dinoStage(dino, now)
+	if stageBefore >= Growth.GIANT then
 		Notify.send(player, "This dino is fully grown already! 🏆", "info")
 		return
 	end
@@ -196,6 +198,9 @@ local function feed(player: Player, dinoId: string)
 	local info = FruitData.FRUITS[kind]
 	profile.fruit[kind] -= 1
 	dino.bornAt -= info.grows
+	if stageBefore < Growth.ADULT and Stats.dinoStage(dino, now) >= Growth.ADULT then
+		dino.lastLaidAt = now -- grown up just now: no backlog of eggs
+	end
 	Plots.syncDinos(player)
 	State.markDirty(player)
 	Quests.track(player, "feed")
@@ -222,11 +227,35 @@ function Fruit.init()
 	end)
 end
 
+-- Riders float above the ground, so they pick fruit by distance.
+function Fruit.collectForRiders()
+	for _, session in Sessions.ready() do
+		local character = if session.riding then session.player.Character else nil
+		local root = character and character:FindFirstChild("HumanoidRootPart")
+		if root and root:IsA("BasePart") then
+			for _, spot in spots do
+				local fruit = spot.fruit
+				if fruit then
+					local offset = root.CFrame.Position - fruit.CFrame.Position
+					if Vector3.new(offset.X, 0, offset.Z).Magnitude <= 4 then
+						Fruit.collect(session.player, fruit)
+					end
+				end
+			end
+		end
+	end
+end
+
 function Fruit.start()
 	Fruit.setup()
+	local ticks = 0
 	while true do
-		Fruit.spawnDue(Clock.now())
-		task.wait(2)
+		if ticks % 8 == 0 then
+			Fruit.spawnDue(Clock.now())
+		end
+		Fruit.collectForRiders()
+		ticks += 1
+		task.wait(0.25)
 	end
 end
 

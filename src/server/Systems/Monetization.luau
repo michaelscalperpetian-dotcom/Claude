@@ -336,8 +336,15 @@ function Monetization.init()
 	MarketplaceService.PromptGamePassPurchaseFinished:Connect(
 		function(player: Player, id: number, purchased: boolean)
 			local key = passKeyById[id]
+			if not purchased or not key or not Sessions.get(player) then
+				return
+			end
+			-- Don't trust the signal alone: confirm the player really owns it.
+			local ok, owns = pcall(function()
+				return MarketplaceService:UserOwnsGamePassAsync(player.UserId, id)
+			end)
 			local session = Sessions.get(player)
-			if purchased and key and session then
+			if ok and owns and session then
 				session.passes[key] = true
 				Analytics.event(player, "Pass" .. key)
 				Notify.send(player, "🎉 Thanks for your support! Your pass is active.", "good")

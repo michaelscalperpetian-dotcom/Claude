@@ -548,6 +548,20 @@ describe("Square studs", function()
 	end)
 end)
 
+describe("Selling babies", function()
+	it("never pays more than the egg cost on average, even in a Mega Storm", function()
+		for _, egg in EggData.LIST do
+			local average = 0
+			for _, entry in egg.odds do
+				local species = DinoData.get(entry.species)
+				average += Economy.dinoValue(species.income, 1, 1) * entry.weight / 10000
+			end
+			-- a Mega Storm makes about 15% of hatches Rainbow (8x) and some Cosmic/Glossy
+			ok(average * 2.3 < egg.price, `{egg.id}: babies sell for {average} on average`)
+		end
+	end)
+end)
+
 describe("Rebirth", function()
 	it("costs more each time and boosts coins for good", function()
 		eq(Economy.rebirthCost(0), Config.REBIRTH_BASE_COST)

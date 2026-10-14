@@ -64,6 +64,7 @@ export type Profile = {
 	nicknames: { [string]: string }, -- dino id -> name as typed (server only, re-filtered on join)
 	rebirths: number,
 	fruit: { [string]: number }, -- basket: FruitData kind -> count
+	liked: { day: number, owners: { [string]: boolean } }, -- nests liked today (by owner UserId)
 }
 
 -- Today's quest progress; reset when the UTC day changes.

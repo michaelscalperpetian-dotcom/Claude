@@ -12,6 +12,7 @@ export type Carry = {
 	species: string,
 	model: Model?,
 	startedAt: number,
+	arriveAfter: number, -- can't legitimately be home before this (walking speed)
 }
 
 export type Session = {
@@ -32,7 +33,6 @@ export type Session = {
 	riding: string?,
 	mount: Model?,
 	originalHipHeight: number?,
-	liked: { [number]: boolean },
 	lastAdAt: number,
 }
 
@@ -62,7 +62,6 @@ function Sessions.create(player: Player): Session
 		riding = nil,
 		mount = nil,
 		originalHipHeight = nil,
-		liked = {},
 		lastAdAt = 0,
 	}
 	sessions[player] = session

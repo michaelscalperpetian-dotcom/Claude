@@ -98,6 +98,9 @@ local function fuse(player: Player, dinoId: string)
 	keeper.golden = true
 	keeper.mutation = mutation
 	keeper.bornAt = bornAt
+	-- its laying clock starts now (an older inherited age mustn't count as
+	-- eggs it was owed)
+	keeper.lastLaidAt = math.max(keeper.lastLaidAt, Clock.now())
 	Plots.syncDinos(player)
 	Preferences.syncBuddy(player)
 	State.markDirty(player)

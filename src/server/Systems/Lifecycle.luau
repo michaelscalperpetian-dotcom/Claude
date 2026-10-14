@@ -39,6 +39,7 @@ local function onCharacter(player: Player, character: Model)
 	end
 	task.defer(Social.decorateCharacter, player)
 	humanoid.Died:Connect(function()
+		Raids.dropCarry(player)
 		Dinos.dismount(player)
 		task.delay(3, function()
 			if player.Parent ~= nil and Sessions.get(player) then
@@ -50,6 +51,11 @@ end
 
 local function onJoin(player: Player)
 	local session = Sessions.create(player)
+	-- The player can leave during any yield below; onLeave then cleans up
+	-- (including the nest) and this join stops.
+	local function left(): boolean
+		return player.Parent == nil or Sessions.get(player) ~= session
+	end
 
 	local profile = Data.load(player)
 	if player.Parent == nil then
@@ -71,10 +77,14 @@ local function onJoin(player: Player)
 		return
 	end
 
+	-- Passes and the Club first, so offline earnings include their boosts.
+	Monetization.onJoin(player)
+	if left() then
+		return
+	end
 	Dinos.applyOffline(player)
 	Plots.renderAll(player)
 	Coins.setupLeaderstats(player)
-	task.spawn(Monetization.onJoin, player)
 	task.spawn(Social.onJoin, player)
 
 	local plot = World.getPlot(index)
@@ -84,7 +94,15 @@ local function onJoin(player: Player)
 	player.CharacterAdded:Connect(function(character)
 		onCharacter(player, character)
 	end)
-	player:LoadCharacterAsync()
+	local loaded, err = pcall(function()
+		player:LoadCharacterAsync()
+	end)
+	if left() then
+		return
+	end
+	if not loaded then
+		warn(`[Lifecycle] couldn't load {player.Name}'s character: {err}`)
+	end
 
 	session.ready = true
 	Sessions.Ready:fire(player)
@@ -106,8 +124,9 @@ local function onLeave(player: Player)
 		Raids.onLeave(player)
 		Dinos.dismount(player)
 		Social.onLeave(player)
-		Plots.release(player)
 	end
+	-- also when they leave before finishing joining (no-op without a nest)
+	Plots.release(player)
 	Data.release(player)
 	Sessions.remove(player)
 end

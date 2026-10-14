@@ -32,6 +32,9 @@ local store: DataStore? = nil
 local mock = false
 
 local profiles: { [Player]: Profile } = {}
+-- UserIds whose final save is still being written. A rejoin to this same
+-- server waits for it, so it can't load (and later save over) older data.
+local releasing: { [number]: boolean } = {}
 local saving: { [Player]: boolean } = {}
 local nextAutosave: { [Player]: number } = {}
 
@@ -66,6 +69,7 @@ local function defaultProfile(now: number): Profile
 		nicknames = {},
 		rebirths = 0,
 		fruit = { apple = 0, golden = 0 },
+		liked = { day = 0, owners = {} },
 	}
 end
 
@@ -151,6 +155,11 @@ function Data.load(player: Player): Profile?
 	end
 	local ds = store :: DataStore
 	local key = keyFor(player)
+
+	local waitedUntil = os.clock() + 60
+	while releasing[player.UserId] and os.clock() < waitedUntil do
+		task.wait(0.5)
+	end
 
 	for _ = 1, 5 do
 		local loaded: Profile? = nil
@@ -260,7 +269,10 @@ function Data.release(player: Player)
 	if not profiles[player] then
 		return
 	end
+	local userId = player.UserId
+	releasing[userId] = true
 	save(player, true)
+	releasing[userId] = nil
 	profiles[player] = nil
 	nextAutosave[player] = nil
 end
