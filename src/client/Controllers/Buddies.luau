@@ -18,6 +18,8 @@ local ATTRIBUTE = "Buddy"
 local MAX_STAGE = Growth.JUVENILE -- buddies stay pet-sized
 local SIDE_OFFSET = 3.5
 local BACK_OFFSET = 4.5
+local FAR = 160 -- buddies further from the camera than this aren't animated
+local GROUND_EVERY = 3 -- frames between ground checks
 
 type Follower = {
 	look: string,
@@ -26,6 +28,8 @@ type Follower = {
 	position: Vector3,
 	facing: Vector3,
 	phase: number,
+	ground: number?, -- last ground height under the target spot
+	frame: number, -- staggers ground checks between buddies
 }
 
 local followers: { [Player]: Follower } = {}
@@ -76,6 +80,8 @@ local function build(player: Player, look: string)
 		position = start,
 		facing = Vector3.new(0, 0, -1),
 		phase = math.random() * 10,
+		ground = nil,
+		frame = math.random(0, GROUND_EVERY - 1),
 	}
 end
 
@@ -105,7 +111,11 @@ local function groundBelow(position: Vector3, ignore: { Instance }): number?
 	return if hit then hit.Position.Y else nil
 end
 
+local ignore: { Instance } = {}
+
 local function step(dt: number)
+	local camera = Workspace.CurrentCamera
+	local eye = if camera then camera.CFrame.Position else nil
 	for player, follower in followers do
 		local character = player.Character
 		local hrp = character and character:FindFirstChild("HumanoidRootPart")
@@ -113,6 +123,9 @@ local function step(dt: number)
 			continue
 		end
 		local rootCf = hrp.CFrame
+		if eye and (rootCf.Position - eye).Magnitude > FAR then
+			continue -- out of sight; it snaps back into place when it's near again
+		end
 		local look = rootCf.LookVector
 		local flat = Vector3.new(look.X, 0, look.Z)
 		if flat.Magnitude < 1e-3 then
@@ -121,7 +134,13 @@ local function step(dt: number)
 		flat = flat.Unit
 		local right = Vector3.new(-flat.Z, 0, flat.X)
 		local target = rootCf.Position - flat * BACK_OFFSET + right * SIDE_OFFSET
-		local ground = groundBelow(target, { character, folder }) or (rootCf.Position.Y - 3)
+		follower.frame += 1
+		if follower.ground == nil or follower.frame % GROUND_EVERY == 0 then
+			ignore[1] = character
+			ignore[2] = folder
+			follower.ground = groundBelow(target, ignore)
+		end
+		local ground = follower.ground or (rootCf.Position.Y - 3)
 		target = Vector3.new(target.X, ground, target.Z)
 
 		local before = follower.position

@@ -41,10 +41,13 @@ type Walker = {
 	rng: Random,
 	floor: BasePart?, -- the pen's floor; walks stay inside it
 	margin: number, -- distance kept from the fence
+	homeCheck: number, -- frames until we look for a new home spot
 }
 
 local walkers: { [Model]: Walker } = {}
-local FAR = 220
+local FAR = 150 -- dinos further from the camera than this stand still
+local NEAR = 70 -- idle dinos only breathe when this close
+local HOME_CHECK_FRAMES = 30
 
 local function flatten(v: Vector3, fallback: Vector3): Vector3
 	local flat = Vector3.new(v.X, 0, v.Z)
@@ -83,6 +86,7 @@ local function addWalker(model: Model, tries: number?)
 		rng = rng,
 		floor = if floor and floor:IsA("BasePart") then floor else nil,
 		margin = math.clamp(h * 0.6, 4, 10),
+		homeCheck = rng:NextInteger(1, HOME_CHECK_FRAMES),
 	}
 end
 
@@ -118,15 +122,20 @@ local function stepWalkers(dt: number)
 			walkers[model] = nil
 			continue
 		end
-		if (w.position - eye).Magnitude > FAR then
+		local away = (w.position - eye).Magnitude
+		if away > FAR then
 			continue
 		end
 		-- the server moves dinos to a new home when the nest is rearranged
-		local home = model:GetAttribute("Home")
-		if typeof(home) == "CFrame" and (home.Position - w.home).Magnitude > 0.1 then
-			w.home = home.Position
-			w.position = home.Position
-			w.target = nil
+		w.homeCheck -= 1
+		if w.homeCheck <= 0 then
+			w.homeCheck = HOME_CHECK_FRAMES
+			local home = model:GetAttribute("Home")
+			if typeof(home) == "CFrame" and (home.Position - w.home).Magnitude > 0.1 then
+				w.home = home.Position
+				w.position = home.Position
+				w.target = nil
+			end
 		end
 		local moving = false
 		local target = w.target
@@ -147,6 +156,9 @@ local function stepWalkers(dt: number)
 		elseif now >= w.waitUntil then
 			w.target = pickTarget(w)
 		end
+		if not moving and away > NEAR then
+			continue -- too far to see it breathe
+		end
 		w.phase += dt * (if moving then 4 + w.speed * 1.5 else 2)
 		local lift = if moving
 			then math.abs(math.sin(w.phase)) * w.hop
@@ -165,12 +177,25 @@ end
 
 -- ===== Rainbow mutation =====
 
-local function rainbowStep()
+-- Rainbow parts, kept up to date by tag signals (part -> hue offset).
+local rainbowParts: { [BasePart]: number } = {}
+local rainbowWait = 0
+
+local function addRainbow(instance: Instance)
+	if instance:IsA("BasePart") then
+		rainbowParts[instance] = math.random() * 0.3
+	end
+end
+
+local function rainbowStep(dt: number)
+	rainbowWait -= dt
+	if rainbowWait > 0 then
+		return
+	end
+	rainbowWait = 1 / 15
 	local hue = (os.clock() * 0.25) % 1
-	for i, part in CollectionService:GetTagged(DinoModel.RAINBOW_TAG) do
-		if part:IsA("BasePart") then
-			part.Color = Color3.fromHSV((hue + i * 0.03) % 1, 0.65, 1)
-		end
+	for part, offset in rainbowParts do
+		part.Color = Color3.fromHSV((hue + offset) % 1, 0.65, 1)
 	end
 end
 
@@ -566,6 +591,15 @@ function WorldFx.init()
 		onDinoAdded(instance)
 	end
 	CollectionService:GetInstanceAddedSignal(DinoModel.TAG):Connect(onDinoAdded)
+	for _, part in CollectionService:GetTagged(DinoModel.RAINBOW_TAG) do
+		addRainbow(part)
+	end
+	CollectionService:GetInstanceAddedSignal(DinoModel.RAINBOW_TAG):Connect(addRainbow)
+	CollectionService:GetInstanceRemovedSignal(DinoModel.RAINBOW_TAG):Connect(function(instance)
+		if instance:IsA("BasePart") then
+			rainbowParts[instance] = nil
+		end
+	end)
 	CollectionService:GetInstanceAddedSignal(Tags.NIGHT_LIGHT):Connect(function(instance)
 		if instance:IsA("Light") then
 			instance.Enabled = lastNight == true
@@ -580,7 +614,7 @@ end
 
 function WorldFx.start()
 	RunService.Heartbeat:Connect(function(dt: number)
-		rainbowStep()
+		rainbowStep(dt)
 		followCamera()
 		stepWalkers(dt)
 	end)

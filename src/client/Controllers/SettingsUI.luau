@@ -202,7 +202,11 @@ function SettingsUI.init()
 		parent = list,
 	})
 
-	ClientState.changed:connect(refresh)
+	ClientState.changed:connect(function(snapshot: Types.Snapshot)
+		if Panels.isOpen("Settings") then
+			refresh(snapshot)
+		end
+	end)
 	Panels.onOpen("Settings", function()
 		local snapshot = ClientState.get()
 		if snapshot then

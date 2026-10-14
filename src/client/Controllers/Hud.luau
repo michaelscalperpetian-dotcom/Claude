@@ -429,14 +429,23 @@ function Hud.init()
 		parent = timers,
 	})
 	stormChip.root.Visible = false
+	-- up to 4 chips per row (wraps instead of running into the menu on phones)
 	boostRow = UI.new("Frame", {
 		Name = "Boosts",
 		BackgroundTransparency = 1,
 		AnchorPoint = Vector2.new(0.5, 0),
 		Position = UDim2.new(0.5, 0, 0, 122),
-		Size = UDim2.fromOffset(820, 34),
+		Size = UDim2.fromOffset(4 * 150 + 3 * 8, 2 * 34 + 8),
 		Parent = screen,
-	}, { UI.list(Enum.FillDirection.Horizontal, 8, Enum.HorizontalAlignment.Center) }) :: Frame
+	}, {
+		UI.new("UIGridLayout", {
+			CellSize = UDim2.fromOffset(150, 34),
+			CellPadding = UDim2.fromOffset(8, 8),
+			FillDirectionMaxCells = 4,
+			HorizontalAlignment = Enum.HorizontalAlignment.Center,
+			SortOrder = Enum.SortOrder.LayoutOrder,
+		}),
+	}) :: Frame
 
 	buildMenu()
 	buildActions()

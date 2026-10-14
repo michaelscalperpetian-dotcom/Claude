@@ -5,7 +5,6 @@
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local Clock = require(ReplicatedStorage.Shared.Util.Clock)
 local Economy = require(ReplicatedStorage.Shared.Util.Economy)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Net = require(ReplicatedStorage.Shared.Net)
@@ -22,7 +21,7 @@ local boostLabel: TextLabel
 local nextLabel: TextLabel
 local progress: UI.Bar
 local rebirthButton: UI.Button
-local armedUntil = 0
+local confirm = UI.confirm()
 
 local function bonusPercent(rebirths: number): number
 	return math.floor((Economy.rebirthMultiplier(rebirths) - 1) * 100 + 0.5)
@@ -52,7 +51,7 @@ local function refresh(snapshot: Types.Snapshot)
 			color = UI.Theme.gold,
 			enabled = false,
 		})
-	elseif Clock.now() < armedUntil then
+	elseif UI.isArmed(confirm) then
 		UI.setButton(
 			rebirthButton,
 			{ text = "Sure? All coins reset! Tap again", color = UI.Theme.red, enabled = true }
@@ -178,11 +177,9 @@ function RebirthUI.init()
 			if not snapshot or not RebirthUI.ready(snapshot) then
 				return
 			end
-			if Clock.now() < armedUntil then
-				armedUntil = 0
+			if UI.confirmTap(confirm) then
 				Net.send("Rebirth")
 			else
-				armedUntil = Clock.now() + 3
 				refresh(snapshot)
 			end
 		end,
@@ -200,7 +197,7 @@ function RebirthUI.init()
 		end
 	end)
 	Panels.onOpen("Rebirth", function()
-		armedUntil = 0
+		UI.disarm(confirm)
 		local snapshot = ClientState.get()
 		if snapshot then
 			refresh(snapshot)

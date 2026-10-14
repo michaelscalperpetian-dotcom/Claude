@@ -191,15 +191,19 @@ local function reveal(item: Reveal)
 		Parent = screen,
 	}) :: Frame
 	TweenService:Create(overlay, TweenInfo.new(0.25), { BackgroundTransparency = 0.3 }):Play()
+	-- The reveal (460 px stage, chips and "Tap to continue" below it, 554 px
+	-- in all) shrinks to fit short landscape phones and stays centred.
+	local canvasHeight = UI.canvasSize().Y
+	local fit = math.min(1, (canvasHeight - 24) / 554)
 	local stage = UI.new("Frame", {
 		Name = "Reveal",
 		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.fromScale(0.5, 0.46),
+		Position = UDim2.new(0.5, 0, 0, canvasHeight / 2 - 47 * fit),
 		Size = UDim2.fromOffset(460, 460),
 		BackgroundTransparency = 1,
 		ZIndex = 11,
 		Parent = screen,
-	}) :: Frame
+	}, { UI.new("UIScale", { Scale = fit }) }) :: Frame
 
 	-- 1. The egg drops in and wobbles harder and harder, then cracks
 	local eggHolder = UI.new("Frame", {
@@ -351,11 +355,12 @@ local function reveal(item: Reveal)
 		parent = stage,
 	})
 	hint.TextTransparency = 1
-	TweenService:Create(
+	local hintPulse = TweenService:Create(
 		hint,
 		TweenInfo.new(0.6, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true, 0.8),
 		{ TextTransparency = 0.2 }
-	):Play()
+	)
+	hintPulse:Play()
 
 	if rarity.order >= DinoData.rarityInfo("Rare").order or m then
 		confetti(if rarity.order >= DinoData.rarityInfo("Legendary").order then 120 else 60)
@@ -397,6 +402,7 @@ local function reveal(item: Reveal)
 	spin:Disconnect()
 	closeButton:Destroy()
 	overlay:Destroy()
+	hintPulse:Cancel()
 	stage:Destroy()
 end
 

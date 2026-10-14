@@ -445,6 +445,42 @@ function UI.menuButton(props: {
 	return { button = button, badge = badge, badgeLabel = badgeLabel }
 end
 
+-- ===== Two-tap confirmation =====
+-- For buttons that can't be undone (sell, fuse, rebirth). The first tap arms
+-- the button (it shows a warning); a second tap confirms, but only after
+-- CONFIRM_DELAY, so a quick double-tap can't skip reading the warning.
+
+UI.CONFIRM_DELAY = 0.5
+UI.CONFIRM_WINDOW = 3
+
+export type Confirm = { armedAt: number }
+
+function UI.confirm(): Confirm
+	return { armedAt = -math.huge }
+end
+
+-- Is the warning showing?
+function UI.isArmed(confirm: Confirm): boolean
+	return os.clock() - confirm.armedAt < UI.CONFIRM_WINDOW
+end
+
+-- Call on tap. Returns true when this tap confirms the action.
+function UI.confirmTap(confirm: Confirm): boolean
+	local age = os.clock() - confirm.armedAt
+	if age >= UI.CONFIRM_DELAY and age < UI.CONFIRM_WINDOW then
+		confirm.armedAt = -math.huge
+		return true
+	end
+	if age >= UI.CONFIRM_WINDOW then
+		confirm.armedAt = os.clock() -- arm
+	end
+	return false -- armed now, or tapped again too fast
+end
+
+function UI.disarm(confirm: Confirm)
+	confirm.armedAt = -math.huge
+end
+
 -- ===== Studs =====
 -- One see-through stud (assets/textures/SquareStuds_UI.png) tiled over a
 -- panel, card or button of any colour. Its image ID lives in the "UIStudImage"
@@ -453,7 +489,7 @@ end
 
 UI.STUD_TILE = 26
 
-local studLabels: { ImageLabel } = {}
+local studLabels: { [ImageLabel]: true } = {}
 
 local function readStudImage(): string
 	local variant = MaterialService:FindFirstChild("SquareStuds")
@@ -472,14 +508,9 @@ do
 	if variant then
 		variant:GetAttributeChangedSignal("UIStudImage"):Connect(function()
 			studImage = readStudImage()
-			for i = #studLabels, 1, -1 do
-				local label = studLabels[i]
-				if label.Parent then
-					label.Image = studImage
-					label.Visible = studImage ~= ""
-				else
-					table.remove(studLabels, i)
-				end
+			for label in studLabels do
+				label.Image = studImage
+				label.Visible = studImage ~= ""
 			end
 		end)
 	end
@@ -498,7 +529,10 @@ function UI.studs(target: GuiObject, radius: number?, zIndex: number?): ImageLab
 		ZIndex = zIndex or 0,
 		Parent = target,
 	}, { UI.corner(radius or 16) }) :: ImageLabel
-	table.insert(studLabels, label)
+	studLabels[label] = true
+	label.Destroying:Connect(function()
+		studLabels[label] = nil
+	end)
 	return label
 end
 

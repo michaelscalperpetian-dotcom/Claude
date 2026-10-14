@@ -43,8 +43,8 @@ local rideButton: UI.Button
 local buddyButton: UI.Button
 local goldenButton: UI.Button
 local feedButton: UI.Button
-local sellArmedUntil = 0
-local goldenArmedUntil = 0
+local sellConfirm = UI.confirm()
+local goldenConfirm = UI.confirm()
 
 local function findDino(snapshot: Types.Snapshot, id: string): Types.DinoRecord?
 	for _, dino in snapshot.dinos do
@@ -130,7 +130,7 @@ local function refresh()
 		else "🍼 Too young to lay eggs or guard the nest yet"
 
 	local value = Economy.dinoValue(species.income, stage, multiplier)
-	if now < sellArmedUntil then
+	if UI.isArmed(sellConfirm) then
 		UI.setButton(sellButton, { text = "Sure? Tap again!", color = UI.Theme.red })
 	else
 		UI.setButton(
@@ -164,7 +164,7 @@ local function refresh()
 				goldenButton,
 				{ text = `⭐ Golden ({count}/3)`, color = UI.Theme.orange, enabled = true }
 			)
-		elseif now < goldenArmedUntil then
+		elseif UI.isArmed(goldenConfirm) then
 			UI.setButton(
 				goldenButton,
 				{ text = "Fuse 3? Tap again!", color = UI.Theme.red, enabled = true }
@@ -225,8 +225,8 @@ function DinoPanel.open(dinoId: string)
 	stopRenaming()
 	currentId = dinoId
 	shownKey = ""
-	sellArmedUntil = 0
-	goldenArmedUntil = 0
+	UI.disarm(sellConfirm)
+	UI.disarm(goldenConfirm)
 	refresh()
 	Panels.open("Dino")
 end
@@ -420,11 +420,9 @@ function DinoPanel.init()
 					)}x!`,
 					"info"
 				)
-			elseif Clock.now() < goldenArmedUntil then
-				goldenArmedUntil = 0
+			elseif UI.confirmTap(goldenConfirm) then
 				Net.send("FuseGolden", dino.id)
 			else
-				goldenArmedUntil = Clock.now() + 3
 				refresh()
 			end
 		end,
@@ -475,11 +473,9 @@ function DinoPanel.init()
 			if not id then
 				return
 			end
-			if Clock.now() < sellArmedUntil then
-				sellArmedUntil = 0
+			if UI.confirmTap(sellConfirm) then
 				Net.send("SellDino", id)
 			else
-				sellArmedUntil = Clock.now() + 3
 				refresh()
 			end
 		end,

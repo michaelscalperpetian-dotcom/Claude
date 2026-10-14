@@ -20,7 +20,8 @@ local DexUI = {}
 type Card = {
 	species: DinoData.Species,
 	frame: Frame,
-	viewport: ViewportFrame,
+	stage: Frame,
+	viewport: ViewportFrame?, -- built the first time the Dex opens
 	name: TextLabel,
 	badges: { [string]: Frame },
 	discovered: boolean?,
@@ -45,7 +46,10 @@ local function refresh(snapshot: Types.Snapshot)
 		end
 		if card.discovered ~= discovered then
 			card.discovered = discovered
-			setSilhouette(card.viewport, not discovered)
+			local viewport = card.viewport
+			if viewport then
+				setSilhouette(viewport, not discovered)
+			end
 			card.name.Text = if discovered then card.species.name else "???"
 		end
 		for mutation, badge in card.badges do
@@ -103,8 +107,6 @@ local function buildCard(grid: Instance, index: number, species: DinoData.Specie
 		BackgroundColor3 = UI.lighten(rarityColor, 0.72),
 		Parent = frame,
 	}, { UI.corner(12), UI.shade(0.9) }) :: Frame
-	local viewport =
-		UI.viewport(DinoModel.build(species.id, 3, nil, "Static"), UDim2.fromScale(1, 1), stage, 30)
 	local name = UI.body({
 		text = "???",
 		size = UDim2.new(1, -10, 0, 24),
@@ -178,11 +180,11 @@ local function buildCard(grid: Instance, index: number, species: DinoData.Specie
 		})
 		badges.Golden = badge
 	end
-	setSilhouette(viewport, true)
 	return {
 		species = species,
 		frame = frame,
-		viewport = viewport,
+		stage = stage,
+		viewport = nil,
 		name = name,
 		badges = badges,
 		discovered = nil,
@@ -255,7 +257,11 @@ function DexUI.init()
 		table.insert(cards, buildCard(grid, index, species))
 	end
 
-	ClientState.changed:connect(refresh)
+	ClientState.changed:connect(function(snapshot: Types.Snapshot)
+		if Panels.isOpen("Dex") then
+			refresh(snapshot)
+		end
+	end)
 	table.insert(Hud.badgeRefreshers, function(snapshot: Types.Snapshot)
 		local item = Hud.menu.Dex
 		if item then
@@ -263,6 +269,19 @@ function DexUI.init()
 		end
 	end)
 	Panels.onOpen("Dex", function()
+		-- 3D previews are built on first open, not at startup (cheaper on phones)
+		for _, card in cards do
+			if not card.viewport then
+				local viewport = UI.viewport(
+					DinoModel.build(card.species.id, 3, nil, "Static"),
+					UDim2.fromScale(1, 1),
+					card.stage,
+					30
+				)
+				setSilhouette(viewport, card.discovered ~= true)
+				card.viewport = viewport
+			end
+		end
 		local snapshot = ClientState.get()
 		if snapshot then
 			refresh(snapshot)

@@ -234,7 +234,10 @@ function StoreUI.init()
 		ScrollBarThickness = 6,
 		BorderSizePixel = 0,
 		Parent = content,
-	}, { UI.list(Enum.FillDirection.Vertical, 10), UI.padding(2, 4) }) :: ScrollingFrame
+	}, {
+		UI.list(Enum.FillDirection.Vertical, 10),
+		UI.padding(2, 16), -- room for the hero card's "BEST VALUE" ribbon
+	}) :: ScrollingFrame
 
 	-- Starter Pack hero banner
 	hero = UI.new("Frame", {

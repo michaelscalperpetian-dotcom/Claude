@@ -8,6 +8,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local SoundService = game:GetService("SoundService")
 
 local Config = require(ReplicatedStorage.Shared.Config)
+local Types = require(ReplicatedStorage.Shared.Types)
+local ClientState = require(script.Parent.ClientState)
 local Effects = require(script.Parent.Effects)
 local SettingsUI = require(script.Parent.SettingsUI)
 local Toasts = require(script.Parent.Toasts)
@@ -184,9 +186,16 @@ function Audio.init()
 end
 
 function Audio.start()
-	-- the saved settings arrive with the first state snapshot
-	task.wait(2)
-	updateMusic()
+	-- Saved settings arrive with the state snapshots; follow the music
+	-- setting whenever it changes (including the first snapshot).
+	local lastMusic: boolean? = nil
+	ClientState.changed:connect(function(_: Types.Snapshot)
+		local musicOn = SettingsUI.get("music")
+		if musicOn ~= lastMusic then
+			lastMusic = musicOn
+			updateMusic()
+		end
+	end)
 end
 
 return Audio

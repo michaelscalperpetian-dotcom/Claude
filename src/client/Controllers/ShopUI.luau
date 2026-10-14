@@ -30,7 +30,7 @@ type Card = {
 	buy: UI.Button,
 }
 
-type UpgradeRow = { info: TextLabel, bar: UI.Bar, button: UI.Button }
+type UpgradeRow = { info: TextLabel, bar: UI.Bar, button: UI.Button, level: number }
 
 local cards: { Card } = {}
 local restockChip: UI.Chip
@@ -126,19 +126,31 @@ local function sectionLabel(text: string, order: number)
 	})
 end
 
+local shownOdds = ""
+
+-- Rebuilds the odds list, but only when something on it changed (snapshots
+-- arrive every second; the odds only move with luck and storms).
 local function renderOdds()
 	local eggId = oddsEgg
 	local egg = eggId and EggData.get(eggId)
 	if not egg then
 		return
 	end
+	local snapshot = ClientState.get()
+	local luck = snapshot ~= nil and snapshot.boosts.luckUntil > Clock.now()
+	local key = `{egg.id}|{luck}`
+	for _, m in EggOdds.mutations(Clock.cycleNow()) do
+		key ..= `|{m.key}:{m.bp}`
+	end
+	if key == shownOdds then
+		return
+	end
+	shownOdds = key
 	for _, child in oddsList:GetChildren() do
 		if child:IsA("GuiObject") then
 			child:Destroy()
 		end
 	end
-	local snapshot = ClientState.get()
-	local luck = snapshot ~= nil and snapshot.boosts.luckUntil > Clock.now()
 	Panels.setTitle("Odds", `📊 {egg.name} Odds`)
 	oddsTitle.Text = if luck
 		then "🍀 Your Luck boost is included!"
@@ -332,10 +344,11 @@ local function upgradeCard(
 		parent = card,
 		onClick = onClick,
 	})
-	return { info = info, bar = bar, button = button }
+	return { info = info, bar = bar, button = button, level = 0 }
 end
 
 local function refreshUpgrade(row: UpgradeRow, costs: { number }, level: number, coins: number)
+	row.level = level -- the level a tap buys (the price shown)
 	local cost = Economy.nextUpgradeCost(costs, level)
 	UI.setBar(row.bar, level / #costs, `Level {level} / {#costs}`)
 	if cost then
@@ -456,10 +469,10 @@ function ShopUI.init()
 		Parent = content,
 	}, { UI.list(Enum.FillDirection.Vertical, 16) }) :: Frame
 	slotRow = upgradeCard(upgradesPage, 1, "🦖", "+1 Dino Slot", function()
-		Net.send("BuyUpgrade", "slots")
+		Net.send("BuyUpgrade", "slots", slotRow.level)
 	end)
 	incubatorRow = upgradeCard(upgradesPage, 2, "🥚", "+1 Incubator", function()
-		Net.send("BuyUpgrade", "incubators")
+		Net.send("BuyUpgrade", "incubators", incubatorRow.level)
 	end)
 	selectTab("Eggs")
 

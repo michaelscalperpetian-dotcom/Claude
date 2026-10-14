@@ -255,10 +255,16 @@ end)
 step("upgrades cost coins and raise limits", function()
 	local profile = profileOf(alice)
 	local coins = profile.coins
-	handlers.BuyUpgrade(alice, "slots")
+	handlers.BuyUpgrade(alice, "slots", 0)
 	eq(profile.upgrades.slots, 1, "slot upgrade")
 	eq(profile.coins, coins - Config.SLOT_UPGRADE_COSTS[1], "paid for slot")
-	handlers.BuyUpgrade(alice, "incubators")
+	profile.coins = 10 ^ 9
+	handlers.BuyUpgrade(alice, "slots", 0)
+	eq(profile.upgrades.slots, 1, "a double tap doesn't buy the next level")
+	handlers.BuyUpgrade(alice, "slots")
+	eq(profile.upgrades.slots, 1, "level is required")
+	profile.coins = coins - Config.SLOT_UPGRADE_COSTS[1]
+	handlers.BuyUpgrade(alice, "incubators", 0)
 	eq(profile.upgrades.incubators, 1, "incubator upgrade")
 end)
 

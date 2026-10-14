@@ -50,7 +50,9 @@ function DevPanel.init()
 		UI.padding(4, 6),
 	}) :: ScrollingFrame
 	for order, entry in COMMANDS do
-		UI.button({
+		local confirm = UI.confirm()
+		local button: UI.Button
+		button = UI.button({
 			text = entry[2],
 			size = UDim2.fromOffset(170, 54),
 			color = if entry[1] == "reset" then UI.Theme.red else UI.Theme.blue,
@@ -58,6 +60,14 @@ function DevPanel.init()
 			maxTextSize = 22,
 			parent = grid,
 			onClick = function()
+				-- wiping the save needs a second tap
+				if entry[1] == "reset" and not UI.confirmTap(confirm) then
+					UI.setButton(button, { text = "Sure? Tap again" })
+					task.delay(UI.CONFIRM_WINDOW, function()
+						UI.setButton(button, { text = entry[2] })
+					end)
+					return
+				end
 				Net.send("Cheat", entry[1])
 			end,
 		})

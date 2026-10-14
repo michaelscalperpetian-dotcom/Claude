@@ -1,6 +1,8 @@
 --!strict
 -- Permanent nest upgrades bought with coins (the long-term coin sink):
--- more dino slots and more incubators.
+-- more dino slots and more incubators. The client says which level it is
+-- buying (the one whose price it showed), so a fast double-tap can't also
+-- buy the next, pricier level.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -16,11 +18,18 @@ local Notify = require(script.Parent.Parent.Lib.Notify)
 
 local Upgrades = {}
 
-local function buy(player: Player, kind: unknown)
+local function buy(player: Player, kind: unknown, level: unknown)
 	local profile = Data.get(player)
 	local session = Sessions.get(player)
 	if not profile or not session or not session.ready then
 		return
+	end
+	local owned = if kind == "slots"
+		then profile.upgrades.slots
+		elseif kind == "incubators" then profile.upgrades.incubators
+		else nil
+	if owned == nil or level ~= owned then
+		return -- unknown upgrade, or a stale tap for a level already bought
 	end
 	if kind == "slots" then
 		local cost = Economy.nextUpgradeCost(Config.SLOT_UPGRADE_COSTS, profile.upgrades.slots)
