@@ -145,6 +145,14 @@ local Config = {
 	BASE_INCUBATORS = 3,
 	MAX_INCUBATORS = 5,
 	BASE_DINO_SLOTS = 8,
+	NICKNAME_MAX_LENGTH = 20,
+	-- Golden dinos: fuse 3 of one species into a Golden one that earns this much more.
+	GOLDEN_MULTIPLIER = 3,
+	GOLDEN_FEE_SECONDS = 300, -- fee = this many seconds of the species' adult income
+	-- Rebirth: trade all your coins for +REBIRTH_BONUS coins forever (stacks).
+	REBIRTH_BASE_COST = 1000000,
+	REBIRTH_COST_GROWTH = 4, -- each rebirth costs this many times the last
+	REBIRTH_BONUS = 0.5,
 	PASS_EXTRA_SLOTS = 4,
 	TRAY_CAPACITY = 6,
 
@@ -1187,6 +1195,69 @@ return EggData
         </Item>
         <Item class="ModuleScript" referent="16">
           <Properties>
+            <string name="Name">FruitData</string>
+            <string name="Source"><![CDATA[--!strict
+-- Fruit you pick up under the fruit trees and feed to dinos to grow them faster.
+
+export type Kind = "apple" | "golden"
+
+export type Fruit = {
+	kind: Kind,
+	name: string,
+	emoji: string,
+	color: { number },
+	grows: number, -- seconds of growth one fruit gives
+	cap: number, -- how many fit in your basket
+}
+
+local FRUITS: { [string]: Fruit } = {
+	apple = {
+		kind = "apple",
+		name = "Dino Apple",
+		emoji = "🍎",
+		color = { 235, 60, 60 },
+		grows = 300,
+		cap = 20,
+	},
+	golden = {
+		kind = "golden",
+		name = "Golden Apple",
+		emoji = "🌟",
+		color = { 255, 200, 50 },
+		grows = 1800,
+		cap = 5,
+	},
+}
+
+local FruitData = {
+	FRUITS = FRUITS,
+	-- feeding uses apples first, then golden apples
+	ORDER = { "apple", "golden" } :: { Kind },
+	RESPAWN_SECONDS = 60,
+	GOLDEN_CHANCE = 0.08,
+	PICK_DISTANCE = 12,
+}
+
+function FruitData.get(kind: string): Fruit?
+	return FRUITS[kind]
+end
+
+-- Which fruit a feed would use, given what's in the basket.
+function FruitData.nextToFeed(basket: { [string]: number }): Kind?
+	for _, kind in FruitData.ORDER do
+		if (basket[kind] or 0) > 0 then
+			return kind :: Kind
+		end
+	end
+	return nil
+end
+
+return FruitData
+]]></string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="17">
+          <Properties>
             <string name="Name">MutationData</string>
             <string name="Source"><![CDATA[--!strict
 -- Mutations multiply a dino's income and change how it looks. Storms boost the
@@ -1325,7 +1396,7 @@ return MutationData
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="17">
+        <Item class="ModuleScript" referent="18">
           <Properties>
             <string name="Name">QuestData</string>
             <string name="Source"><![CDATA[--!strict
@@ -1346,6 +1417,14 @@ export type Quest = {
 }
 
 local POOL: { Quest } = {
+	{
+		id = "feed",
+		event = "feed",
+		goal = 3,
+		text = "Feed your dinos 3 fruits",
+		emoji = "🍎",
+		reward = { kind = "coins", minutes = 10, minimum = 400, label = "Coins", emoji = "💰" },
+	},
 	{
 		id = "hatch",
 		event = "hatch",
@@ -1428,7 +1507,7 @@ return QuestData
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="18">
+        <Item class="ModuleScript" referent="19">
           <Properties>
             <string name="Name">StoreData</string>
             <string name="Source"><![CDATA[--!strict
@@ -1560,7 +1639,7 @@ return StoreData
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="19">
+        <Item class="ModuleScript" referent="20">
           <Properties>
             <string name="Name">TutorialData</string>
             <string name="Source"><![CDATA[--!strict
@@ -1615,7 +1694,7 @@ return TutorialData
           </Properties>
         </Item>
       </Item>
-      <Item class="ModuleScript" referent="20">
+      <Item class="ModuleScript" referent="21">
         <Properties>
           <string name="Name">Net</string>
           <string name="Source"><![CDATA[--!strict
@@ -1650,6 +1729,10 @@ export type ClientEvent =
 	| "RedeemCode"
 	| "SetSetting"
 	| "SetBuddy"
+	| "RenameDino"
+	| "FuseGolden"
+	| "Rebirth"
+	| "FeedDino"
 
 export type ServerEvent = "State" | "Notify" | "Effect"
 
@@ -1676,6 +1759,10 @@ local CLIENT_EVENTS: { ClientEvent } = {
 	"RedeemCode",
 	"SetSetting",
 	"SetBuddy",
+	"RenameDino",
+	"FuseGolden",
+	"Rebirth",
+	"FeedDino",
 }
 
 local SERVER_EVENTS: { ServerEvent } = { "State", "Notify", "Effect" }
@@ -1783,7 +1870,7 @@ return Net
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="21">
+      <Item class="ModuleScript" referent="22">
         <Properties>
           <string name="Name">Palette</string>
           <string name="Source"><![CDATA[--!strict
@@ -1869,7 +1956,7 @@ return Palette
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="22">
+      <Item class="ModuleScript" referent="23">
         <Properties>
           <string name="Name">Tags</string>
           <string name="Source"><![CDATA[--!strict
@@ -1883,7 +1970,7 @@ return {
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="23">
+      <Item class="ModuleScript" referent="24">
         <Properties>
           <string name="Name">Types</string>
           <string name="Source"><![CDATA[--!strict
@@ -1896,6 +1983,8 @@ export type DinoRecord = {
 	mutation: string?,
 	bornAt: number, -- unix seconds; stage is computed from age
 	lastLaidAt: number,
+	name: string?, -- nickname, already through Roblox's text filter
+	golden: boolean?, -- fused from 3 of its species; earns Config.GOLDEN_MULTIPLIER x
 }
 
 -- "shop": species rolled at hatch from the egg's odds
@@ -1947,6 +2036,10 @@ export type Profile = {
 	codes: { [string]: boolean }, -- redeemed codes
 	settings: Settings,
 	buddy: string?, -- id of the dino following the player around
+	nicknames: { [string]: string }, -- dino id -> name as typed (server only, re-filtered on join)
+	rebirths: number,
+	fruit: { [string]: number }, -- basket: FruitData kind -> count
+	liked: { day: number, owners: { [string]: boolean } }, -- nests liked today (by owner UserId)
 }
 
 -- Today's quest progress; reset when the UTC day changes.
@@ -1996,6 +2089,8 @@ export type Snapshot = {
 	dexClaimed: { [string]: boolean },
 	settings: Settings,
 	buddy: string?,
+	rebirths: number,
+	fruit: { [string]: number },
 }
 
 -- Tutorial steps (server is authoritative; client only renders hints).
@@ -2005,11 +2100,11 @@ return nil
 ]]></string>
         </Properties>
       </Item>
-      <Item class="Folder" referent="24">
+      <Item class="Folder" referent="25">
         <Properties>
           <string name="Name">Util</string>
         </Properties>
-        <Item class="ModuleScript" referent="25">
+        <Item class="ModuleScript" referent="26">
           <Properties>
             <string name="Name">Clock</string>
             <string name="Source"><![CDATA[--!strict
@@ -2041,7 +2136,7 @@ return Clock
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="26">
+        <Item class="ModuleScript" referent="27">
           <Properties>
             <string name="Name">Cycle</string>
             <string name="Source"><![CDATA[--!strict
@@ -2203,7 +2298,7 @@ return Cycle
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="27">
+        <Item class="ModuleScript" referent="28">
           <Properties>
             <string name="Name">Economy</string>
             <string name="Source"><![CDATA[--!strict
@@ -2220,6 +2315,7 @@ export type MultiplierInput = {
 	club: boolean,
 	adBoost: boolean,
 	friends: number,
+	rebirths: number?,
 }
 
 -- Additive bonuses (friends, club) stack together, then multiplicative boosts apply.
@@ -2237,12 +2333,32 @@ function Economy.coinMultiplier(input: MultiplierInput): number
 	if input.vip then
 		multiplier *= Config.VIP_COIN_MULTIPLIER
 	end
-	return multiplier
+	return multiplier * Economy.rebirthMultiplier(input.rebirths or 0)
+end
+
+-- Permanent coin boost from rebirths.
+function Economy.rebirthMultiplier(rebirths: number): number
+	return 1 + rebirths * Config.REBIRTH_BONUS
+end
+
+-- Coins needed for the next rebirth after `rebirths` of them.
+function Economy.rebirthCost(rebirths: number): number
+	return math.floor(Config.REBIRTH_BASE_COST * Config.REBIRTH_COST_GROWTH ^ rebirths)
 end
 
 -- Coins from selling a dino.
 function Economy.dinoValue(baseIncome: number, stage: number, mutationMultiplier: number): number
 	return math.floor(baseIncome * 300 * Growth.SELL[math.clamp(stage, 1, 4)] * mutationMultiplier)
+end
+
+-- Extra income/value multiplier for Golden dinos.
+function Economy.goldenMultiplier(golden: boolean?): number
+	return if golden then Config.GOLDEN_MULTIPLIER else 1
+end
+
+-- Coins it costs to fuse three dinos of a species into a Golden one.
+function Economy.goldenFee(baseIncome: number): number
+	return math.max(100, math.floor(baseIncome * Config.GOLDEN_FEE_SECONDS))
 end
 
 -- Coins from selling a laid egg from your tray.
@@ -2270,7 +2386,7 @@ return Economy
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="28">
+        <Item class="ModuleScript" referent="29">
           <Properties>
             <string name="Name">EggOdds</string>
             <string name="Source"><![CDATA[--!strict
@@ -2310,7 +2426,7 @@ return EggOdds
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="29">
+        <Item class="ModuleScript" referent="30">
           <Properties>
             <string name="Name">Format</string>
             <string name="Source"><![CDATA[--!strict
@@ -2379,7 +2495,7 @@ return Format
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="30">
+        <Item class="ModuleScript" referent="31">
           <Properties>
             <string name="Name">Frames</string>
             <string name="Source"><![CDATA[--!strict
@@ -2426,7 +2542,7 @@ return Frames
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="31">
+        <Item class="ModuleScript" referent="32">
           <Properties>
             <string name="Name">Growth</string>
             <string name="Source"><![CDATA[--!strict
@@ -2447,7 +2563,9 @@ Growth.GIANT = 4
 -- Per-stage multipliers (index = stage).
 Growth.INCOME = { 0.25, 0.5, 1, 2 }
 Growth.SIZE = { 0.5, 0.72, 1, 1.45 }
-Growth.SELL = { 0.3, 0.6, 1, 2 }
+-- Babies sell for very little, so buying cheap eggs and selling the babies
+-- straight away never makes coins (it did at 0.3: a 50-coin egg sold for 180+).
+Growth.SELL = { 0.02, 0.6, 1, 2 }
 
 -- thresholds = ages (seconds) to reach Juvenile, Adult, Giant.
 function Growth.stageIndex(ageSeconds: number, thresholds: { number }): number
@@ -2533,7 +2651,7 @@ return Growth
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="32">
+        <Item class="ModuleScript" referent="33">
           <Properties>
             <string name="Name">Odds</string>
             <string name="Source"><![CDATA[--!strict
@@ -2658,7 +2776,7 @@ return Odds
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="33">
+        <Item class="ModuleScript" referent="34">
           <Properties>
             <string name="Name">Rng</string>
             <string name="Source"><![CDATA[--!strict
@@ -2720,7 +2838,7 @@ return Rng
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="34">
+        <Item class="ModuleScript" referent="35">
           <Properties>
             <string name="Name">Signal</string>
             <string name="Source"><![CDATA[--!strict
@@ -2765,7 +2883,7 @@ return Signal
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="35">
+        <Item class="ModuleScript" referent="36">
           <Properties>
             <string name="Name">Streak</string>
             <string name="Source"><![CDATA[--!strict
@@ -2811,11 +2929,11 @@ return Streak
           </Properties>
         </Item>
       </Item>
-      <Item class="Folder" referent="36">
+      <Item class="Folder" referent="37">
         <Properties>
           <string name="Name">Visual</string>
         </Properties>
-        <Item class="ModuleScript" referent="37">
+        <Item class="ModuleScript" referent="38">
           <Properties>
             <string name="Name">DinoModel</string>
             <string name="Source"><![CDATA[--!strict
@@ -2845,6 +2963,11 @@ local EYE_WHITE = Color3.fromRGB(255, 255, 255)
 local PUPIL = Color3.fromRGB(28, 24, 40)
 local MOUTH = Color3.fromRGB(70, 35, 45)
 local CHEEK = Color3.fromRGB(255, 150, 175)
+local GOLD = {
+	main = Color3.fromRGB(255, 196, 46),
+	belly = Color3.fromRGB(255, 236, 150),
+	accent = Color3.fromRGB(214, 128, 24),
+}
 
 local function rgb(c: { number }): Color3
 	return Color3.fromRGB(c[1], c[2], c[3])
@@ -3057,6 +3180,47 @@ local function applyMutation(b: Builder, mutation: string?)
 		elseif mutation == "Glossy" then
 			addParticles(body, Color3.fromRGB(255, 255, 220), b.scale, 2)
 		end
+	end
+end
+
+-- Golden dinos wear a little crown and sparkle.
+local function addGoldenDetails(b: Builder)
+	local head = b.model:FindFirstChild("Head")
+	if head and head:IsA("BasePart") then
+		local top = head.CFrame.Position / b.scale + Vector3.new(0, head.Size.Y / b.scale * 0.42, 0)
+		local width = math.min(head.Size.X, head.Size.Z) / b.scale * 0.55
+		local band = cylinder(
+			b,
+			"Crown",
+			"detail",
+			GOLD.main,
+			top,
+			top + Vector3.new(0, width * 0.32, 0),
+			width
+		)
+		band.Reflectance = 0.25
+		for i = 0, 2 do
+			local angle = math.rad(-90 + i * 90)
+			local spot = top
+				+ Vector3.new(
+					math.cos(angle) * width * 0.36,
+					width * 0.42,
+					math.sin(angle) * width * 0.36
+				)
+			local jewel = ellipsoid(
+				b,
+				"CrownTip",
+				"detail",
+				if i == 1 then Color3.fromRGB(255, 80, 110) else GOLD.belly,
+				Vector3.new(width * 0.26, width * 0.26, width * 0.26),
+				CFrame.new(spot)
+			)
+			jewel.Reflectance = 0.2
+		end
+	end
+	local body = b.model:FindFirstChild("Body")
+	if body and body:IsA("BasePart") then
+		addParticles(body, Color3.fromRGB(255, 220, 90), b.scale, 4)
 	end
 end
 
@@ -3706,11 +3870,18 @@ function DinoModel.scaleFor(species: DinoData.Species, stage: number): number
 	return species.scale ^ 0.75 * Growth.SIZE[math.clamp(stage, 1, 4)] * DinoModel.BASE_UNIT
 end
 
--- Builds a dino model. `stage` is 1-4 (Baby..Giant).
+-- Builds a dino model. `stage` is 1-4 (Baby..Giant); `golden` paints it gold
+-- with a crown (mutations still apply on top).
 --   Static: every part anchored (UI previews)
 --   World: root anchored, everything else welded to it (move the root to move the dino)
 --   Mount: nothing anchored, welded to the root; caller welds the root to a character
-function DinoModel.build(speciesId: string, stage: number, mutation: string?, mode: Mode): Model
+function DinoModel.build(
+	speciesId: string,
+	stage: number,
+	mutation: string?,
+	mode: Mode,
+	golden: boolean?
+): Model
 	local species = DinoData.get(speciesId)
 	assert(species, `unknown species {speciesId}`)
 	stage = math.clamp(stage, 1, 4)
@@ -3735,16 +3906,22 @@ function DinoModel.build(speciesId: string, stage: number, mutation: string?, mo
 		model = model,
 		root = root,
 		scale = scale,
-		colors = {
-			main = rgb(species.colors.main),
-			belly = rgb(species.colors.belly),
-			accent = rgb(species.colors.accent),
-		},
+		colors = if golden
+			then { main = GOLD.main, belly = GOLD.belly, accent = GOLD.accent }
+			else {
+				main = rgb(species.colors.main),
+				belly = rgb(species.colors.belly),
+				accent = rgb(species.colors.accent),
+			},
 		parts = {},
 	}
 
 	buildBody(b, species, stage)
 	applyMutation(b, mutation)
+	if golden then
+		addGoldenDetails(b)
+		model:SetAttribute("Golden", true)
+	end
 
 	-- Prompt anchor at chest height
 	local top = 0
@@ -3783,7 +3960,7 @@ return DinoModel
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="38">
+        <Item class="ModuleScript" referent="39">
           <Properties>
             <string name="Name">EggModel</string>
             <string name="Source"><![CDATA[--!strict
@@ -3961,7 +4138,7 @@ return EggModel
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="39">
+        <Item class="ModuleScript" referent="40">
           <Properties>
             <string name="Name">Studs</string>
             <string name="Source"><![CDATA[--!strict
@@ -4002,11 +4179,11 @@ return Studs
       </Item>
     </Item>
   </Item>
-  <Item class="ServerScriptService" referent="40">
+  <Item class="ServerScriptService" referent="41">
     <Properties>
       <string name="Name">ServerScriptService</string>
     </Properties>
-    <Item class="Script" referent="41">
+    <Item class="Script" referent="42">
       <Properties>
         <string name="Name">Server</string>
         <token name="RunContext">0</token>
@@ -4057,11 +4234,53 @@ end
 print("[RaiseADino] server started")
 ]]></string>
       </Properties>
-      <Item class="Folder" referent="42">
+      <Item class="Folder" referent="43">
         <Properties>
           <string name="Name">Lib</string>
         </Properties>
-        <Item class="ModuleScript" referent="43">
+        <Item class="ModuleScript" referent="44">
+          <Properties>
+            <string name="Name">BoardData</string>
+            <string name="Source"><![CDATA[--!strict
+-- The global leaderboards in the hub's Hall of Fame (built by Island, filled
+-- in by the Leaderboards system).
+
+export type Board = {
+	key: string,
+	title: string,
+	store: string, -- OrderedDataStore name
+	color: Color3,
+}
+
+local BoardData = {
+	ROWS = 10,
+	BOARDS = {
+		{
+			key = "Earned",
+			title = "🏆 Top Earners",
+			store = "RaiseADino_LB_Earned_v1",
+			color = Color3.fromRGB(255, 196, 46),
+		},
+		{
+			key = "Dex",
+			title = "📖 Dex Masters",
+			store = "RaiseADino_LB_Dex_v1",
+			color = Color3.fromRGB(255, 120, 170),
+		},
+		{
+			key = "Rebirths",
+			title = "⭐ Most Rebirths",
+			store = "RaiseADino_LB_Rebirths_v1",
+			color = Color3.fromRGB(150, 110, 240),
+		},
+	} :: { Board },
+}
+
+return BoardData
+]]></string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="45">
           <Properties>
             <string name="Name">Build</string>
             <string name="Source"><![CDATA[--!strict
@@ -4371,7 +4590,7 @@ return Build
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="44">
+        <Item class="ModuleScript" referent="46">
           <Properties>
             <string name="Name">CodeData</string>
             <string name="Source"><![CDATA[--!strict
@@ -4399,7 +4618,7 @@ return CODES
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="45">
+        <Item class="ModuleScript" referent="47">
           <Properties>
             <string name="Name">Island</string>
             <string name="Source"><![CDATA[--!strict
@@ -4417,6 +4636,7 @@ local EggModel = require(ReplicatedStorage.Shared.Visual.EggModel)
 local DinoModel = require(ReplicatedStorage.Shared.Visual.DinoModel)
 local Palette = require(ReplicatedStorage.Shared.Palette)
 local Rng = require(ReplicatedStorage.Shared.Util.Rng)
+local BoardData = require(script.Parent.BoardData)
 local Build = require(script.Parent.Build)
 local Props = require(script.Parent.Props)
 
@@ -4431,6 +4651,10 @@ Island.PLAZA_RADIUS = 40
 Island.RING_PATH_RADIUS = 86
 Island.GATE_RADIUS = Config.PLOT_RING_RADIUS - HALF
 Island.VOLCANO_ANGLE = PLOT_ANGLE / 2
+-- Hall of Fame (leaderboards): between two paths, opposite the volcano.
+Island.HALL_ANGLE = PLOT_ANGLE * 4.5
+Island.HALL_RADIUS = 66
+Island.FRUIT_TREES = 8
 Island.VOLCANO_POSITION = Build.polar(PLOT_ANGLE / 2, 205)
 Island.VOLCANO_RADIUS = 46
 Island.SHOP_RADIUS = 15
@@ -4978,6 +5202,12 @@ local function scatter(map: Instance, landList: { Land })
 		if insidePlot(position, radius + 4) or nearPath(position, radius) then
 			return false
 		end
+		if
+			(position - Build.polar(Island.HALL_ANGLE, Island.HALL_RADIUS)).Magnitude
+			< radius + 20
+		then
+			return false
+		end
 		local volcano = Vector3.new(
 			position.X - Island.VOLCANO_POSITION.X,
 			0,
@@ -5016,7 +5246,7 @@ local function scatter(map: Instance, landList: { Land })
 	end
 
 	-- landmarks first: decorative egg nests and ponds in open meadows
-	for _, spot in { Build.polar(PLOT_ANGLE * 4.5, 62), Build.polar(PLOT_ANGLE * 6.5, 150) } do
+	for _, spot in { Build.polar(PLOT_ANGLE * 2.5, 62), Build.polar(PLOT_ANGLE * 6.5, 150) } do
 		if free(spot, 6) then
 			table.insert(taken, { position = spot, radius = 6 })
 			Props.eggNest(spot, 1.2, gen, folder)
@@ -5025,6 +5255,13 @@ local function scatter(map: Instance, landList: { Land })
 	place(2, 10, 60, 175, function(p)
 		Props.pond(p, 1 + gen.next() * 0.3, gen, folder)
 	end)
+	-- the fruit orchard, before the other trees so all of it fits
+	local orchard = Instance.new("Folder")
+	orchard.Name = "FruitTrees"
+	place(Island.FRUIT_TREES, 7, 55, 175, function(p)
+		Props.fruitTree(p, 1.05, gen, orchard)
+	end)
+	orchard.Parent = map
 	local reach = Island.LAND_RADIUS + 45 -- peninsulas reach past the main disc
 	place(40, 5, 50, reach, function(p)
 		Props.tree(p, 0.9 + gen.next() * 0.45, gen, folder)
@@ -5112,6 +5349,94 @@ local function buildIslets(map: Instance)
 end
 
 -- Builds everything and returns the shop's prompt part.
+-- Three leaderboards in an arc facing the hub. Each face has a SurfaceGui
+-- with a title and ROWS rows (Rank / Player / Score labels) to fill in.
+type Column = { name: string, x: number, width: number, align: Enum.TextXAlignment }
+local BOARD_COLUMNS: { Column } = {
+	{ name = "Rank", x = 0.02, width = 0.14, align = Enum.TextXAlignment.Center },
+	{ name = "Player", x = 0.17, width = 0.5, align = Enum.TextXAlignment.Left },
+	{ name = "Score", x = 0.67, width = 0.31, align = Enum.TextXAlignment.Right },
+}
+local function buildHallOfFame(map: Instance)
+	local hall = Build.model("HallOfFame", map)
+	local center = Vector3.new(0, 0, 0)
+	for i, board in BoardData.BOARDS do
+		local angle = Island.HALL_ANGLE + (i - 2) * math.rad(11)
+		local base = Build.polar(angle, Island.HALL_RADIUS)
+		local facing = CFrame.lookAt(base, Vector3.new(center.X, 0, center.Z))
+		local model = Build.model(board.key, hall)
+		for _, side in { -1, 1 } do
+			Build.block(
+				Vector3.new(1.2, 18, 1.2),
+				facing * CFrame.new(side * 5.4, 9, 0.8),
+				Palette.wood,
+				model,
+				{ name = "Post", shadow = false }
+			)
+		end
+		local face = Build.block(
+			Vector3.new(11.4, 15, 0.8),
+			facing * CFrame.new(0, 10, 0),
+			Color3.fromRGB(255, 248, 232),
+			model,
+			{ name = "Face", decor = true }
+		)
+		Build.block(
+			Vector3.new(12.4, 1.4, 1.6),
+			facing * CFrame.new(0, 18.1, 0.2),
+			board.color,
+			model,
+			{ name = "Cap", decor = true, shadow = false }
+		)
+
+		local gui = Instance.new("SurfaceGui")
+		gui.Name = "Board"
+		gui.Face = Enum.NormalId.Front
+		gui.LightInfluence = 0
+		gui.PixelsPerStud = 40
+		gui.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
+		gui.Parent = face
+		local title = Instance.new("TextLabel")
+		title.Name = "Title"
+		title.BackgroundColor3 = board.color
+		title.Size = UDim2.new(1, 0, 0.13, 0)
+		title.Font = Enum.Font.FredokaOne
+		title.Text = board.title
+		title.TextScaled = true
+		title.TextColor3 = Color3.new(1, 1, 1)
+		local titleStroke = Instance.new("UIStroke")
+		titleStroke.Color = Color3.fromRGB(43, 33, 64)
+		titleStroke.Thickness = 3
+		titleStroke.Parent = title
+		title.Parent = gui
+		local rowHeight = 0.85 / BoardData.ROWS
+		for row = 1, BoardData.ROWS do
+			local frame = Instance.new("Frame")
+			frame.Name = "Row" .. row
+			frame.BackgroundColor3 = if row % 2 == 0
+				then Color3.fromRGB(246, 236, 214)
+				else Color3.fromRGB(255, 250, 240)
+			frame.BorderSizePixel = 0
+			frame.Position = UDim2.fromScale(0, 0.14 + (row - 1) * rowHeight)
+			frame.Size = UDim2.fromScale(1, rowHeight)
+			frame.Parent = gui
+			for _, column in BOARD_COLUMNS do
+				local text = Instance.new("TextLabel")
+				text.Name = column.name
+				text.BackgroundTransparency = 1
+				text.Position = UDim2.fromScale(column.x, 0.12)
+				text.Size = UDim2.fromScale(column.width, 0.76)
+				text.Font = Enum.Font.FredokaOne
+				text.TextScaled = true
+				text.TextXAlignment = column.align
+				text.TextColor3 = Color3.fromRGB(43, 33, 64)
+				text.Text = if column.name == "Rank" then tostring(row) else ""
+				text.Parent = frame
+			end
+		end
+	end
+end
+
 function Island.build(map: Instance): BasePart
 	local landList = lands()
 	buildOcean(map)
@@ -5120,6 +5445,7 @@ function Island.build(map: Instance): BasePart
 	buildFootprints(map)
 	local _, shopPrompt = buildHub(map)
 	buildVolcano(map)
+	buildHallOfFame(map)
 	scatter(map, landList)
 	buildSky(map)
 	buildIslets(map)
@@ -5130,7 +5456,7 @@ return Island
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="46">
+        <Item class="ModuleScript" referent="48">
           <Properties>
             <string name="Name">Notify</string>
             <string name="Source"><![CDATA[--!strict
@@ -5165,7 +5491,7 @@ return Notify
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="47">
+        <Item class="ModuleScript" referent="49">
           <Properties>
             <string name="Name">Props</string>
             <string name="Source"><![CDATA[--!strict
@@ -5340,6 +5666,35 @@ function Props.fern(base: Vector3, s: number, gen: Gen, parent: Instance): Model
 		)
 	end
 	Build.ball(1.4 * s, base + Vector3.new(0, 0.4 * s, 0), Palette.leafDark, m, SMALL)
+	return m
+end
+
+-- A round tree heavy with red apples, plus invisible "FruitSpot" markers on
+-- the ground around it where the Fruit system drops pickable fruit.
+function Props.fruitTree(base: Vector3, s: number, gen: Gen, parent: Instance): Model
+	local m = Props.tree(base, s, gen, parent)
+	m.Name = "FruitTree"
+	local canopy = base + Vector3.new(0, 9.5 * s, 0)
+	for i = 1, 7 do
+		local a = i * (math.pi * 2 / 7) + gen.next() * 0.4
+		local p = canopy
+			+ Vector3.new(math.sin(a) * 4.8, between(gen, -2.6, 1.2), math.cos(a) * 4.8) * s
+		Build.ball(0.95 * s, p, Palette.red, m, { decor = true, collide = false, shadow = false })
+	end
+	for i = 1, 3 do
+		local a = i * (math.pi * 2 / 3) + gen.next() * 0.6
+		local spot = Instance.new("Part")
+		spot.Name = "FruitSpot"
+		spot.Anchored = true
+		spot.CanCollide = false
+		spot.CanTouch = false
+		spot.CanQuery = false
+		spot.Transparency = 1
+		spot.Size = Vector3.new(1, 1, 1)
+		spot.CFrame =
+			CFrame.new(base + Vector3.new(math.sin(a) * 4.6 * s, 0.9, math.cos(a) * 4.6 * s))
+		spot.Parent = m
+	end
 	return m
 end
 
@@ -5662,7 +6017,7 @@ return Props
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="48">
+        <Item class="ModuleScript" referent="50">
           <Properties>
             <string name="Name">Stats</string>
             <string name="Source"><![CDATA[--!strict
@@ -5716,6 +6071,7 @@ function Stats.multiplier(profile: Profile, session: Session, now: number): numb
 		club = session.subscribed,
 		adBoost = profile.boosts.coinsUntil > now,
 		friends = Stats.friendsHere(session),
+		rebirths = profile.rebirths,
 	})
 end
 
@@ -5735,6 +6091,7 @@ function Stats.dinoIncome(dino: Types.DinoRecord, now: number): number
 	end
 	local stage = Growth.stageIndex(now - dino.bornAt, species.growth)
 	return Growth.income(species.income, stage, MutationData.multiplier(dino.mutation))
+		* Economy.goldenMultiplier(dino.golden)
 end
 
 function Stats.incomePerSecond(profile: Profile, session: Session, now: number): number
@@ -5776,11 +6133,11 @@ return Stats
           </Properties>
         </Item>
       </Item>
-      <Item class="Folder" referent="49">
+      <Item class="Folder" referent="51">
         <Properties>
           <string name="Name">Systems</string>
         </Properties>
-        <Item class="ModuleScript" referent="50">
+        <Item class="ModuleScript" referent="52">
           <Properties>
             <string name="Name">Analytics</string>
             <string name="Source"><![CDATA[--!strict
@@ -5856,7 +6213,7 @@ return Analytics
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="51">
+        <Item class="ModuleScript" referent="53">
           <Properties>
             <string name="Name">Cheats</string>
             <string name="Source"><![CDATA[--!strict
@@ -5992,6 +6349,15 @@ local commands: { [string]: (Player, string?) -> string } = {
 			then "adult T-Rex added"
 			else "nest full"
 	end,
+	raptors = function(player)
+		local added = 0
+		for _ = 1, 3 do
+			if Nest.addDino(player, "Raptor", nil, Growth.JUVENILE) then
+				added += 1
+			end
+		end
+		return `{added} Raptors added (fuse them into a Golden one!)`
+	end,
 	noshield = function(player)
 		local profile = Data.get(player)
 		if profile then
@@ -6042,7 +6408,7 @@ return Cheats
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="52">
+        <Item class="ModuleScript" referent="54">
           <Properties>
             <string name="Name">Codes</string>
             <string name="Source"><![CDATA[--!strict
@@ -6104,7 +6470,7 @@ return Codes
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="53">
+        <Item class="ModuleScript" referent="55">
           <Properties>
             <string name="Name">Coins</string>
             <string name="Source"><![CDATA[--!strict
@@ -6137,7 +6503,19 @@ function Coins.setupLeaderstats(player: Player)
 	dex.Name = "Dex"
 	dex.Value = 0
 	dex.Parent = stats
+	local rebirths = Instance.new("IntValue")
+	rebirths.Name = "Rebirths"
+	rebirths.Value = if profile then profile.rebirths else 0
+	rebirths.Parent = stats
 	stats.Parent = player
+end
+
+function Coins.setRebirths(player: Player, count: number)
+	local stats = player:FindFirstChild("leaderstats")
+	local value = stats and stats:FindFirstChild("Rebirths")
+	if value and value:IsA("IntValue") then
+		value.Value = count
+	end
 end
 
 function Coins.setDexCount(player: Player, count: number)
@@ -6221,7 +6599,7 @@ return Coins
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="54">
+        <Item class="ModuleScript" referent="56">
           <Properties>
             <string name="Name">Data</string>
             <string name="Source"><![CDATA[--!strict
@@ -6258,6 +6636,9 @@ local store: DataStore? = nil
 local mock = false
 
 local profiles: { [Player]: Profile } = {}
+-- UserIds whose final save is still being written. A rejoin to this same
+-- server waits for it, so it can't load (and later save over) older data.
+local releasing: { [number]: boolean } = {}
 local saving: { [Player]: boolean } = {}
 local nextAutosave: { [Player]: number } = {}
 
@@ -6289,6 +6670,10 @@ local function defaultProfile(now: number): Profile
 		dexClaimed = {},
 		codes = {},
 		settings = { music = true, sfx = true },
+		nicknames = {},
+		rebirths = 0,
+		fruit = { apple = 0, golden = 0 },
+		liked = { day = 0, owners = {} },
 	}
 end
 
@@ -6374,6 +6759,11 @@ function Data.load(player: Player): Profile?
 	end
 	local ds = store :: DataStore
 	local key = keyFor(player)
+
+	local waitedUntil = os.clock() + 60
+	while releasing[player.UserId] and os.clock() < waitedUntil do
+		task.wait(0.5)
+	end
 
 	for _ = 1, 5 do
 		local loaded: Profile? = nil
@@ -6483,7 +6873,10 @@ function Data.release(player: Player)
 	if not profiles[player] then
 		return
 	end
+	local userId = player.UserId
+	releasing[userId] = true
 	save(player, true)
+	releasing[userId] = nil
 	profiles[player] = nil
 	nextAutosave[player] = nil
 end
@@ -6585,7 +6978,7 @@ return Data
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="55">
+        <Item class="ModuleScript" referent="57">
           <Properties>
             <string name="Name">Dinos</string>
             <string name="Source"><![CDATA[--!strict
@@ -6679,7 +7072,7 @@ local function ride(player: Player, dinoId: string)
 	end
 	Dinos.dismount(player)
 
-	local mount = DinoModel.build(dino.species, stage, dino.mutation, "Mount")
+	local mount = DinoModel.build(dino.species, stage, dino.mutation, "Mount", dino.golden)
 	mount.Name = "Mount"
 	local height = mount:GetAttribute("Height")
 	local saddle = if typeof(height) == "number" then height * 0.55 else 3
@@ -6718,7 +7111,11 @@ local function sellDino(player: Player, dinoId: string)
 		Dinos.dismount(player)
 	end
 	local stage = Stats.dinoStage(dino, Clock.now())
-	local value = Economy.dinoValue(species.income, stage, MutationData.multiplier(dino.mutation))
+	local value = Economy.dinoValue(
+		species.income,
+		stage,
+		MutationData.multiplier(dino.mutation) * Economy.goldenMultiplier(dino.golden)
+	)
 	Nest.removeDino(player, dinoId)
 	profile.stats.sold += 1
 	local amount = Coins.add(player, value, "Gameplay", "SellDino")
@@ -6808,32 +7205,50 @@ local function tick(dt: number, withLaying: boolean)
 	end
 end
 
+local function collectPad(player: Player, plot: World.PlotInfo)
+	if Plots.ownerOf(plot.index) ~= player then
+		return
+	end
+	local now = os.clock()
+	if lastCollect[player] and now - lastCollect[player] < 0.5 then
+		return
+	end
+	lastCollect[player] = now
+	local amount = Coins.collect(player)
+	if amount > 0 then
+		Plots.updatePad(player, 0)
+		Notify.effect(player, "Collect", { amount = amount, position = plot.pad.CFrame.Position })
+		Quests.track(player, "collect")
+	end
+	-- Advance the tutorial even if the pad was nearly empty.
+	Progress.event(player, "collect")
+end
+
 local function hookCoinPads()
 	for _, plot in World.plots do
 		plot.pad.Touched:Connect(function(hit: BasePart)
 			local character = hit:FindFirstAncestorOfClass("Model")
 			local player = character and Players:GetPlayerFromCharacter(character)
-			if not player or Plots.ownerOf(plot.index) ~= player then
-				return
+			if player then
+				collectPad(player, plot)
 			end
-			local now = os.clock()
-			if lastCollect[player] and now - lastCollect[player] < 0.5 then
-				return
-			end
-			lastCollect[player] = now
-			local amount = Coins.collect(player)
-			if amount > 0 then
-				Plots.updatePad(player, 0)
-				Notify.effect(
-					player,
-					"Collect",
-					{ amount = amount, position = plot.pad.CFrame.Position }
-				)
-				Quests.track(player, "collect")
-			end
-			-- Advance the tutorial even if the pad was nearly empty.
-			Progress.event(player, "collect")
 		end)
+	end
+end
+
+-- Riders float above the pad (their feet never touch it), so collect by
+-- distance while riding.
+function Dinos.collectForRiders()
+	for _, session in Sessions.ready() do
+		local plot = if session.riding then World.getPlot(session.plotIndex) else nil
+		local character = session.player.Character
+		local root = character and character:FindFirstChild("HumanoidRootPart")
+		if plot and root and root:IsA("BasePart") then
+			local offset = root.CFrame.Position - plot.pad.CFrame.Position
+			if Vector3.new(offset.X, 0, offset.Z).Magnitude <= 5 and math.abs(offset.Y) <= 14 then
+				collectPad(session.player, plot)
+			end
+		end
 	end
 end
 
@@ -6867,6 +7282,7 @@ function Dinos.start()
 		local dt = task.wait(1)
 		ticks += 1
 		tick(dt, ticks % 5 == 0)
+		Dinos.collectForRiders()
 	end
 end
 
@@ -6874,7 +7290,7 @@ return Dinos
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="56">
+        <Item class="ModuleScript" referent="58">
           <Properties>
             <string name="Name">Eggs</string>
             <string name="Source"><![CDATA[--!strict
@@ -7264,7 +7680,646 @@ return Eggs
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="57">
+        <Item class="ModuleScript" referent="59">
+          <Properties>
+            <string name="Name">Fruit</string>
+            <string name="Source"><![CDATA[--!strict
+-- Fruit trees drop Dino Apples (and the odd Golden Apple) on the ground
+-- around them. Walk over one to put it in your basket, then feed it to a dino
+-- from its card to make it grow faster. Fruit grows back a minute after it's
+-- picked, so everyone on the server shares the orchard.
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Workspace = game:GetService("Workspace")
+
+local Clock = require(ReplicatedStorage.Shared.Util.Clock)
+local DinoData = require(ReplicatedStorage.Shared.Data.DinoData)
+local Format = require(ReplicatedStorage.Shared.Util.Format)
+local FruitData = require(ReplicatedStorage.Shared.Data.FruitData)
+local Growth = require(ReplicatedStorage.Shared.Util.Growth)
+local Net = require(ReplicatedStorage.Shared.Net)
+local Data = require(script.Parent.Data)
+local Nest = require(script.Parent.Nest)
+local Plots = require(script.Parent.Plots)
+local Quests = require(script.Parent.Quests)
+local Sessions = require(script.Parent.Sessions)
+local State = require(script.Parent.State)
+local Notify = require(script.Parent.Parent.Lib.Notify)
+local Stats = require(script.Parent.Parent.Lib.Stats)
+
+local Fruit = {}
+
+type Spot = { part: BasePart, fruit: BasePart?, respawnAt: number }
+
+local spots: { Spot } = {}
+local folder: Instance? = nil
+local rng = Random.new()
+local fullNoticeAt: { [Player]: number } = {}
+
+local function spotOf(fruit: BasePart): Spot?
+	for _, spot in spots do
+		if spot.fruit == fruit then
+			return spot
+		end
+	end
+	return nil
+end
+
+-- Hands a fruit to a player standing next to it. Returns true if picked.
+function Fruit.collect(player: Player, fruit: BasePart): boolean
+	local spot = spotOf(fruit)
+	if not spot then
+		return false -- already picked
+	end
+	local kind = fruit:GetAttribute("Kind")
+	local info = if typeof(kind) == "string" then FruitData.get(kind) else nil
+	local profile = Data.get(player)
+	local session = Sessions.get(player)
+	if not spot or not info or not profile or not session or not session.ready then
+		return false
+	end
+	local character = player.Character
+	local root = character and character:FindFirstChild("HumanoidRootPart")
+	if
+		not root
+		or not root:IsA("BasePart")
+		or (root.CFrame.Position - fruit.CFrame.Position).Magnitude > FruitData.PICK_DISTANCE
+	then
+		return false
+	end
+	local have = profile.fruit[info.kind] or 0
+	if have >= info.cap then
+		local now = os.clock()
+		if not fullNoticeAt[player] or now - fullNoticeAt[player] > 6 then
+			fullNoticeAt[player] = now
+			Notify.send(
+				player,
+				`Your basket is full of {info.name}s! Feed some to your dinos.`,
+				"info"
+			)
+		end
+		return false
+	end
+	profile.fruit[info.kind] = have + 1
+	local position = fruit.CFrame.Position
+	fruit:Destroy()
+	spot.fruit = nil
+	spot.respawnAt = Clock.now() + FruitData.RESPAWN_SECONDS * rng:NextNumber(0.8, 1.25)
+	State.markDirty(player)
+	Notify.effect(
+		player,
+		"Fruit",
+		{ position = position, kind = info.kind, count = profile.fruit[info.kind] }
+	)
+	return true
+end
+
+local function makeFruit(spot: Spot, kind: FruitData.Kind)
+	local info = FruitData.FRUITS[kind]
+	local fruit = Instance.new("Part")
+	fruit.Name = "Fruit"
+	fruit.Shape = Enum.PartType.Ball
+	fruit.Size = Vector3.new(1.4, 1.4, 1.4)
+	fruit.Color = Color3.fromRGB(info.color[1], info.color[2], info.color[3])
+	fruit.Material = Enum.Material.SmoothPlastic
+	fruit.Anchored = true
+	fruit.CanCollide = false
+	fruit.CanQuery = false
+	fruit.CastShadow = false
+	fruit.CFrame = spot.part.CFrame
+	fruit:SetAttribute("Kind", kind)
+	local leaf = Instance.new("Part")
+	leaf.Name = "Leaf"
+	leaf.Size = Vector3.new(0.5, 0.15, 0.3)
+	leaf.Color = Color3.fromRGB(90, 190, 80)
+	leaf.Material = Enum.Material.SmoothPlastic
+	leaf.Anchored = true
+	leaf.CanCollide = false
+	leaf.CanTouch = false
+	leaf.CanQuery = false
+	leaf.CFrame = spot.part.CFrame * CFrame.new(0.2, 0.75, 0) * CFrame.Angles(0, 0, 0.5)
+	leaf.Parent = fruit
+	if kind == "golden" then
+		fruit.Reflectance = 0.3
+		local sparkle = Instance.new("ParticleEmitter")
+		sparkle.Color = ColorSequence.new(Color3.fromRGB(255, 230, 120))
+		sparkle.LightEmission = 1
+		sparkle.Rate = 6
+		sparkle.Lifetime = NumberRange.new(0.6, 1.2)
+		sparkle.Speed = NumberRange.new(0.5, 1.5)
+		sparkle.SpreadAngle = Vector2.new(180, 180)
+		sparkle.Size = NumberSequence.new({
+			NumberSequenceKeypoint.new(0, 0.3),
+			NumberSequenceKeypoint.new(1, 0),
+		})
+		sparkle.Parent = fruit
+	end
+	fruit.Touched:Connect(function(hit: BasePart)
+		local model = hit:FindFirstAncestorOfClass("Model")
+		local player = model and Players:GetPlayerFromCharacter(model)
+		if player and fruit.Parent then
+			Fruit.collect(player, fruit)
+		end
+	end)
+	fruit.Parent = folder
+	spot.fruit = fruit
+end
+
+-- Finds the orchard's fruit spots (World builds the island first).
+function Fruit.setup()
+	table.clear(spots)
+	local map = Workspace:FindFirstChild("Map")
+	local orchard = map and map:FindFirstChild("FruitTrees")
+	folder = orchard
+	if not orchard then
+		return
+	end
+	for _, part in orchard:GetDescendants() do
+		if part.Name == "FruitSpot" and part:IsA("BasePart") then
+			table.insert(spots, { part = part, fruit = nil, respawnAt = 0 })
+		end
+	end
+end
+
+-- Grows fruit on every empty spot whose time has come.
+function Fruit.spawnDue(now: number)
+	for _, spot in spots do
+		if not spot.fruit and now >= spot.respawnAt then
+			local kind: FruitData.Kind = if rng:NextNumber() < FruitData.GOLDEN_CHANCE
+				then "golden"
+				else "apple"
+			makeFruit(spot, kind)
+		end
+	end
+end
+
+function Fruit.spots(): { Spot }
+	return spots
+end
+
+local function feed(player: Player, dinoId: string)
+	local profile = Data.get(player)
+	local session = Sessions.get(player)
+	if not profile or not session or not session.ready then
+		return
+	end
+	local dino = Nest.findDino(profile, dinoId)
+	local species = dino and DinoData.get(dino.species)
+	if not dino or not species then
+		return
+	end
+	local now = Clock.now()
+	local stageBefore = Stats.dinoStage(dino, now)
+	if stageBefore >= Growth.GIANT then
+		Notify.send(player, "This dino is fully grown already! 🏆", "info")
+		return
+	end
+	local kind = FruitData.nextToFeed(profile.fruit)
+	if not kind then
+		Notify.send(player, "No fruit! Pick some up under the fruit trees 🍎", "info")
+		return
+	end
+	local info = FruitData.FRUITS[kind]
+	profile.fruit[kind] -= 1
+	dino.bornAt -= info.grows
+	if stageBefore < Growth.ADULT and Stats.dinoStage(dino, now) >= Growth.ADULT then
+		dino.lastLaidAt = now -- grown up just now: no backlog of eggs
+	end
+	Plots.syncDinos(player)
+	State.markDirty(player)
+	Quests.track(player, "feed")
+	local model = Plots.dinoModel(player, dino.id)
+	Notify.effect(player, "Feed", {
+		position = if model then model:GetPivot().Position + Vector3.new(0, 3, 0) else nil,
+		kind = kind,
+	})
+	Notify.send(
+		player,
+		`{info.emoji} Yum! {dino.name or species.name} grew {Format.duration(info.grows)} in one bite.`,
+		"good"
+	)
+end
+
+function Fruit.init()
+	Net.on("FeedDino", 2, 4, function(player: Player, dinoId: unknown)
+		if typeof(dinoId) == "string" and #dinoId <= 20 then
+			feed(player, dinoId)
+		end
+	end)
+	Sessions.Leaving:connect(function(player: Player)
+		fullNoticeAt[player] = nil
+	end)
+end
+
+-- Riders float above the ground, so they pick fruit by distance.
+function Fruit.collectForRiders()
+	for _, session in Sessions.ready() do
+		local character = if session.riding then session.player.Character else nil
+		local root = character and character:FindFirstChild("HumanoidRootPart")
+		if root and root:IsA("BasePart") then
+			for _, spot in spots do
+				local fruit = spot.fruit
+				if fruit then
+					local offset = root.CFrame.Position - fruit.CFrame.Position
+					if Vector3.new(offset.X, 0, offset.Z).Magnitude <= 4 then
+						Fruit.collect(session.player, fruit)
+					end
+				end
+			end
+		end
+	end
+end
+
+function Fruit.start()
+	Fruit.setup()
+	local ticks = 0
+	while true do
+		if ticks % 8 == 0 then
+			Fruit.spawnDue(Clock.now())
+		end
+		Fruit.collectForRiders()
+		ticks += 1
+		task.wait(0.25)
+	end
+end
+
+return Fruit
+]]></string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="60">
+          <Properties>
+            <string name="Name">Golden</string>
+            <string name="Source"><![CDATA[--!strict
+-- Golden dinos: fuse three dinos of one species into a Golden one that earns
+-- Config.GOLDEN_MULTIPLIER times the coins. The dino you fuse from keeps its
+-- id, name and spot, and takes the oldest age and best mutation of the three.
+-- The two partners are the cheapest other dinos of that species. A small coin
+-- fee keeps it a choice (and frees up nest space).
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local Clock = require(ReplicatedStorage.Shared.Util.Clock)
+local DinoData = require(ReplicatedStorage.Shared.Data.DinoData)
+local Economy = require(ReplicatedStorage.Shared.Util.Economy)
+local Format = require(ReplicatedStorage.Shared.Util.Format)
+local MutationData = require(ReplicatedStorage.Shared.Data.MutationData)
+local Net = require(ReplicatedStorage.Shared.Net)
+local Types = require(ReplicatedStorage.Shared.Types)
+local Coins = require(script.Parent.Coins)
+local Data = require(script.Parent.Data)
+local Dinos = require(script.Parent.Dinos)
+local Nest = require(script.Parent.Nest)
+local Plots = require(script.Parent.Plots)
+local Preferences = require(script.Parent.Preferences)
+local Sessions = require(script.Parent.Sessions)
+local State = require(script.Parent.State)
+local Notify = require(script.Parent.Parent.Lib.Notify)
+local Stats = require(script.Parent.Parent.Lib.Stats)
+
+local Golden = {}
+
+Golden.NEEDED = 3
+
+-- Other non-golden dinos of the same species, cheapest first.
+function Golden.partners(profile: Types.Profile, keeper: Types.DinoRecord): { Types.DinoRecord }
+	local species = DinoData.get(keeper.species)
+	local now = Clock.now()
+	local list = {}
+	for _, dino in profile.dinos do
+		if dino ~= keeper and dino.species == keeper.species and not dino.golden then
+			table.insert(list, dino)
+		end
+	end
+	local function value(dino: Types.DinoRecord): number
+		local income = if species then species.income else 1
+		return Economy.dinoValue(
+			income,
+			Stats.dinoStage(dino, now),
+			MutationData.multiplier(dino.mutation)
+		)
+	end
+	table.sort(list, function(a, b)
+		return value(a) < value(b)
+	end)
+	return list
+end
+
+local function fuse(player: Player, dinoId: string)
+	local profile = Data.get(player)
+	local session = Sessions.get(player)
+	if not profile or not session or not session.ready then
+		return
+	end
+	local keeper = Nest.findDino(profile, dinoId)
+	local species = keeper and DinoData.get(keeper.species)
+	if not keeper or not species or keeper.golden then
+		return
+	end
+	local partners = Golden.partners(profile, keeper)
+	if #partners < Golden.NEEDED - 1 then
+		Notify.send(
+			player,
+			`You need {Golden.NEEDED} {species.name}s to make a Golden one!`,
+			"info"
+		)
+		return
+	end
+	local fee = Economy.goldenFee(species.income)
+	if not Coins.spend(player, fee, "Gameplay", "GoldenFuse") then
+		Notify.send(player, `Making it Golden costs 💰 {Format.number(fee)}.`, "bad")
+		return
+	end
+
+	local mutation = keeper.mutation
+	local bornAt = keeper.bornAt
+	for i = 1, Golden.NEEDED - 1 do
+		local partner = partners[i]
+		if MutationData.multiplier(partner.mutation) > MutationData.multiplier(mutation) then
+			mutation = partner.mutation
+		end
+		bornAt = math.min(bornAt, partner.bornAt)
+		if session.riding == partner.id then
+			Dinos.dismount(player)
+		end
+		Nest.removeDino(player, partner.id)
+	end
+	if session.riding == keeper.id then
+		Dinos.dismount(player) -- the mount is rebuilt golden next ride
+	end
+	keeper.golden = true
+	keeper.mutation = mutation
+	keeper.bornAt = bornAt
+	-- its laying clock starts now (an older inherited age mustn't count as
+	-- eggs it was owed)
+	keeper.lastLaidAt = math.max(keeper.lastLaidAt, Clock.now())
+	Plots.syncDinos(player)
+	Preferences.syncBuddy(player)
+	State.markDirty(player)
+	Nest.DinoChanged:fire(player, keeper)
+	Notify.effect(player, "Golden", { species = keeper.species, mutation = mutation })
+	Notify.send(
+		player,
+		`⭐ Your {species.name} is GOLDEN! It earns {Economy.goldenMultiplier(true)}x coins!`,
+		"rare"
+	)
+end
+
+function Golden.init()
+	Net.on("FuseGolden", 1, 3, function(player: Player, dinoId: unknown)
+		if typeof(dinoId) == "string" and #dinoId <= 20 then
+			fuse(player, dinoId)
+		end
+	end)
+end
+
+return Golden
+]]></string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="61">
+          <Properties>
+            <string name="Name">Leaderboards</string>
+            <string name="Source"><![CDATA[--!strict
+-- Global leaderboards in the hub's Hall of Fame: top coin earners, biggest
+-- Dex and most rebirths. Scores go to OrderedDataStores every few minutes
+-- (and when a player leaves); the top 10 are read back and shown on the
+-- boards. Without DataStore access (Studio before publishing) the boards
+-- show the players in this server instead. Studio test sessions never write
+-- (the dev panel's cheats would otherwise reach the real boards).
+
+local DataStoreService = game:GetService("DataStoreService")
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+local UserService = game:GetService("UserService")
+local Workspace = game:GetService("Workspace")
+
+local Format = require(ReplicatedStorage.Shared.Util.Format)
+local Types = require(ReplicatedStorage.Shared.Types)
+local Data = require(script.Parent.Data)
+local Sessions = require(script.Parent.Sessions)
+local BoardData = require(script.Parent.Parent.Lib.BoardData)
+
+local Leaderboards = {}
+
+Leaderboards.REFRESH_SECONDS = 120
+
+export type Entry = { userId: number, value: number }
+
+local MAX_VALUE = 2 ^ 53
+
+local stores: { [string]: OrderedDataStore } = {}
+local mock = false
+local lastWritten: { [Player]: { [string]: number } } = {}
+local names: { [number]: string } = {}
+
+local function valueOf(key: string, profile: Types.Profile): number
+	local value = 0
+	if key == "Earned" then
+		value = profile.totalEarned
+	elseif key == "Dex" then
+		for _ in profile.dex do
+			value += 1
+		end
+	elseif key == "Rebirths" then
+		value = profile.rebirths
+	end
+	return math.clamp(math.floor(value), 0, MAX_VALUE)
+end
+
+local function formatValue(key: string, value: number): string
+	if key == "Earned" then
+		return "💰 " .. Format.number(value)
+	elseif key == "Dex" then
+		return `{value} 🦖`
+	end
+	return `⭐ {value}`
+end
+
+local function openStores()
+	for _, board in BoardData.BOARDS do
+		local ok, store = pcall(function()
+			return DataStoreService:GetOrderedDataStore(board.store)
+		end)
+		if not ok then
+			mock = true
+			return
+		end
+		stores[board.key] = store
+	end
+end
+
+-- Saves a player's scores (only the ones that changed since last time).
+local function write(player: Player, profile: Types.Profile)
+	if mock or RunService:IsStudio() then
+		return
+	end
+	local written = lastWritten[player] or {}
+	lastWritten[player] = written
+	for _, board in BoardData.BOARDS do
+		local value = valueOf(board.key, profile)
+		local store = stores[board.key]
+		if store and written[board.key] ~= value and value > 0 then
+			local ok = pcall(function()
+				store:SetAsync(tostring(player.UserId), value)
+			end)
+			if ok then
+				written[board.key] = value
+			end
+		end
+	end
+end
+
+local function topEntries(key: string): { Entry }
+	local entries: { Entry } = {}
+	if mock then
+		for _, player in Players:GetPlayers() do
+			local profile = Data.get(player)
+			if profile then
+				table.insert(entries, { userId = player.UserId, value = valueOf(key, profile) })
+				names[player.UserId] = player.DisplayName
+			end
+		end
+		table.sort(entries, function(a, b)
+			return a.value > b.value
+		end)
+		while #entries > BoardData.ROWS do
+			table.remove(entries)
+		end
+		return entries
+	end
+	local store = stores[key]
+	if not store then
+		return entries
+	end
+	local ok, page = pcall(function()
+		return store:GetSortedAsync(false, BoardData.ROWS):GetCurrentPage()
+	end)
+	if ok and type(page) == "table" then
+		for _, item in page do
+			local userId = tonumber(item.key)
+			if userId and type(item.value) == "number" then
+				table.insert(entries, { userId = userId, value = item.value })
+			end
+		end
+	end
+	return entries
+end
+
+-- Display names for any user ids we haven't seen yet.
+local function resolveNames(entries: { Entry })
+	local missing = {}
+	for _, entry in entries do
+		if not names[entry.userId] then
+			local player = Players:GetPlayerByUserId(entry.userId)
+			if player then
+				names[entry.userId] = player.DisplayName
+			else
+				table.insert(missing, entry.userId)
+			end
+		end
+	end
+	if #missing == 0 then
+		return
+	end
+	local ok, infos = pcall(function()
+		return UserService:GetUserInfosByUserIdsAsync(missing)
+	end)
+	if ok and type(infos) == "table" then
+		for _, info in infos do
+			if type(info.Id) == "number" and type(info.DisplayName) == "string" then
+				names[info.Id] = info.DisplayName
+			end
+		end
+	end
+end
+
+local function render(key: string, entries: { Entry })
+	local map = Workspace:FindFirstChild("Map")
+	local hall = map and map:FindFirstChild("HallOfFame")
+	local model = hall and hall:FindFirstChild(key)
+	local face = model and model:FindFirstChild("Face")
+	local gui = face and face:FindFirstChild("Board")
+	if not gui then
+		return
+	end
+	for row = 1, BoardData.ROWS do
+		local frame = gui:FindFirstChild("Row" .. row)
+		local nameLabel = frame and frame:FindFirstChild("Player")
+		local valueLabel = frame and frame:FindFirstChild("Score")
+		local rankLabel = frame and frame:FindFirstChild("Rank")
+		if
+			not nameLabel
+			or not nameLabel:IsA("TextLabel")
+			or not valueLabel
+			or not valueLabel:IsA("TextLabel")
+			or not rankLabel
+			or not rankLabel:IsA("TextLabel")
+		then
+			continue
+		end
+		local entry = entries[row]
+		rankLabel.Text = if row == 1
+			then "🥇"
+			elseif row == 2 then "🥈"
+			elseif row == 3 then "🥉"
+			else tostring(row)
+		nameLabel.Text = if entry then names[entry.userId] or "Player" else ""
+		valueLabel.Text = if entry then formatValue(key, entry.value) else ""
+	end
+end
+
+-- One full pass: save everyone's scores, then redraw every board.
+function Leaderboards.refresh()
+	for _, session in Sessions.ready() do
+		-- (earlier writes yield; skip anyone who left meanwhile)
+		local profile = Data.get(session.player)
+		if profile and session.ready and session.player.Parent ~= nil then
+			write(session.player, profile)
+		end
+	end
+	for _, board in BoardData.BOARDS do
+		local entries = topEntries(board.key)
+		resolveNames(entries)
+		render(board.key, entries)
+	end
+end
+
+function Leaderboards.isMock(): boolean
+	return mock
+end
+
+function Leaderboards.init()
+	openStores()
+	Sessions.Leaving:connect(function(player: Player)
+		local profile = Data.get(player)
+		if profile then
+			task.spawn(write, player, profile)
+		end
+		lastWritten[player] = nil
+	end)
+	Players.PlayerRemoving:Connect(function(player: Player)
+		task.defer(function()
+			lastWritten[player] = nil
+		end)
+	end)
+end
+
+function Leaderboards.start()
+	task.wait(10)
+	while true do
+		Leaderboards.refresh()
+		task.wait(Leaderboards.REFRESH_SECONDS)
+	end
+end
+
+return Leaderboards
+]]></string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="62">
           <Properties>
             <string name="Name">Lifecycle</string>
             <string name="Source"><![CDATA[--!strict
@@ -7308,6 +8363,7 @@ local function onCharacter(player: Player, character: Model)
 	end
 	task.defer(Social.decorateCharacter, player)
 	humanoid.Died:Connect(function()
+		Raids.dropCarry(player)
 		Dinos.dismount(player)
 		task.delay(3, function()
 			if player.Parent ~= nil and Sessions.get(player) then
@@ -7319,6 +8375,11 @@ end
 
 local function onJoin(player: Player)
 	local session = Sessions.create(player)
+	-- The player can leave during any yield below; onLeave then cleans up
+	-- (including the nest) and this join stops.
+	local function left(): boolean
+		return player.Parent == nil or Sessions.get(player) ~= session
+	end
 
 	local profile = Data.load(player)
 	if player.Parent == nil then
@@ -7340,10 +8401,14 @@ local function onJoin(player: Player)
 		return
 	end
 
+	-- Passes and the Club first, so offline earnings include their boosts.
+	Monetization.onJoin(player)
+	if left() then
+		return
+	end
 	Dinos.applyOffline(player)
 	Plots.renderAll(player)
 	Coins.setupLeaderstats(player)
-	task.spawn(Monetization.onJoin, player)
 	task.spawn(Social.onJoin, player)
 
 	local plot = World.getPlot(index)
@@ -7353,7 +8418,15 @@ local function onJoin(player: Player)
 	player.CharacterAdded:Connect(function(character)
 		onCharacter(player, character)
 	end)
-	player:LoadCharacterAsync()
+	local loaded, err = pcall(function()
+		player:LoadCharacterAsync()
+	end)
+	if left() then
+		return
+	end
+	if not loaded then
+		warn(`[Lifecycle] couldn't load {player.Name}'s character: {err}`)
+	end
 
 	session.ready = true
 	Sessions.Ready:fire(player)
@@ -7375,8 +8448,9 @@ local function onLeave(player: Player)
 		Raids.onLeave(player)
 		Dinos.dismount(player)
 		Social.onLeave(player)
-		Plots.release(player)
 	end
+	-- also when they leave before finishing joining (no-op without a nest)
+	Plots.release(player)
 	Data.release(player)
 	Sessions.remove(player)
 end
@@ -7397,7 +8471,7 @@ return Lifecycle
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="58">
+        <Item class="ModuleScript" referent="63">
           <Properties>
             <string name="Name">Monetization</string>
             <string name="Source"><![CDATA[--!strict
@@ -7738,8 +8812,15 @@ function Monetization.init()
 	MarketplaceService.PromptGamePassPurchaseFinished:Connect(
 		function(player: Player, id: number, purchased: boolean)
 			local key = passKeyById[id]
+			if not purchased or not key or not Sessions.get(player) then
+				return
+			end
+			-- Don't trust the signal alone: confirm the player really owns it.
+			local ok, owns = pcall(function()
+				return MarketplaceService:UserOwnsGamePassAsync(player.UserId, id)
+			end)
 			local session = Sessions.get(player)
-			if purchased and key and session then
+			if ok and owns and session then
 				session.passes[key] = true
 				Analytics.event(player, "Pass" .. key)
 				Notify.send(player, "🎉 Thanks for your support! Your pass is active.", "good")
@@ -7773,7 +8854,7 @@ return Monetization
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="59">
+        <Item class="ModuleScript" referent="64">
           <Properties>
             <string name="Name">Nest</string>
             <string name="Source"><![CDATA[--!strict
@@ -7988,7 +9069,166 @@ return Nest
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="60">
+        <Item class="ModuleScript" referent="65">
+          <Properties>
+            <string name="Name">Nicknames</string>
+            <string name="Source"><![CDATA[--!strict
+-- Dino nicknames. A player types a name; Roblox's text filter decides what
+-- everyone may see. The name as typed stays on the server (profile.nicknames)
+-- and is filtered again on every join, because filter rules change. Dinos
+-- only carry the filtered, broadcast-safe name (dino.name).
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local TextService = game:GetService("TextService")
+
+local Config = require(ReplicatedStorage.Shared.Config)
+local Net = require(ReplicatedStorage.Shared.Net)
+local Types = require(ReplicatedStorage.Shared.Types)
+local Data = require(script.Parent.Data)
+local Nest = require(script.Parent.Nest)
+local Plots = require(script.Parent.Plots)
+local Sessions = require(script.Parent.Sessions)
+local State = require(script.Parent.State)
+local Notify = require(script.Parent.Parent.Lib.Notify)
+
+local Nicknames = {}
+
+local busy: { [Player]: boolean } = {}
+
+-- Collapses whitespace and control characters; nil for invalid UTF-8.
+function Nicknames.clean(text: string): string?
+	if utf8.len(text) == nil then
+		return nil
+	end
+	local cleaned = string.gsub(text, "%c", " ")
+	cleaned = string.gsub(cleaned, "%s+", " ")
+	return string.match(cleaned, "^%s*(.-)%s*$") or ""
+end
+
+-- What everyone may see, or nil if the filter didn't answer or hid any of it.
+local function filter(player: Player, text: string): (string?, boolean)
+	local ok, result = pcall(function()
+		local filtered = TextService:FilterStringAsync(text, player.UserId)
+		return filtered:GetNonChatStringForBroadcastAsync()
+	end)
+	if not ok or type(result) ~= "string" then
+		return nil, false
+	end
+	local blocked = string.find(result, "#", 1, true) ~= nil
+		and string.find(text, "#", 1, true) == nil
+	return if blocked then nil else result, true
+end
+
+local function setName(player: Player, dino: Types.DinoRecord, name: string?)
+	dino.name = name
+	Plots.syncDinos(player)
+	State.markDirty(player)
+end
+
+local function rename(player: Player, dinoId: string, text: string)
+	local profile = Data.get(player)
+	if not profile or busy[player] or not Nest.findDino(profile, dinoId) then
+		return
+	end
+	local name = Nicknames.clean(text)
+	if not name then
+		return
+	end
+	if name == "" then
+		profile.nicknames[dinoId] = nil
+		local dino = Nest.findDino(profile, dinoId)
+		if dino then
+			setName(player, dino, nil)
+		end
+		return
+	end
+	if (utf8.len(name) or 0) > Config.NICKNAME_MAX_LENGTH then
+		Notify.send(player, `Names can be up to {Config.NICKNAME_MAX_LENGTH} letters long.`, "bad")
+		return
+	end
+	busy[player] = true
+	local filtered, answered = filter(player, name)
+	busy[player] = nil
+	-- The dino may have been sold (or the player left) while the filter ran.
+	local current = Data.get(player)
+	local dino = if current then Nest.findDino(current, dinoId) else nil
+	if not current or not dino then
+		return
+	end
+	if not answered then
+		Notify.send(player, "Couldn't check that name right now. Try again in a moment!", "bad")
+	elseif not filtered then
+		Notify.send(player, "That name isn't allowed. Try another one!", "bad")
+	else
+		current.nicknames[dinoId] = name
+		setName(player, dino, filtered)
+		Notify.send(player, `🏷 Say hi to {filtered}!`, "good")
+	end
+end
+
+-- Runs every saved name through the filter again (on join).
+function Nicknames.refresh(player: Player)
+	local profile = Data.get(player)
+	if not profile then
+		return
+	end
+	local changed = false
+	for dinoId, raw in table.clone(profile.nicknames) do
+		if not Nest.findDino(profile, dinoId) then
+			profile.nicknames[dinoId] = nil
+			continue
+		end
+		local filtered, answered = filter(player, raw)
+		if Data.get(player) ~= profile then
+			return -- left while filtering
+		end
+		local dino = Nest.findDino(profile, dinoId)
+		if answered and dino and profile.nicknames[dinoId] == raw then
+			if not filtered then
+				profile.nicknames[dinoId] = nil
+			end
+			if dino.name ~= filtered then
+				dino.name = filtered
+				changed = true
+			end
+		end
+	end
+	if changed then
+		Plots.syncDinos(player)
+		State.markDirty(player)
+	end
+end
+
+function Nicknames.init()
+	Net.on("RenameDino", 0.5, 3, function(player: Player, dinoId: unknown, text: unknown)
+		if
+			typeof(dinoId) == "string"
+			and #dinoId <= 20
+			and typeof(text) == "string"
+			and #text <= 200
+		then
+			rename(player, dinoId, text)
+		end
+	end)
+	Nest.DinoRemoved:connect(function(player: Player, dino: Types.DinoRecord)
+		local profile = Data.get(player)
+		if profile then
+			profile.nicknames[dino.id] = nil
+		end
+	end)
+	Sessions.Ready:connect(function(player: Player)
+		task.spawn(Nicknames.refresh, player)
+	end)
+	Sessions.Leaving:connect(function(player: Player)
+		busy[player] = nil
+	end)
+end
+
+return Nicknames
+]]></string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="66">
           <Properties>
             <string name="Name">Plots</string>
             <string name="Source"><![CDATA[--!strict
@@ -8019,7 +9259,14 @@ local Plots = {}
 
 Plots.EGG_TAG = "IncubatorEgg"
 
-type DinoRender = { model: Model, stage: number, mutation: string, home: number }
+type DinoRender = {
+	model: Model,
+	stage: number,
+	mutation: string,
+	golden: boolean,
+	home: number,
+	label: TextLabel,
+}
 type EggRender = { id: string, model: Model }
 
 type Render = {
@@ -8109,7 +9356,9 @@ function Plots.updateSign(player: Player)
 	end
 	local likes = if profile then profile.likes else 0
 	local shielded = profile ~= nil and Stats.shieldUntil(profile) > Clock.now()
-	local info = `❤ {Format.number(likes)} likes`
+	local rebirths = if profile then profile.rebirths else 0
+	local info = (if rebirths > 0 then `⭐{rebirths}  ` else "")
+		.. `❤ {Format.number(likes)} likes`
 		.. (if shielded then "  🛡 New Nest Shield" else "")
 	World.setSign(plot, `{player.DisplayName}'s Nest`, info)
 	if profile then
@@ -8142,7 +9391,11 @@ local function labelFor(dino: Types.DinoRecord, stage: number): string
 	local species = DinoData.get(dino.species)
 	local name = if species then species.name else dino.species
 	local mutation = MutationData.get(dino.mutation)
-	local prefix = if mutation then mutation.emoji .. " " .. mutation.name .. " " else ""
+	local prefix = (if dino.golden then "⭐ " else "")
+		.. (if mutation then mutation.emoji .. " " .. mutation.name .. " " else "")
+	if dino.name then
+		return `{prefix}{dino.name} • {Growth.stageName(stage)}`
+	end
 	return `{prefix}{name} • {Growth.stageName(stage)}`
 end
 
@@ -8152,8 +9405,8 @@ local function buildDino(
 	dino: Types.DinoRecord,
 	stage: number,
 	home: number
-): Model
-	local model = DinoModel.build(dino.species, stage, dino.mutation, "World")
+): (Model, TextLabel)
+	local model = DinoModel.build(dino.species, stage, dino.mutation, "World", dino.golden)
 	model.Name = "Dino_" .. dino.id
 	model:SetAttribute("DinoId", dino.id)
 	model:SetAttribute("OwnerId", player.UserId)
@@ -8200,7 +9453,7 @@ local function buildDino(
 
 	CollectionService:AddTag(model, DinoModel.TAG)
 	model.Parent = plot.dinoFolder
-	return model
+	return model, text
 end
 
 function Plots.syncDinos(player: Player)
@@ -8216,16 +9469,33 @@ function Plots.syncDinos(player: Player)
 		seen[dino.id] = true
 		local stage = Stats.dinoStage(dino, now)
 		local mutation = dino.mutation or ""
+		local golden = dino.golden == true
 		local existing: DinoRender? = render.dinos[dino.id]
-		if existing and (existing.stage ~= stage or existing.mutation ~= mutation) then
+		if
+			existing
+			and (
+				existing.stage ~= stage
+				or existing.mutation ~= mutation
+				or existing.golden ~= golden
+			)
+		then
 			existing.model:Destroy()
 			existing = nil
 		end
 		if not existing then
-			local model = buildDino(player, plot, dino, stage, home)
-			render.dinos[dino.id] =
-				{ model = model, stage = stage, mutation = mutation, home = home }
-		elseif existing.home ~= home then
+			local model, label = buildDino(player, plot, dino, stage, home)
+			render.dinos[dino.id] = {
+				model = model,
+				stage = stage,
+				mutation = mutation,
+				golden = golden,
+				home = home,
+				label = label,
+			}
+		else
+			existing.label.Text = labelFor(dino, stage) -- picks up renames
+		end
+		if existing and existing.home ~= home then
 			local spot = plot.homeSpots[math.clamp(home, 1, #plot.homeSpots)]
 			existing.model:SetAttribute("Home", spot)
 			existing.model:PivotTo(spot)
@@ -8517,7 +9787,7 @@ return Plots
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="61">
+        <Item class="ModuleScript" referent="67">
           <Properties>
             <string name="Name">Preferences</string>
             <string name="Source"><![CDATA[--!strict
@@ -8562,7 +9832,7 @@ function Preferences.buddyLook(profile: Types.Profile): string?
 		return nil
 	end
 	local stage = Growth.progress(Clock.now() - dino.bornAt, species.growth)
-	return `{dino.species}|{dino.mutation or ""}|{stage}`
+	return `{dino.species}|{dino.mutation or ""}|{stage}|{if dino.golden then "g" else ""}`
 end
 
 function Preferences.syncBuddy(player: Player)
@@ -8642,7 +9912,7 @@ return Preferences
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="62">
+        <Item class="ModuleScript" referent="68">
           <Properties>
             <string name="Name">Progress</string>
             <string name="Source"><![CDATA[--!strict
@@ -8777,6 +10047,10 @@ local function recordDex(player: Player, dino: Types.DinoRecord)
 		profile.dex[dino.species] = entry
 	end
 	local key = dino.mutation or "Normal"
+	if dino.golden and not entry.Golden then
+		entry.Golden = true
+		State.markDirty(player)
+	end
 	if entry[key] then
 		return
 	end
@@ -8907,7 +10181,7 @@ return Progress
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="63">
+        <Item class="ModuleScript" referent="69">
           <Properties>
             <string name="Name">Prompts</string>
             <string name="Source"><![CDATA[--!strict
@@ -9028,7 +10302,7 @@ return Prompts
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="64">
+        <Item class="ModuleScript" referent="70">
           <Properties>
             <string name="Name">Quests</string>
             <string name="Source"><![CDATA[--!strict
@@ -9172,7 +10446,7 @@ return Quests
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="65">
+        <Item class="ModuleScript" referent="71">
           <Properties>
             <string name="Name">Raids</string>
             <string name="Source"><![CDATA[--!strict
@@ -9399,12 +10673,27 @@ local function steal(thief: Player, prompt: ProximityPrompt)
 		model = carried
 	end
 
+	-- The quickest a thief can walk home at carry speed (with some slack), so
+	-- teleporting or resetting home can't finish a steal.
+	local home = World.getPlot(thiefSession.plotIndex)
+	local trip = if home
+		then math.max(
+			0,
+			(Vector3.new(
+				home.cframe.Position.X - trayPosition.X,
+				0,
+				home.cframe.Position.Z - trayPosition.Z
+			)).Magnitude - Config.PLOT_SIZE / 2
+		)
+		else 0
+	local now = Clock.now()
 	thiefSession.carry = {
 		victim = owner,
 		eggId = eggId,
 		species = egg.species,
 		model = model,
-		startedAt = Clock.now(),
+		startedAt = now,
+		arriveAfter = now + trip / Config.CARRY_WALKSPEED * 0.7,
 	}
 	carriedEggs[carryKey(owner, eggId)] = thief
 	Plots.setTrayEggHidden(owner, eggId, true)
@@ -9446,7 +10735,11 @@ local function carryTick()
 				endCarry(thief, false, "caught")
 				stun(thief)
 			elseif World.isInside(session.plotIndex, root.CFrame.Position) then
-				endCarry(thief, true, nil)
+				if Clock.now() >= carry.arriveAfter then
+					endCarry(thief, true, nil)
+				else
+					endCarry(thief, false, nil) -- home impossibly fast
+				end
 			end
 		end
 	end
@@ -9565,6 +10858,14 @@ function Raids.superLock(player: Player)
 end
 
 -- Called by Lifecycle before a player's data is released.
+-- The thief died (or reset): the egg goes back to its nest.
+function Raids.dropCarry(player: Player)
+	local session = Sessions.get(player)
+	if session and session.carry then
+		endCarry(player, false, nil)
+	end
+end
+
 function Raids.onLeave(player: Player)
 	local session = Sessions.get(player)
 	if session and session.carry then
@@ -9615,7 +10916,70 @@ return Raids
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="66">
+        <Item class="ModuleScript" referent="72">
+          <Properties>
+            <string name="Name">Rebirth</string>
+            <string name="Source"><![CDATA[--!strict
+-- Rebirth: once you have enough coins, trade ALL of them (wallet and coin
+-- pad) for a permanent +REBIRTH_BONUS coin boost. Dinos, eggs, upgrades and
+-- the Dex are kept. Each rebirth costs REBIRTH_COST_GROWTH times the last.
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local Economy = require(ReplicatedStorage.Shared.Util.Economy)
+local Format = require(ReplicatedStorage.Shared.Util.Format)
+local Net = require(ReplicatedStorage.Shared.Net)
+local Analytics = require(script.Parent.Analytics)
+local Coins = require(script.Parent.Coins)
+local Data = require(script.Parent.Data)
+local Plots = require(script.Parent.Plots)
+local Sessions = require(script.Parent.Sessions)
+local State = require(script.Parent.State)
+local Notify = require(script.Parent.Parent.Lib.Notify)
+
+local Rebirth = {}
+
+local function rebirth(player: Player)
+	local profile = Data.get(player)
+	local session = Sessions.get(player)
+	if not profile or not session or not session.ready then
+		return
+	end
+	local cost = Economy.rebirthCost(profile.rebirths)
+	if profile.coins < cost then
+		Notify.send(player, `You need 💰 {Format.number(cost)} to rebirth.`, "bad")
+		return
+	end
+	if not Coins.spend(player, profile.coins, "Gameplay", "Rebirth") then
+		return
+	end
+	profile.pendingCoins = 0
+	profile.rebirths += 1
+	Plots.updatePad(player, 0)
+	Plots.updateSign(player)
+	Coins.setRebirths(player, profile.rebirths)
+	State.markDirty(player)
+	Analytics.event(player, "Rebirth", profile.rebirths)
+	Notify.effect(player, "Reward", {})
+	local bonus = math.floor((Economy.rebirthMultiplier(profile.rebirths) - 1) * 100 + 0.5)
+	Notify.send(
+		player,
+		`⭐ REBIRTH {profile.rebirths}! Everything you earn now gets +{bonus}% coins, forever!`,
+		"rare"
+	)
+end
+
+function Rebirth.init()
+	Net.on("Rebirth", 0.5, 2, function(player: Player)
+		rebirth(player)
+	end)
+end
+
+return Rebirth
+]]></string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="73">
           <Properties>
             <string name="Name">Rewards</string>
             <string name="Source"><![CDATA[--!strict
@@ -9689,7 +11053,7 @@ return Rewards
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="67">
+        <Item class="ModuleScript" referent="74">
           <Properties>
             <string name="Name">Sessions</string>
             <string name="Source"><![CDATA[--!strict
@@ -9706,6 +11070,7 @@ export type Carry = {
 	species: string,
 	model: Model?,
 	startedAt: number,
+	arriveAfter: number, -- can't legitimately be home before this (walking speed)
 }
 
 export type Session = {
@@ -9726,7 +11091,6 @@ export type Session = {
 	riding: string?,
 	mount: Model?,
 	originalHipHeight: number?,
-	liked: { [number]: boolean },
 	lastAdAt: number,
 }
 
@@ -9756,7 +11120,6 @@ function Sessions.create(player: Player): Session
 		riding = nil,
 		mount = nil,
 		originalHipHeight = nil,
-		liked = {},
 		lastAdAt = 0,
 	}
 	sessions[player] = session
@@ -9786,7 +11149,7 @@ return Sessions
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="68">
+        <Item class="ModuleScript" referent="75">
           <Properties>
             <string name="Name">Social</string>
             <string name="Source"><![CDATA[--!strict
@@ -9797,6 +11160,8 @@ return Sessions
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local Clock = require(ReplicatedStorage.Shared.Util.Clock)
+local Cycle = require(ReplicatedStorage.Shared.Util.Cycle)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Data = require(script.Parent.Data)
 local Monetization = require(script.Parent.Monetization)
@@ -9901,15 +11266,22 @@ local function like(player: Player, prompt: ProximityPrompt)
 	then
 		return
 	end
-	if session.liked[owner.UserId] then
+	local likerProfile = Data.get(player)
+	local profile = Data.get(owner)
+	if not likerProfile or not profile then
+		return
+	end
+	-- remembered in the liker's save, so rejoining doesn't allow another like
+	local today = Cycle.dayNumber(Clock.now())
+	if likerProfile.liked.day ~= today then
+		likerProfile.liked = { day = today, owners = {} }
+	end
+	local ownerKey = tostring(owner.UserId)
+	if likerProfile.liked.owners[ownerKey] then
 		Notify.send(player, "You already liked this nest today ❤", "info")
 		return
 	end
-	local profile = Data.get(owner)
-	if not profile then
-		return
-	end
-	session.liked[owner.UserId] = true
+	likerProfile.liked.owners[ownerKey] = true
 	profile.likes += 1
 	Plots.updateSign(owner)
 	State.markDirty(owner)
@@ -9961,7 +11333,7 @@ return Social
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="69">
+        <Item class="ModuleScript" referent="76">
           <Properties>
             <string name="Name">State</string>
             <string name="Source"><![CDATA[--!strict
@@ -9969,6 +11341,7 @@ return Social
 -- (batched, at most 5 times per second), plus a full snapshot when their
 -- client says it's ready. Clients render; they never compute anything that matters.
 
+local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Clock = require(ReplicatedStorage.Shared.Util.Clock)
@@ -10037,6 +11410,8 @@ function State.snapshot(player: Player): Types.Snapshot?
 		dexClaimed = profile.dexClaimed,
 		settings = profile.settings,
 		buddy = profile.buddy,
+		rebirths = profile.rebirths,
+		fruit = profile.fruit,
 	}
 end
 
@@ -10052,10 +11427,13 @@ function State.init()
 		clientReady[player] = true
 		send(player)
 	end)
-	Sessions.Leaving:connect(function(player: Player)
+	local function forget(player: Player)
 		dirty[player] = nil
 		clientReady[player] = nil
-	end)
+	end
+	Sessions.Leaving:connect(forget)
+	-- players kicked while joining never fire Leaving
+	Players.PlayerRemoving:Connect(forget)
 end
 
 function State.start()
@@ -10074,12 +11452,14 @@ return State
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="70">
+        <Item class="ModuleScript" referent="77">
           <Properties>
             <string name="Name">Upgrades</string>
             <string name="Source"><![CDATA[--!strict
 -- Permanent nest upgrades bought with coins (the long-term coin sink):
--- more dino slots and more incubators.
+-- more dino slots and more incubators. The client says which level it is
+-- buying (the one whose price it showed), so a fast double-tap can't also
+-- buy the next, pricier level.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -10095,11 +11475,18 @@ local Notify = require(script.Parent.Parent.Lib.Notify)
 
 local Upgrades = {}
 
-local function buy(player: Player, kind: unknown)
+local function buy(player: Player, kind: unknown, level: unknown)
 	local profile = Data.get(player)
 	local session = Sessions.get(player)
 	if not profile or not session or not session.ready then
 		return
+	end
+	local owned = if kind == "slots"
+		then profile.upgrades.slots
+		elseif kind == "incubators" then profile.upgrades.incubators
+		else nil
+	if owned == nil or level ~= owned then
+		return -- unknown upgrade, or a stale tap for a level already bought
 	end
 	if kind == "slots" then
 		local cost = Economy.nextUpgradeCost(Config.SLOT_UPGRADE_COSTS, profile.upgrades.slots)
@@ -10139,7 +11526,7 @@ return Upgrades
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="71">
+        <Item class="ModuleScript" referent="78">
           <Properties>
             <string name="Name">Weather</string>
             <string name="Source"><![CDATA[--!strict
@@ -10238,7 +11625,7 @@ return Weather
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="72">
+        <Item class="ModuleScript" referent="79">
           <Properties>
             <string name="Name">World</string>
             <string name="Source"><![CDATA[--!strict
@@ -10930,15 +12317,15 @@ return World
       </Item>
     </Item>
   </Item>
-  <Item class="StarterPlayer" referent="73">
+  <Item class="StarterPlayer" referent="80">
     <Properties>
       <string name="Name">StarterPlayer</string>
     </Properties>
-    <Item class="StarterPlayerScripts" referent="74">
+    <Item class="StarterPlayerScripts" referent="81">
       <Properties>
         <string name="Name">StarterPlayerScripts</string>
       </Properties>
-      <Item class="LocalScript" referent="75">
+      <Item class="LocalScript" referent="82">
         <Properties>
           <string name="Name">Client</string>
           <string name="Source"><![CDATA[--!strict
@@ -10995,11 +12382,11 @@ end
 print("[RaiseADino] client started")
 ]]></string>
         </Properties>
-        <Item class="Folder" referent="76">
+        <Item class="Folder" referent="83">
           <Properties>
             <string name="Name">Controllers</string>
           </Properties>
-          <Item class="ModuleScript" referent="77">
+          <Item class="ModuleScript" referent="84">
             <Properties>
               <string name="Name">Audio</string>
               <string name="Source"><![CDATA[--!strict
@@ -11012,6 +12399,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local SoundService = game:GetService("SoundService")
 
 local Config = require(ReplicatedStorage.Shared.Config)
+local Types = require(ReplicatedStorage.Shared.Types)
+local ClientState = require(script.Parent.ClientState)
 local Effects = require(script.Parent.Effects)
 local SettingsUI = require(script.Parent.SettingsUI)
 local Toasts = require(script.Parent.Toasts)
@@ -11188,16 +12577,23 @@ function Audio.init()
 end
 
 function Audio.start()
-	-- the saved settings arrive with the first state snapshot
-	task.wait(2)
-	updateMusic()
+	-- Saved settings arrive with the state snapshots; follow the music
+	-- setting whenever it changes (including the first snapshot).
+	local lastMusic: boolean? = nil
+	ClientState.changed:connect(function(_: Types.Snapshot)
+		local musicOn = SettingsUI.get("music")
+		if musicOn ~= lastMusic then
+			lastMusic = musicOn
+			updateMusic()
+		end
+	end)
 end
 
 return Audio
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="78">
+          <Item class="ModuleScript" referent="85">
             <Properties>
               <string name="Name">Buddies</string>
               <string name="Source"><![CDATA[--!strict
@@ -11220,6 +12616,8 @@ local ATTRIBUTE = "Buddy"
 local MAX_STAGE = Growth.JUVENILE -- buddies stay pet-sized
 local SIDE_OFFSET = 3.5
 local BACK_OFFSET = 4.5
+local FAR = 160 -- buddies further from the camera than this aren't animated
+local GROUND_EVERY = 3 -- frames between ground checks
 
 type Follower = {
 	look: string,
@@ -11228,6 +12626,8 @@ type Follower = {
 	position: Vector3,
 	facing: Vector3,
 	phase: number,
+	ground: number?, -- last ground height under the target spot
+	frame: number, -- staggers ground checks between buddies
 }
 
 local followers: { [Player]: Follower } = {}
@@ -11245,13 +12645,20 @@ end
 
 local function build(player: Player, look: string)
 	remove(player)
-	local species, mutation, stageText = string.match(look, "^([^|]+)|([^|]*)|(%d+)$")
+	local species, mutation, stageText, goldenText =
+		string.match(look, "^([^|]+)|([^|]*)|(%d+)|?(%a*)$")
 	if not species then
 		return
 	end
 	local stage = math.min(tonumber(stageText) or 1, MAX_STAGE)
 	local ok, model = pcall(function()
-		return DinoModel.build(species, stage, if mutation == "" then nil else mutation, "World")
+		return DinoModel.build(
+			species,
+			stage,
+			if mutation == "" then nil else mutation,
+			"World",
+			goldenText == "g"
+		)
 	end)
 	if not ok then
 		return
@@ -11271,6 +12678,8 @@ local function build(player: Player, look: string)
 		position = start,
 		facing = Vector3.new(0, 0, -1),
 		phase = math.random() * 10,
+		ground = nil,
+		frame = math.random(0, GROUND_EVERY - 1),
 	}
 end
 
@@ -11300,7 +12709,11 @@ local function groundBelow(position: Vector3, ignore: { Instance }): number?
 	return if hit then hit.Position.Y else nil
 end
 
+local ignore: { Instance } = {}
+
 local function step(dt: number)
+	local camera = Workspace.CurrentCamera
+	local eye = if camera then camera.CFrame.Position else nil
 	for player, follower in followers do
 		local character = player.Character
 		local hrp = character and character:FindFirstChild("HumanoidRootPart")
@@ -11308,6 +12721,9 @@ local function step(dt: number)
 			continue
 		end
 		local rootCf = hrp.CFrame
+		if eye and (rootCf.Position - eye).Magnitude > FAR then
+			continue -- out of sight; it snaps back into place when it's near again
+		end
 		local look = rootCf.LookVector
 		local flat = Vector3.new(look.X, 0, look.Z)
 		if flat.Magnitude < 1e-3 then
@@ -11316,7 +12732,13 @@ local function step(dt: number)
 		flat = flat.Unit
 		local right = Vector3.new(-flat.Z, 0, flat.X)
 		local target = rootCf.Position - flat * BACK_OFFSET + right * SIDE_OFFSET
-		local ground = groundBelow(target, { character, folder }) or (rootCf.Position.Y - 3)
+		follower.frame += 1
+		if follower.ground == nil or follower.frame % GROUND_EVERY == 0 then
+			ignore[1] = character
+			ignore[2] = folder
+			follower.ground = groundBelow(target, ignore)
+		end
+		local ground = follower.ground or (rootCf.Position.Y - 3)
 		target = Vector3.new(target.X, ground, target.Z)
 
 		local before = follower.position
@@ -11364,7 +12786,7 @@ return Buddies
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="79">
+          <Item class="ModuleScript" referent="86">
             <Properties>
               <string name="Name">ClientState</string>
               <string name="Source"><![CDATA[--!strict
@@ -11434,7 +12856,7 @@ return ClientState
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="80">
+          <Item class="ModuleScript" referent="87">
             <Properties>
               <string name="Name">DevPanel</string>
               <string name="Source"><![CDATA[--!strict
@@ -11466,6 +12888,7 @@ local COMMANDS = {
 	{ "resettime", "Normal time" },
 	{ "luck", "Luck 15m" },
 	{ "trex", "Add T-Rex" },
+	{ "raptors", "Add 3 Raptors" },
 	{ "noshield", "Remove shield" },
 	{ "skiptutorial", "Skip tutorial" },
 	{ "reset", "Reset save" },
@@ -11488,7 +12911,9 @@ function DevPanel.init()
 		UI.padding(4, 6),
 	}) :: ScrollingFrame
 	for order, entry in COMMANDS do
-		UI.button({
+		local confirm = UI.confirm()
+		local button: UI.Button
+		button = UI.button({
 			text = entry[2],
 			size = UDim2.fromOffset(170, 54),
 			color = if entry[1] == "reset" then UI.Theme.red else UI.Theme.blue,
@@ -11496,6 +12921,14 @@ function DevPanel.init()
 			maxTextSize = 22,
 			parent = grid,
 			onClick = function()
+				-- wiping the save needs a second tap
+				if entry[1] == "reset" and not UI.confirmTap(confirm) then
+					UI.setButton(button, { text = "Sure? Tap again" })
+					task.delay(UI.CONFIRM_WINDOW, function()
+						UI.setButton(button, { text = entry[2] })
+					end)
+					return
+				end
 				Net.send("Cheat", entry[1])
 			end,
 		})
@@ -11537,7 +12970,7 @@ return DevPanel
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="81">
+          <Item class="ModuleScript" referent="88">
             <Properties>
               <string name="Name">DexUI</string>
               <string name="Source"><![CDATA[--!strict
@@ -11562,7 +12995,8 @@ local DexUI = {}
 type Card = {
 	species: DinoData.Species,
 	frame: Frame,
-	viewport: ViewportFrame,
+	stage: Frame,
+	viewport: ViewportFrame?, -- built the first time the Dex opens
 	name: TextLabel,
 	badges: { [string]: Frame },
 	discovered: boolean?,
@@ -11587,7 +13021,10 @@ local function refresh(snapshot: Types.Snapshot)
 		end
 		if card.discovered ~= discovered then
 			card.discovered = discovered
-			setSilhouette(card.viewport, not discovered)
+			local viewport = card.viewport
+			if viewport then
+				setSilhouette(viewport, not discovered)
+			end
 			card.name.Text = if discovered then card.species.name else "???"
 		end
 		for mutation, badge in card.badges do
@@ -11645,8 +13082,6 @@ local function buildCard(grid: Instance, index: number, species: DinoData.Specie
 		BackgroundColor3 = UI.lighten(rarityColor, 0.72),
 		Parent = frame,
 	}, { UI.corner(12), UI.shade(0.9) }) :: Frame
-	local viewport =
-		UI.viewport(DinoModel.build(species.id, 3, nil, "Static"), UDim2.fromScale(1, 1), stage, 30)
 	local name = UI.body({
 		text = "???",
 		size = UDim2.new(1, -10, 0, 24),
@@ -11673,7 +13108,7 @@ local function buildCard(grid: Instance, index: number, species: DinoData.Specie
 	}, {
 		UI.list(
 			Enum.FillDirection.Horizontal,
-			3,
+			2,
 			Enum.HorizontalAlignment.Center,
 			Enum.VerticalAlignment.Center
 		),
@@ -11684,7 +13119,7 @@ local function buildCard(grid: Instance, index: number, species: DinoData.Specie
 		if info then
 			local badge = UI.new("Frame", {
 				Name = mutationId,
-				Size = UDim2.fromOffset(24, 24),
+				Size = UDim2.fromOffset(21, 21),
 				BackgroundColor3 = UI.lighten(UI.rgb(info.color), 0.4),
 				LayoutOrder = order,
 				Parent = badgeRow,
@@ -11701,11 +13136,30 @@ local function buildCard(grid: Instance, index: number, species: DinoData.Specie
 			badges[mutationId] = badge
 		end
 	end
-	setSilhouette(viewport, true)
+	do
+		local badge = UI.new("Frame", {
+			Name = "Golden",
+			Size = UDim2.fromOffset(21, 21),
+			BackgroundColor3 = UI.lighten(UI.Theme.gold, 0.3),
+			LayoutOrder = #MutationData.ORDER + 1,
+			Parent = badgeRow,
+		}, { UI.round() }) :: Frame
+		UI.text({
+			text = "⭐",
+			size = UDim2.fromScale(0.8, 0.8),
+			position = UDim2.fromScale(0.5, 0.5),
+			anchor = Vector2.new(0.5, 0.5),
+			maxTextSize = 16,
+			noOutline = true,
+			parent = badge,
+		})
+		badges.Golden = badge
+	end
 	return {
 		species = species,
 		frame = frame,
-		viewport = viewport,
+		stage = stage,
+		viewport = nil,
 		name = name,
 		badges = badges,
 		discovered = nil,
@@ -11778,7 +13232,11 @@ function DexUI.init()
 		table.insert(cards, buildCard(grid, index, species))
 	end
 
-	ClientState.changed:connect(refresh)
+	ClientState.changed:connect(function(snapshot: Types.Snapshot)
+		if Panels.isOpen("Dex") then
+			refresh(snapshot)
+		end
+	end)
 	table.insert(Hud.badgeRefreshers, function(snapshot: Types.Snapshot)
 		local item = Hud.menu.Dex
 		if item then
@@ -11786,6 +13244,19 @@ function DexUI.init()
 		end
 	end)
 	Panels.onOpen("Dex", function()
+		-- 3D previews are built on first open, not at startup (cheaper on phones)
+		for _, card in cards do
+			if not card.viewport then
+				local viewport = UI.viewport(
+					DinoModel.build(card.species.id, 3, nil, "Static"),
+					UDim2.fromScale(1, 1),
+					card.stage,
+					30
+				)
+				setSilhouette(viewport, card.discovered ~= true)
+				card.viewport = viewport
+			end
+		end
 		local snapshot = ClientState.get()
 		if snapshot then
 			refresh(snapshot)
@@ -11797,12 +13268,13 @@ return DexUI
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="82">
+          <Item class="ModuleScript" referent="89">
             <Properties>
               <string name="Name">DinoPanel</string>
               <string name="Source"><![CDATA[--!strict
--- Info card for one of your dinos (opened from its "View" prompt): growth
--- progress, income, mutation, and Sell / Ride / Buddy buttons.
+-- Info card for one of your dinos (opened from its "View" prompt): its name
+-- (tap ✏️ to rename), growth progress, income, mutation, Make Golden (fuse 3
+-- of a species), Feed (fruit from the fruit trees), and Sell / Ride / Buddy.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -11812,11 +13284,13 @@ local DinoData = require(ReplicatedStorage.Shared.Data.DinoData)
 local DinoModel = require(ReplicatedStorage.Shared.Visual.DinoModel)
 local Economy = require(ReplicatedStorage.Shared.Util.Economy)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
+local FruitData = require(ReplicatedStorage.Shared.Data.FruitData)
 local Growth = require(ReplicatedStorage.Shared.Util.Growth)
 local MutationData = require(ReplicatedStorage.Shared.Data.MutationData)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Types = require(ReplicatedStorage.Shared.Types)
 local ClientState = require(script.Parent.ClientState)
+local Toasts = require(script.Parent.Toasts)
 local Panels = require(script.Parent.Parent.Lib.Panels)
 local UI = require(script.Parent.Parent.Lib.UI)
 
@@ -11827,9 +13301,12 @@ local shownKey = ""
 local showcase: Frame
 local previewHolder: Frame
 local nameLabel: TextLabel
+local nameBox: TextBox
+local renameButton: UI.Button
 local rarityChip: UI.Chip
 local stageChip: UI.Chip
 local mutationChip: UI.Chip
+local goldenChip: UI.Chip
 local growthLabel: TextLabel
 local growthBar: UI.Bar
 local incomeLabel: TextLabel
@@ -11837,7 +13314,10 @@ local extraLabel: TextLabel
 local sellButton: UI.Button
 local rideButton: UI.Button
 local buddyButton: UI.Button
-local sellArmedUntil = 0
+local goldenButton: UI.Button
+local feedButton: UI.Button
+local sellConfirm = UI.confirm()
+local goldenConfirm = UI.confirm()
 
 local function findDino(snapshot: Types.Snapshot, id: string): Types.DinoRecord?
 	for _, dino in snapshot.dinos do
@@ -11846,6 +13326,17 @@ local function findDino(snapshot: Types.Snapshot, id: string): Types.DinoRecord?
 		end
 	end
 	return nil
+end
+
+-- Non-golden dinos of this species you own (the ones a fuse can use).
+local function fuseCount(snapshot: Types.Snapshot, speciesId: string): number
+	local count = 0
+	for _, dino in snapshot.dinos do
+		if dino.species == speciesId and not dino.golden then
+			count += 1
+		end
+	end
+	return count
 end
 
 local function refresh()
@@ -11865,23 +13356,27 @@ local function refresh()
 	local mutation = MutationData.get(dino.mutation)
 	local rarityColor = UI.rgb(DinoData.rarityInfo(species.rarity).color)
 
-	local key = `{dino.id}:{stage}:{dino.mutation or ""}`
+	local golden = dino.golden == true
+	local key = `{dino.id}:{stage}:{dino.mutation or ""}:{golden}`
 	if key ~= shownKey then
 		shownKey = key
 		for _, child in previewHolder:GetChildren() do
 			child:Destroy()
 		end
 		UI.viewport(
-			DinoModel.build(dino.species, stage, dino.mutation, "Static"),
+			DinoModel.build(dino.species, stage, dino.mutation, "Static", golden),
 			UDim2.fromScale(1, 1),
 			previewHolder,
 			30
 		)
-		showcase.BackgroundColor3 =
-			UI.lighten(if mutation then UI.rgb(mutation.color) else rarityColor, 0.65)
+		showcase.BackgroundColor3 = UI.lighten(
+			if golden then UI.Theme.gold elseif mutation then UI.rgb(mutation.color) else rarityColor,
+			0.65
+		)
 	end
 
-	nameLabel.Text = species.name
+	Panels.setTitle("Dino", `🦖 {species.name}`)
+	nameLabel.Text = dino.name or species.name
 	rarityChip.label.Text = species.rarity
 	UI.setChipColor(rarityChip, rarityColor)
 	stageChip.label.Text = Growth.stageName(stage)
@@ -11890,6 +13385,7 @@ local function refresh()
 		mutationChip.label.Text = `{mutation.emoji} {mutation.name} x{mutation.multiplier}`
 		UI.setChipColor(mutationChip, UI.rgb(mutation.color))
 	end
+	goldenChip.root.Visible = golden
 	if stage >= Growth.GIANT then
 		growthLabel.Text = "Fully grown GIANT! 🏆"
 		UI.setBar(growthBar, 1, "MAX")
@@ -11898,16 +13394,16 @@ local function refresh()
 			`Grows into a {Growth.stageName(stage + 1)} in {Format.time(secondsLeft)}`
 		UI.setBar(growthBar, fraction, `{math.floor(fraction * 100)}%`)
 	end
-	local income = Growth.income(species.income, stage, MutationData.multiplier(dino.mutation))
-		* snapshot.multiplier
+	local multiplier = MutationData.multiplier(dino.mutation) * Economy.goldenMultiplier(golden)
+	local income = Growth.income(species.income, stage, multiplier) * snapshot.multiplier
 	incomeLabel.Text = `+{Format.number(income)} / sec`
 	local lays = Growth.layInterval(stage, Config.LAY_INTERVAL_ADULT, Config.LAY_INTERVAL_GIANT)
 	extraLabel.Text = if lays
 		then `🥚 Lays an egg every {Format.duration(lays)}\n🛡 Guards your nest at night`
 		else "🍼 Too young to lay eggs or guard the nest yet"
 
-	local value = Economy.dinoValue(species.income, stage, MutationData.multiplier(dino.mutation))
-	if now < sellArmedUntil then
+	local value = Economy.dinoValue(species.income, stage, multiplier)
+	if UI.isArmed(sellConfirm) then
 		UI.setButton(sellButton, { text = "Sure? Tap again!", color = UI.Theme.red })
 	else
 		UI.setButton(
@@ -11929,6 +13425,49 @@ local function refresh()
 		UI.setButton(rideButton, { text = "🦖 Ride!", color = UI.Theme.blue, enabled = true })
 	end
 
+	if golden then
+		UI.setButton(
+			goldenButton,
+			{ text = "⭐ Golden ✓", color = UI.Theme.gold, enabled = false }
+		)
+	else
+		local count = fuseCount(snapshot, dino.species)
+		if count < 3 then
+			UI.setButton(
+				goldenButton,
+				{ text = `⭐ Golden ({count}/3)`, color = UI.Theme.orange, enabled = true }
+			)
+		elseif UI.isArmed(goldenConfirm) then
+			UI.setButton(
+				goldenButton,
+				{ text = "Fuse 3? Tap again!", color = UI.Theme.red, enabled = true }
+			)
+		else
+			UI.setButton(goldenButton, {
+				text = `⭐ Make Golden 💰{Format.number(Economy.goldenFee(species.income))}`,
+				color = UI.Theme.gold,
+				enabled = true,
+			})
+		end
+	end
+
+	local fruitKind = FruitData.nextToFeed(snapshot.fruit)
+	if stage >= Growth.GIANT then
+		UI.setButton(
+			feedButton,
+			{ text = "🏆 Fully grown", color = UI.Theme.red, enabled = false }
+		)
+	elseif fruitKind then
+		local info = FruitData.FRUITS[fruitKind]
+		UI.setButton(feedButton, {
+			text = `{info.emoji} Feed ({snapshot.fruit[fruitKind]})`,
+			color = UI.Theme.red,
+			enabled = true,
+		})
+	else
+		UI.setButton(feedButton, { text = "🍎 No fruit", color = UI.Theme.red, enabled = true })
+	end
+
 	local isBuddy = snapshot.buddy == dino.id
 	UI.setButton(
 		buddyButton,
@@ -11936,20 +13475,41 @@ local function refresh()
 	)
 end
 
+local function stopRenaming()
+	nameBox.Visible = false
+	nameLabel.Visible = true
+	renameButton.root.Visible = true
+end
+
+local function startRenaming()
+	local snapshot = ClientState.get()
+	local dino = if snapshot and currentId then findDino(snapshot, currentId) else nil
+	if not dino then
+		return
+	end
+	nameBox.Text = dino.name or ""
+	nameLabel.Visible = false
+	renameButton.root.Visible = false
+	nameBox.Visible = true
+	nameBox:CaptureFocus()
+end
+
 function DinoPanel.open(dinoId: string)
+	stopRenaming()
 	currentId = dinoId
 	shownKey = ""
-	sellArmedUntil = 0
+	UI.disarm(sellConfirm)
+	UI.disarm(goldenConfirm)
 	refresh()
 	Panels.open("Dino")
 end
 
 function DinoPanel.init()
 	local _, content =
-		Panels.window("Dino", "🦖 Your Dino", Vector2.new(820, 470), UI.Theme.green)
+		Panels.window("Dino", "🦖 Your Dino", Vector2.new(820, 540), UI.Theme.green)
 	showcase = UI.new("Frame", {
 		Name = "Showcase",
-		Size = UDim2.fromOffset(300, 362),
+		Size = UDim2.new(0, 300, 1, 0),
 		BackgroundColor3 = UI.Theme.panelDark,
 		Parent = content,
 	}, { UI.corner(22), UI.stroke(UI.Theme.cardEdge, 3), UI.shade(0.86) }) :: Frame
@@ -11970,11 +13530,54 @@ function DinoPanel.init()
 	}) :: Frame
 	nameLabel = UI.body({
 		text = "",
-		size = UDim2.new(1, 0, 0, 44),
+		size = UDim2.new(1, -60, 0, 44),
 		font = UI.Font,
 		align = Enum.TextXAlignment.Left,
 		maxTextSize = 38,
 		parent = right,
+	})
+	nameBox = UI.new("TextBox", {
+		Name = "NameBox",
+		Text = "",
+		PlaceholderText = "Give your dino a name!",
+		ClearTextOnFocus = false,
+		Visible = false,
+		Size = UDim2.new(1, -6, 0, 46),
+		BackgroundColor3 = UI.Theme.white,
+		TextColor3 = UI.Theme.ink,
+		PlaceholderColor3 = UI.Theme.grey,
+		Font = UI.Font,
+		TextScaled = true,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		ZIndex = 3,
+		Parent = right,
+	}, {
+		UI.corner(14),
+		UI.stroke(UI.Theme.ink, 3),
+		UI.padding(14, 8),
+		UI.new("UITextSizeConstraint", { MaxTextSize = 28 }),
+	}) :: TextBox
+	nameBox.FocusLost:Connect(function()
+		local id = currentId
+		local snapshot = ClientState.get()
+		local dino = if snapshot and id then findDino(snapshot, id) else nil
+		stopRenaming()
+		if id and dino and nameBox.Text ~= (dino.name or "") then
+			Net.send("RenameDino", id, nameBox.Text)
+		end
+	end)
+	renameButton = UI.button({
+		name = "Rename",
+		text = "✏️",
+		size = UDim2.fromOffset(50, 44),
+		position = UDim2.new(1, -6, 0, 0),
+		anchor = Vector2.new(1, 0),
+		color = UI.Theme.purple,
+		radius = 12,
+		depth = 4,
+		maxTextSize = 24,
+		parent = right,
+		onClick = startRenaming,
 	})
 	local tags = UI.new("Frame", {
 		Name = "Tags",
@@ -11985,14 +13588,14 @@ function DinoPanel.init()
 	}, { UI.list(Enum.FillDirection.Horizontal, 8, Enum.HorizontalAlignment.Left) }) :: Frame
 	rarityChip = UI.chip({
 		text = "",
-		size = UDim2.fromOffset(120, 32),
+		size = UDim2.fromOffset(110, 32),
 		order = 1,
 		maxTextSize = 18,
 		parent = tags,
 	})
 	stageChip = UI.chip({
 		text = "",
-		size = UDim2.fromOffset(110, 32),
+		size = UDim2.fromOffset(100, 32),
 		color = UI.Theme.teal,
 		order = 2,
 		maxTextSize = 18,
@@ -12000,8 +13603,16 @@ function DinoPanel.init()
 	})
 	mutationChip = UI.chip({
 		text = "",
-		size = UDim2.fromOffset(170, 32),
+		size = UDim2.fromOffset(150, 32),
 		order = 3,
+		maxTextSize = 18,
+		parent = tags,
+	})
+	goldenChip = UI.chip({
+		text = `⭐ x{Economy.goldenMultiplier(true)}`,
+		size = UDim2.fromOffset(78, 32),
+		color = UI.Theme.gold,
+		order = 4,
 		maxTextSize = 18,
 		parent = tags,
 	})
@@ -12051,6 +13662,70 @@ function DinoPanel.init()
 		parent = stats,
 	})
 
+	-- Care row: Make Golden (and Feed)
+	local care = UI.new("Frame", {
+		Name = "Care",
+		BackgroundTransparency = 1,
+		Size = UDim2.new(1, -6, 0, 60),
+		Position = UDim2.new(0, 0, 1, -134),
+		Parent = right,
+	}, { UI.list(Enum.FillDirection.Horizontal, 10, Enum.HorizontalAlignment.Left) }) :: Frame
+	goldenButton = UI.button({
+		name = "Golden",
+		text = "⭐ Golden",
+		size = UDim2.new(0.55, -5, 0, 58),
+		color = UI.Theme.gold,
+		order = 1,
+		maxTextSize = 22,
+		parent = care,
+		onClick = function()
+			local id = currentId
+			local snapshot = ClientState.get()
+			local dino = if snapshot and id then findDino(snapshot, id) else nil
+			local species = if dino then DinoData.get(dino.species) else nil
+			if not snapshot or not dino or not species or dino.golden then
+				return
+			end
+			if fuseCount(snapshot, dino.species) < 3 then
+				Toasts.show(
+					`Collect 3 {species.name}s, then fuse them into one ⭐ Golden dino that earns {Economy.goldenMultiplier(
+						true
+					)}x!`,
+					"info"
+				)
+			elseif UI.confirmTap(goldenConfirm) then
+				Net.send("FuseGolden", dino.id)
+			else
+				refresh()
+			end
+		end,
+	})
+
+	feedButton = UI.button({
+		name = "Feed",
+		text = "🍎 Feed",
+		size = UDim2.new(0.45, -5, 0, 58),
+		color = UI.Theme.red,
+		order = 2,
+		maxTextSize = 22,
+		parent = care,
+		onClick = function()
+			local id = currentId
+			local snapshot = ClientState.get()
+			if not id or not snapshot then
+				return
+			end
+			if FruitData.nextToFeed(snapshot.fruit) then
+				Net.send("FeedDino", id)
+			else
+				Toasts.show(
+					"Pick up fruit under the 🍎 fruit trees, then feed it here to grow your dino faster!",
+					"info"
+				)
+			end
+		end,
+	})
+
 	local buttons = UI.new("Frame", {
 		Name = "Buttons",
 		BackgroundTransparency = 1,
@@ -12071,11 +13746,9 @@ function DinoPanel.init()
 			if not id then
 				return
 			end
-			if Clock.now() < sellArmedUntil then
-				sellArmedUntil = 0
+			if UI.confirmTap(sellConfirm) then
 				Net.send("SellDino", id)
 			else
-				sellArmedUntil = Clock.now() + 3
 				refresh()
 			end
 		end,
@@ -12142,7 +13815,7 @@ return DinoPanel
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="83">
+          <Item class="ModuleScript" referent="90">
             <Properties>
               <string name="Name">Effects</string>
               <string name="Source"><![CDATA[--!strict
@@ -12158,6 +13831,8 @@ local Workspace = game:GetService("Workspace")
 
 local DinoData = require(ReplicatedStorage.Shared.Data.DinoData)
 local DinoModel = require(ReplicatedStorage.Shared.Visual.DinoModel)
+local Economy = require(ReplicatedStorage.Shared.Util.Economy)
+local FruitData = require(ReplicatedStorage.Shared.Data.FruitData)
 local EggModel = require(ReplicatedStorage.Shared.Visual.EggModel)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
 local MutationData = require(ReplicatedStorage.Shared.Data.MutationData)
@@ -12173,7 +13848,7 @@ Effects.onReveal = function(_rarity: string) end
 Effects.onCrack = function() end
 Effects.onCoins = function() end
 
-type Reveal = { species: string, mutation: string?, new: boolean }
+type Reveal = { species: string, mutation: string?, new: boolean, golden: boolean? }
 
 local screen: ScreenGui
 local revealQueue: { Reveal } = {}
@@ -12336,15 +14011,19 @@ local function reveal(item: Reveal)
 		Parent = screen,
 	}) :: Frame
 	TweenService:Create(overlay, TweenInfo.new(0.25), { BackgroundTransparency = 0.3 }):Play()
+	-- The reveal (460 px stage, chips and "Tap to continue" below it, 554 px
+	-- in all) shrinks to fit short landscape phones and stays centred.
+	local canvasHeight = UI.canvasSize().Y
+	local fit = math.min(1, (canvasHeight - 24) / 554)
 	local stage = UI.new("Frame", {
 		Name = "Reveal",
 		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.fromScale(0.5, 0.46),
+		Position = UDim2.new(0.5, 0, 0, canvasHeight / 2 - 47 * fit),
 		Size = UDim2.fromOffset(460, 460),
 		BackgroundTransparency = 1,
 		ZIndex = 11,
 		Parent = screen,
-	}) :: Frame
+	}, { UI.new("UIScale", { Scale = fit }) }) :: Frame
 
 	-- 1. The egg drops in and wobbles harder and harder, then cracks
 	local eggHolder = UI.new("Frame", {
@@ -12397,7 +14076,7 @@ local function reveal(item: Reveal)
 
 	-- 3. The dino pops out
 	local dinoViewport = UI.viewport(
-		DinoModel.build(item.species, 3, item.mutation, "Static"),
+		DinoModel.build(item.species, 3, item.mutation, "Static", item.golden),
 		UDim2.fromOffset(340, 340),
 		stage,
 		25
@@ -12419,7 +14098,9 @@ local function reveal(item: Reveal)
 	}, { UI.corner(20), UI.stroke(UI.darken(rarityColor, 0.5), 4), UI.shade(0.82) }) :: Frame
 	UI.text({
 		name = "Title",
-		text = (if m then m.emoji .. " " .. m.name .. " " else "") .. data.name .. "!",
+		text = (if item.golden then "⭐ GOLDEN " else "") .. (if m
+			then m.emoji .. " " .. m.name .. " "
+			else "") .. data.name .. "!",
 		size = UDim2.new(1, -30, 1, -14),
 		position = UDim2.fromOffset(15, 7),
 		maxTextSize = 46,
@@ -12456,6 +14137,17 @@ local function reveal(item: Reveal)
 		})
 		chip.root.ZIndex = 15
 	end
+	if item.golden then
+		local chip = UI.chip({
+			text = `⭐ x{Economy.goldenMultiplier(true)} coins`,
+			size = UDim2.fromOffset(160, 36),
+			color = UI.Theme.gold,
+			order = 3,
+			maxTextSize = 22,
+			parent = tags,
+		})
+		chip.root.ZIndex = 15
+	end
 	if item.new then
 		local newBadge = UI.chip({
 			name = "New",
@@ -12483,11 +14175,12 @@ local function reveal(item: Reveal)
 		parent = stage,
 	})
 	hint.TextTransparency = 1
-	TweenService:Create(
+	local hintPulse = TweenService:Create(
 		hint,
 		TweenInfo.new(0.6, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true, 0.8),
 		{ TextTransparency = 0.2 }
-	):Play()
+	)
+	hintPulse:Play()
 
 	if rarity.order >= DinoData.rarityInfo("Rare").order or m then
 		confetti(if rarity.order >= DinoData.rarityInfo("Legendary").order then 120 else 60)
@@ -12529,6 +14222,7 @@ local function reveal(item: Reveal)
 	spin:Disconnect()
 	closeButton:Destroy()
 	overlay:Destroy()
+	hintPulse:Cancel()
 	stage:Destroy()
 end
 
@@ -12690,6 +14384,26 @@ local function onEffect(kind: string, data: { [string]: any })
 			})
 			task.spawn(processQueue)
 		end
+	elseif kind == "Golden" then
+		if typeof(data.species) == "string" then
+			table.insert(revealQueue, {
+				species = data.species,
+				mutation = if typeof(data.mutation) == "string" then data.mutation else nil,
+				new = false,
+				golden = true,
+			})
+			task.spawn(processQueue)
+		end
+	elseif kind == "Fruit" then
+		local info = if typeof(data.kind) == "string" then FruitData.get(data.kind) else nil
+		if info and typeof(data.position) == "Vector3" then
+			worldText(data.position, `+1 {info.emoji} ({data.count or 1})`, UI.rgb(info.color), 28)
+		end
+	elseif kind == "Feed" then
+		if typeof(data.position) == "Vector3" then
+			burst(data.position, UI.Theme.pink)
+			worldText(data.position, "Yum! 💕", UI.Theme.pink, 34)
+		end
 	elseif kind == "Roar" then
 		if typeof(data.position) == "Vector3" then
 			worldText(data.position, "ROAR!", UI.Theme.orange, if data.big then 48 else 34)
@@ -12741,7 +14455,7 @@ return Effects
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="84">
+          <Item class="ModuleScript" referent="91">
             <Properties>
               <string name="Name">Hud</string>
               <string name="Source"><![CDATA[--!strict
@@ -13039,6 +14753,7 @@ local MENU = {
 	{ name = "Rewards", icon = "🎁", caption = "Daily", color = UI.Theme.orange },
 	{ name = "Quests", icon = "📜", caption = "Quests", color = UI.Theme.purple },
 	{ name = "Dex", icon = "📖", caption = "Dex", color = UI.Theme.pink },
+	{ name = "Rebirth", icon = "⭐", caption = "Rebirth", color = UI.Theme.gold },
 	{ name = "Settings", icon = "⚙️", caption = "Settings", color = UI.Theme.teal },
 }
 
@@ -13047,8 +14762,8 @@ local function buildMenu()
 		Name = "Menu",
 		BackgroundTransparency = 1,
 		AnchorPoint = Vector2.new(0, 0.5),
-		Position = UDim2.new(0, 16, 0.44, 0),
-		Size = UDim2.fromOffset(70 * 2 + 18, 3 * 70 + 2 * 34),
+		Position = UDim2.new(0, 16, 0.5, 0),
+		Size = UDim2.fromOffset(70 * 2 + 18, 4 * 70 + 3 * 34),
 		Parent = screen,
 	}, {
 		UI.new("UIGridLayout", {
@@ -13174,14 +14889,23 @@ function Hud.init()
 		parent = timers,
 	})
 	stormChip.root.Visible = false
+	-- up to 4 chips per row (wraps instead of running into the menu on phones)
 	boostRow = UI.new("Frame", {
 		Name = "Boosts",
 		BackgroundTransparency = 1,
 		AnchorPoint = Vector2.new(0.5, 0),
 		Position = UDim2.new(0.5, 0, 0, 122),
-		Size = UDim2.fromOffset(820, 34),
+		Size = UDim2.fromOffset(4 * 150 + 3 * 8, 2 * 34 + 8),
 		Parent = screen,
-	}, { UI.list(Enum.FillDirection.Horizontal, 8, Enum.HorizontalAlignment.Center) }) :: Frame
+	}, {
+		UI.new("UIGridLayout", {
+			CellSize = UDim2.fromOffset(150, 34),
+			CellPadding = UDim2.fromOffset(8, 8),
+			FillDirectionMaxCells = 4,
+			HorizontalAlignment = Enum.HorizontalAlignment.Center,
+			SortOrder = Enum.SortOrder.LayoutOrder,
+		}),
+	}) :: Frame
 
 	buildMenu()
 	buildActions()
@@ -13207,7 +14931,7 @@ return Hud
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="85">
+          <Item class="ModuleScript" referent="92">
             <Properties>
               <string name="Name">PromptVisibility</string>
               <string name="Source"><![CDATA[--!strict
@@ -13326,7 +15050,7 @@ return PromptVisibility
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="86">
+          <Item class="ModuleScript" referent="93">
             <Properties>
               <string name="Name">QuestsUI</string>
               <string name="Source"><![CDATA[--!strict
@@ -13611,7 +15335,232 @@ return QuestsUI
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="87">
+          <Item class="ModuleScript" referent="94">
+            <Properties>
+              <string name="Name">RebirthUI</string>
+              <string name="Source"><![CDATA[--!strict
+-- Rebirth window: how many rebirths you have, your permanent coin boost, and
+-- progress toward the next one. The menu button shows a badge when you can
+-- afford it. Rebirthing needs a second tap, since it spends all your coins.
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local Economy = require(ReplicatedStorage.Shared.Util.Economy)
+local Format = require(ReplicatedStorage.Shared.Util.Format)
+local Net = require(ReplicatedStorage.Shared.Net)
+local Types = require(ReplicatedStorage.Shared.Types)
+local ClientState = require(script.Parent.ClientState)
+local Hud = require(script.Parent.Hud)
+local Panels = require(script.Parent.Parent.Lib.Panels)
+local UI = require(script.Parent.Parent.Lib.UI)
+
+local RebirthUI = {}
+
+local countLabel: TextLabel
+local boostLabel: TextLabel
+local nextLabel: TextLabel
+local progress: UI.Bar
+local rebirthButton: UI.Button
+local confirm = UI.confirm()
+
+local function bonusPercent(rebirths: number): number
+	return math.floor((Economy.rebirthMultiplier(rebirths) - 1) * 100 + 0.5)
+end
+
+function RebirthUI.ready(snapshot: Types.Snapshot): boolean
+	return snapshot.coins >= Economy.rebirthCost(snapshot.rebirths)
+end
+
+local function refresh(snapshot: Types.Snapshot)
+	local rebirths = snapshot.rebirths
+	local cost = Economy.rebirthCost(rebirths)
+	countLabel.Text = `⭐ {rebirths}`
+	boostLabel.Text = if rebirths > 0
+		then `Your coins: +{bonusPercent(rebirths)}% forever`
+		else "No rebirths yet"
+	nextLabel.Text =
+		`Rebirth {rebirths + 1}: +{bonusPercent(rebirths + 1)}% coins on everything, forever`
+	UI.setBar(
+		progress,
+		math.clamp(snapshot.coins / cost, 0, 1),
+		`💰 {Format.number(snapshot.coins)} / {Format.number(cost)}`
+	)
+	if not RebirthUI.ready(snapshot) then
+		UI.setButton(rebirthButton, {
+			text = `Need 💰{Format.number(cost - snapshot.coins)} more`,
+			color = UI.Theme.gold,
+			enabled = false,
+		})
+	elseif UI.isArmed(confirm) then
+		UI.setButton(
+			rebirthButton,
+			{ text = "Sure? All coins reset! Tap again", color = UI.Theme.red, enabled = true }
+		)
+	else
+		UI.setButton(
+			rebirthButton,
+			{ text = "⭐ Rebirth!", color = UI.Theme.gold, enabled = true }
+		)
+	end
+end
+
+local function infoCard(
+	parent: Instance,
+	position: UDim2,
+	title: string,
+	text: string,
+	color: Color3
+)
+	local card = UI.card({
+		size = UDim2.new(0.5, -8, 0, 116),
+		position = position,
+		color = UI.lighten(color, 0.82),
+		edge = color,
+		radius = 16,
+		parent = parent,
+	})
+	UI.body({
+		text = title,
+		size = UDim2.new(1, -24, 0, 28),
+		position = UDim2.fromOffset(12, 8),
+		font = UI.Font,
+		align = Enum.TextXAlignment.Left,
+		maxTextSize = 22,
+		parent = card,
+	})
+	UI.body({
+		text = text,
+		size = UDim2.new(1, -24, 0, 70),
+		position = UDim2.fromOffset(12, 38),
+		color = UI.Theme.inkSoft,
+		align = Enum.TextXAlignment.Left,
+		valign = Enum.TextYAlignment.Top,
+		maxTextSize = 18,
+		parent = card,
+	})
+end
+
+function RebirthUI.init()
+	local _, content = Panels.window("Rebirth", "⭐ Rebirth", Vector2.new(760, 500), UI.Theme.gold)
+
+	local top = UI.card({
+		name = "Current",
+		size = UDim2.new(1, 0, 0, 96),
+		color = UI.lighten(UI.Theme.gold, 0.75),
+		edge = UI.darken(UI.Theme.gold, 0.25),
+		radius = 18,
+		parent = content,
+	})
+	countLabel = UI.text({
+		text = "⭐ 0",
+		size = UDim2.fromOffset(150, 70),
+		position = UDim2.new(0, 14, 0.5, 0),
+		anchor = Vector2.new(0, 0.5),
+		color = UI.Theme.gold,
+		maxTextSize = 54,
+		outlineThickness = 3,
+		parent = top,
+	})
+	boostLabel = UI.body({
+		text = "",
+		size = UDim2.new(1, -190, 0, 40),
+		position = UDim2.new(0, 176, 0.5, 0),
+		anchor = Vector2.new(0, 0.5),
+		font = UI.Font,
+		align = Enum.TextXAlignment.Left,
+		maxTextSize = 30,
+		parent = top,
+	})
+
+	nextLabel = UI.body({
+		text = "",
+		size = UDim2.new(1, 0, 0, 30),
+		position = UDim2.fromOffset(0, 110),
+		font = UI.Font,
+		align = Enum.TextXAlignment.Left,
+		maxTextSize = 22,
+		parent = content,
+	})
+	progress = UI.bar({
+		size = UDim2.new(1, 0, 0, 34),
+		position = UDim2.fromOffset(0, 146),
+		color = UI.Theme.gold,
+		parent = content,
+	})
+
+	infoCard(
+		content,
+		UDim2.fromOffset(0, 196),
+		"✅ You keep",
+		"🦖 All your dinos  🥚 Eggs\n⬆️ Upgrades  📖 Dex  🎟 Passes",
+		UI.Theme.green
+	)
+	infoCard(
+		content,
+		UDim2.new(0.5, 8, 0, 196),
+		"🔄 Resets",
+		"💰 All your coins, including the ones on your coin pad",
+		UI.Theme.orange
+	)
+
+	rebirthButton = UI.button({
+		name = "RebirthButton",
+		text = "⭐ Rebirth!",
+		size = UDim2.new(1, -120, 0, 64),
+		position = UDim2.new(0.5, 0, 1, -6),
+		anchor = Vector2.new(0.5, 1),
+		color = UI.Theme.gold,
+		maxTextSize = 30,
+		parent = content,
+		onClick = function()
+			local snapshot = ClientState.get()
+			if not snapshot or not RebirthUI.ready(snapshot) then
+				return
+			end
+			if UI.confirmTap(confirm) then
+				Net.send("Rebirth")
+			else
+				refresh(snapshot)
+			end
+		end,
+	})
+
+	table.insert(Hud.badgeRefreshers, function(snapshot: Types.Snapshot)
+		local item = Hud.menu.Rebirth
+		if item then
+			item.badge.Visible = RebirthUI.ready(snapshot)
+		end
+	end)
+	ClientState.changed:connect(function(snapshot: Types.Snapshot)
+		if Panels.isOpen("Rebirth") then
+			refresh(snapshot)
+		end
+	end)
+	Panels.onOpen("Rebirth", function()
+		UI.disarm(confirm)
+		local snapshot = ClientState.get()
+		if snapshot then
+			refresh(snapshot)
+		end
+	end)
+end
+
+function RebirthUI.start()
+	-- the "tap again" prompt times out
+	while true do
+		task.wait(1)
+		local snapshot = ClientState.get()
+		if snapshot and Panels.isOpen("Rebirth") then
+			refresh(snapshot)
+		end
+	end
+end
+
+return RebirthUI
+]]></string>
+            </Properties>
+          </Item>
+          <Item class="ModuleScript" referent="95">
             <Properties>
               <string name="Name">RewardsUI</string>
               <string name="Source"><![CDATA[--!strict
@@ -13840,7 +15789,7 @@ return RewardsUI
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="88">
+          <Item class="ModuleScript" referent="96">
             <Properties>
               <string name="Name">SettingsUI</string>
               <string name="Source"><![CDATA[--!strict
@@ -14047,7 +15996,11 @@ function SettingsUI.init()
 		parent = list,
 	})
 
-	ClientState.changed:connect(refresh)
+	ClientState.changed:connect(function(snapshot: Types.Snapshot)
+		if Panels.isOpen("Settings") then
+			refresh(snapshot)
+		end
+	end)
 	Panels.onOpen("Settings", function()
 		local snapshot = ClientState.get()
 		if snapshot then
@@ -14060,7 +16013,7 @@ return SettingsUI
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="89">
+          <Item class="ModuleScript" referent="97">
             <Properties>
               <string name="Name">ShopUI</string>
               <string name="Source"><![CDATA[--!strict
@@ -14095,7 +16048,7 @@ type Card = {
 	buy: UI.Button,
 }
 
-type UpgradeRow = { info: TextLabel, bar: UI.Bar, button: UI.Button }
+type UpgradeRow = { info: TextLabel, bar: UI.Bar, button: UI.Button, level: number }
 
 local cards: { Card } = {}
 local restockChip: UI.Chip
@@ -14191,19 +16144,31 @@ local function sectionLabel(text: string, order: number)
 	})
 end
 
+local shownOdds = ""
+
+-- Rebuilds the odds list, but only when something on it changed (snapshots
+-- arrive every second; the odds only move with luck and storms).
 local function renderOdds()
 	local eggId = oddsEgg
 	local egg = eggId and EggData.get(eggId)
 	if not egg then
 		return
 	end
+	local snapshot = ClientState.get()
+	local luck = snapshot ~= nil and snapshot.boosts.luckUntil > Clock.now()
+	local key = `{egg.id}|{luck}`
+	for _, m in EggOdds.mutations(Clock.cycleNow()) do
+		key ..= `|{m.key}:{m.bp}`
+	end
+	if key == shownOdds then
+		return
+	end
+	shownOdds = key
 	for _, child in oddsList:GetChildren() do
 		if child:IsA("GuiObject") then
 			child:Destroy()
 		end
 	end
-	local snapshot = ClientState.get()
-	local luck = snapshot ~= nil and snapshot.boosts.luckUntil > Clock.now()
 	Panels.setTitle("Odds", `📊 {egg.name} Odds`)
 	oddsTitle.Text = if luck
 		then "🍀 Your Luck boost is included!"
@@ -14397,10 +16362,11 @@ local function upgradeCard(
 		parent = card,
 		onClick = onClick,
 	})
-	return { info = info, bar = bar, button = button }
+	return { info = info, bar = bar, button = button, level = 0 }
 end
 
 local function refreshUpgrade(row: UpgradeRow, costs: { number }, level: number, coins: number)
+	row.level = level -- the level a tap buys (the price shown)
 	local cost = Economy.nextUpgradeCost(costs, level)
 	UI.setBar(row.bar, level / #costs, `Level {level} / {#costs}`)
 	if cost then
@@ -14521,10 +16487,10 @@ function ShopUI.init()
 		Parent = content,
 	}, { UI.list(Enum.FillDirection.Vertical, 16) }) :: Frame
 	slotRow = upgradeCard(upgradesPage, 1, "🦖", "+1 Dino Slot", function()
-		Net.send("BuyUpgrade", "slots")
+		Net.send("BuyUpgrade", "slots", slotRow.level)
 	end)
 	incubatorRow = upgradeCard(upgradesPage, 2, "🥚", "+1 Incubator", function()
-		Net.send("BuyUpgrade", "incubators")
+		Net.send("BuyUpgrade", "incubators", incubatorRow.level)
 	end)
 	selectTab("Eggs")
 
@@ -14588,7 +16554,7 @@ return ShopUI
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="90">
+          <Item class="ModuleScript" referent="98">
             <Properties>
               <string name="Name">StoreUI</string>
               <string name="Source"><![CDATA[--!strict
@@ -14827,7 +16793,10 @@ function StoreUI.init()
 		ScrollBarThickness = 6,
 		BorderSizePixel = 0,
 		Parent = content,
-	}, { UI.list(Enum.FillDirection.Vertical, 10), UI.padding(2, 4) }) :: ScrollingFrame
+	}, {
+		UI.list(Enum.FillDirection.Vertical, 10),
+		UI.padding(2, 16), -- room for the hero card's "BEST VALUE" ribbon
+	}) :: ScrollingFrame
 
 	-- Starter Pack hero banner
 	hero = UI.new("Frame", {
@@ -14941,7 +16910,7 @@ return StoreUI
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="91">
+          <Item class="ModuleScript" referent="99">
             <Properties>
               <string name="Name">Toasts</string>
               <string name="Source"><![CDATA[--!strict
@@ -15070,7 +17039,7 @@ return Toasts
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="92">
+          <Item class="ModuleScript" referent="100">
             <Properties>
               <string name="Name">Tutorial</string>
               <string name="Source"><![CDATA[--!strict
@@ -15327,7 +17296,7 @@ return Tutorial
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="93">
+          <Item class="ModuleScript" referent="101">
             <Properties>
               <string name="Name">WorldFx</string>
               <string name="Source"><![CDATA[--!strict
@@ -15373,10 +17342,13 @@ type Walker = {
 	rng: Random,
 	floor: BasePart?, -- the pen's floor; walks stay inside it
 	margin: number, -- distance kept from the fence
+	homeCheck: number, -- frames until we look for a new home spot
 }
 
 local walkers: { [Model]: Walker } = {}
-local FAR = 220
+local FAR = 150 -- dinos further from the camera than this stand still
+local NEAR = 70 -- idle dinos only breathe when this close
+local HOME_CHECK_FRAMES = 30
 
 local function flatten(v: Vector3, fallback: Vector3): Vector3
 	local flat = Vector3.new(v.X, 0, v.Z)
@@ -15415,6 +17387,7 @@ local function addWalker(model: Model, tries: number?)
 		rng = rng,
 		floor = if floor and floor:IsA("BasePart") then floor else nil,
 		margin = math.clamp(h * 0.6, 4, 10),
+		homeCheck = rng:NextInteger(1, HOME_CHECK_FRAMES),
 	}
 end
 
@@ -15450,15 +17423,20 @@ local function stepWalkers(dt: number)
 			walkers[model] = nil
 			continue
 		end
-		if (w.position - eye).Magnitude > FAR then
+		local away = (w.position - eye).Magnitude
+		if away > FAR then
 			continue
 		end
 		-- the server moves dinos to a new home when the nest is rearranged
-		local home = model:GetAttribute("Home")
-		if typeof(home) == "CFrame" and (home.Position - w.home).Magnitude > 0.1 then
-			w.home = home.Position
-			w.position = home.Position
-			w.target = nil
+		w.homeCheck -= 1
+		if w.homeCheck <= 0 then
+			w.homeCheck = HOME_CHECK_FRAMES
+			local home = model:GetAttribute("Home")
+			if typeof(home) == "CFrame" and (home.Position - w.home).Magnitude > 0.1 then
+				w.home = home.Position
+				w.position = home.Position
+				w.target = nil
+			end
 		end
 		local moving = false
 		local target = w.target
@@ -15479,6 +17457,9 @@ local function stepWalkers(dt: number)
 		elseif now >= w.waitUntil then
 			w.target = pickTarget(w)
 		end
+		if not moving and away > NEAR then
+			continue -- too far to see it breathe
+		end
 		w.phase += dt * (if moving then 4 + w.speed * 1.5 else 2)
 		local lift = if moving
 			then math.abs(math.sin(w.phase)) * w.hop
@@ -15497,12 +17478,25 @@ end
 
 -- ===== Rainbow mutation =====
 
-local function rainbowStep()
+-- Rainbow parts, kept up to date by tag signals (part -> hue offset).
+local rainbowParts: { [BasePart]: number } = {}
+local rainbowWait = 0
+
+local function addRainbow(instance: Instance)
+	if instance:IsA("BasePart") then
+		rainbowParts[instance] = math.random() * 0.3
+	end
+end
+
+local function rainbowStep(dt: number)
+	rainbowWait -= dt
+	if rainbowWait > 0 then
+		return
+	end
+	rainbowWait = 1 / 15
 	local hue = (os.clock() * 0.25) % 1
-	for i, part in CollectionService:GetTagged(DinoModel.RAINBOW_TAG) do
-		if part:IsA("BasePart") then
-			part.Color = Color3.fromHSV((hue + i * 0.03) % 1, 0.65, 1)
-		end
+	for part, offset in rainbowParts do
+		part.Color = Color3.fromHSV((hue + offset) % 1, 0.65, 1)
 	end
 end
 
@@ -15898,6 +17892,15 @@ function WorldFx.init()
 		onDinoAdded(instance)
 	end
 	CollectionService:GetInstanceAddedSignal(DinoModel.TAG):Connect(onDinoAdded)
+	for _, part in CollectionService:GetTagged(DinoModel.RAINBOW_TAG) do
+		addRainbow(part)
+	end
+	CollectionService:GetInstanceAddedSignal(DinoModel.RAINBOW_TAG):Connect(addRainbow)
+	CollectionService:GetInstanceRemovedSignal(DinoModel.RAINBOW_TAG):Connect(function(instance)
+		if instance:IsA("BasePart") then
+			rainbowParts[instance] = nil
+		end
+	end)
 	CollectionService:GetInstanceAddedSignal(Tags.NIGHT_LIGHT):Connect(function(instance)
 		if instance:IsA("Light") then
 			instance.Enabled = lastNight == true
@@ -15912,7 +17915,7 @@ end
 
 function WorldFx.start()
 	RunService.Heartbeat:Connect(function(dt: number)
-		rainbowStep()
+		rainbowStep(dt)
 		followCamera()
 		stepWalkers(dt)
 	end)
@@ -15931,11 +17934,11 @@ return WorldFx
             </Properties>
           </Item>
         </Item>
-        <Item class="Folder" referent="94">
+        <Item class="Folder" referent="102">
           <Properties>
             <string name="Name">Lib</string>
           </Properties>
-          <Item class="ModuleScript" referent="95">
+          <Item class="ModuleScript" referent="103">
             <Properties>
               <string name="Name">Panels</string>
               <string name="Source"><![CDATA[--!strict
@@ -16241,7 +18244,7 @@ return Panels
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="96">
+          <Item class="ModuleScript" referent="104">
             <Properties>
               <string name="Name">UI</string>
               <string name="Source"><![CDATA[--!strict
@@ -16691,6 +18694,42 @@ function UI.menuButton(props: {
 	return { button = button, badge = badge, badgeLabel = badgeLabel }
 end
 
+-- ===== Two-tap confirmation =====
+-- For buttons that can't be undone (sell, fuse, rebirth). The first tap arms
+-- the button (it shows a warning); a second tap confirms, but only after
+-- CONFIRM_DELAY, so a quick double-tap can't skip reading the warning.
+
+UI.CONFIRM_DELAY = 0.5
+UI.CONFIRM_WINDOW = 3
+
+export type Confirm = { armedAt: number }
+
+function UI.confirm(): Confirm
+	return { armedAt = -math.huge }
+end
+
+-- Is the warning showing?
+function UI.isArmed(confirm: Confirm): boolean
+	return os.clock() - confirm.armedAt < UI.CONFIRM_WINDOW
+end
+
+-- Call on tap. Returns true when this tap confirms the action.
+function UI.confirmTap(confirm: Confirm): boolean
+	local age = os.clock() - confirm.armedAt
+	if age >= UI.CONFIRM_DELAY and age < UI.CONFIRM_WINDOW then
+		confirm.armedAt = -math.huge
+		return true
+	end
+	if age >= UI.CONFIRM_WINDOW then
+		confirm.armedAt = os.clock() -- arm
+	end
+	return false -- armed now, or tapped again too fast
+end
+
+function UI.disarm(confirm: Confirm)
+	confirm.armedAt = -math.huge
+end
+
 -- ===== Studs =====
 -- One see-through stud (assets/textures/SquareStuds_UI.png) tiled over a
 -- panel, card or button of any colour. Its image ID lives in the "UIStudImage"
@@ -16699,7 +18738,7 @@ end
 
 UI.STUD_TILE = 26
 
-local studLabels: { ImageLabel } = {}
+local studLabels: { [ImageLabel]: true } = {}
 
 local function readStudImage(): string
 	local variant = MaterialService:FindFirstChild("SquareStuds")
@@ -16718,14 +18757,9 @@ do
 	if variant then
 		variant:GetAttributeChangedSignal("UIStudImage"):Connect(function()
 			studImage = readStudImage()
-			for i = #studLabels, 1, -1 do
-				local label = studLabels[i]
-				if label.Parent then
-					label.Image = studImage
-					label.Visible = studImage ~= ""
-				else
-					table.remove(studLabels, i)
-				end
+			for label in studLabels do
+				label.Image = studImage
+				label.Visible = studImage ~= ""
 			end
 		end)
 	end
@@ -16744,7 +18778,10 @@ function UI.studs(target: GuiObject, radius: number?, zIndex: number?): ImageLab
 		ZIndex = zIndex or 0,
 		Parent = target,
 	}, { UI.corner(radius or 16) }) :: ImageLabel
-	table.insert(studLabels, label)
+	studLabels[label] = true
+	label.Destroying:Connect(function()
+		studLabels[label] = nil
+	end)
 	return label
 end
 
@@ -17036,13 +19073,13 @@ return UI
       </Item>
     </Item>
   </Item>
-  <Item class="Workspace" referent="97">
+  <Item class="Workspace" referent="105">
     <Properties>
       <string name="Name">Workspace</string>
       <bool name="NeedsPivotMigration">false</bool>
       <bool name="StreamingEnabled">false</bool>
     </Properties>
-    <Item class="Part" referent="98">
+    <Item class="Part" referent="106">
       <Properties>
         <string name="Name">PressPlay</string>
         <bool name="Anchored">true</bool>
@@ -17053,7 +19090,7 @@ return UI
           <Z>24</Z>
         </Vector3>
       </Properties>
-      <Item class="BillboardGui" referent="99">
+      <Item class="BillboardGui" referent="107">
         <Properties>
           <string name="Name">Sign</string>
           <bool name="AlwaysOnTop">true</bool>
@@ -17069,7 +19106,7 @@ return UI
             <Z>0</Z>
           </Vector3>
         </Properties>
-        <Item class="TextLabel" referent="100">
+        <Item class="TextLabel" referent="108">
           <Properties>
             <string name="Name">Text</string>
             <float name="BackgroundTransparency">1</float>
