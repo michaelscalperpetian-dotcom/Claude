@@ -1,11 +1,12 @@
 --!strict
--- The heads-up display, kept small so the lake stays the star:
---   * the power meter beside your character (only near the water): a needle
---     that swings while you wind up, with the gold zone and the perfect line
---   * a hint under it saying how to throw, or what's in the way
---   * your stone (bottom left), which opens the journal
---   * your best throw and title (top)
---   * the result of each of your throws once the stone stops
+-- The heads-up display:
+--   * coins, big at the top, with your coin multiplier and longest throw
+--   * buttons down the left: Rocks, Upgrade (one tap buys a level), Rebirth
+--     (glows when you can afford one) and the chase camera
+--   * the power meter beside your character (on the beach and the piers):
+--     a needle that swings while you wind up, with the gold zone and the
+--     perfect line, and a hint under it
+--   * the result of each throw once the rock sinks: coins and distance
 --   * a big Throw button on touch screens
 
 local Players = game:GetService("Players")
@@ -13,12 +14,15 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 
-local StoneData = require(ReplicatedStorage.Shared.Data.StoneData)
+local Net = require(ReplicatedStorage.Shared.Net)
+local RockData = require(ReplicatedStorage.Shared.Data.RockData)
 local Skip = require(ReplicatedStorage.Shared.Skip)
 local Types = require(ReplicatedStorage.Shared.Types)
+local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Audio = require(script.Parent.Audio)
 local ClientState = require(script.Parent.ClientState)
-local Journal = require(script.Parent.Journal)
+local Menu = require(script.Parent.Menu)
+local RockFx = require(script.Parent.RockFx)
 local ThrowInput = require(script.Parent.ThrowInput)
 local UI = require(script.Parent.Parent.Lib.UI)
 
@@ -28,31 +32,36 @@ local T = UI.Theme
 local METER_HEIGHT = 250
 local METER_WIDTH = 30
 local METER_X = 260 -- right of the screen's centre (clear of the messages)
+local COIN_GOLD = Color3.fromRGB(255, 214, 92)
 
 type Refs = {
 	meter: Frame,
 	needle: Frame,
 	fill: Frame,
 	hint: TextLabel,
-	stoneDot: Frame,
-	stoneName: TextLabel,
-	stoneRarity: TextLabel,
-	best: TextLabel,
+	coins: TextLabel,
+	details: TextLabel,
+	upgrade: UI.Button,
+	upgradeCost: TextLabel,
+	rebirth: UI.Button,
+	rocks: UI.Button,
+	rockDot: Frame,
+	camera: UI.Button,
 	result: Frame,
 	resultTitle: TextLabel,
 	resultLine: TextLabel,
 	flash: TextLabel,
-	throwButton: TextButton?,
 	waking: Frame,
+	throwButton: TextButton?,
 }
 
 local refs: Refs? = nil
 local resultToken = 0
 local flashToken = 0
+local shownCoins = 0 -- the counter rolls up to the real number
 
 -- ===== The power meter =====
 
--- A band of the meter from power `a` to power `b`.
 local function band(
 	parent: Instance,
 	a: number,
@@ -150,16 +159,119 @@ local function buildMeter(canvas: Frame): (Frame, Frame, Frame)
 	return meter, needle, fill
 end
 
--- ===== Building =====
+-- A square button down the left side: an emoji over a caption.
+local function sideButton(
+	canvas: Frame,
+	name: string,
+	emoji: string,
+	caption: string,
+	order: number,
+	onClick: () -> ()
+): UI.Button
+	local button = UI.button({
+		name = name,
+		text = "",
+		size = UDim2.fromOffset(88, 76),
+		position = UDim2.new(0, 16, 0, 64 + (order - 1) * 84),
+		parent = canvas,
+		onClick = onClick,
+	})
+	button.label.Visible = false
+	UI.text({
+		name = "Icon",
+		text = emoji,
+		size = UDim2.new(1, -10, 0, 34),
+		position = UDim2.fromOffset(5, 6),
+		maxTextSize = 30,
+		parent = button.root,
+	})
+	UI.text({
+		name = "Caption",
+		text = caption,
+		size = UDim2.new(1, -8, 0, 22),
+		position = UDim2.fromOffset(4, 44),
+		font = UI.BodyFont,
+		maxTextSize = 16,
+		parent = button.root,
+	})
+	return button
+end
 
 local function build()
 	local _, canvas = UI.screen("Hud", 5)
 	local meter, needle, fill = buildMeter(canvas)
 
+	-- coins, top centre
+	local coinPill = UI.glass({
+		Name = "CoinPill",
+		AnchorPoint = Vector2.new(0.5, 0),
+		Position = UDim2.new(0.5, 0, 0, 10),
+		Size = UDim2.fromOffset(320, 76),
+		Parent = canvas,
+	})
+	local coins = UI.text({
+		name = "Coins",
+		text = "🪙 0",
+		size = UDim2.new(1, -20, 0, 44),
+		position = UDim2.fromOffset(10, 4),
+		color = COIN_GOLD,
+		maxTextSize = 40,
+		shadow = true,
+		parent = coinPill,
+	})
+	local details = UI.text({
+		name = "Details",
+		text = "",
+		size = UDim2.new(1, -20, 0, 22),
+		position = UDim2.fromOffset(10, 48),
+		font = UI.BodyFont,
+		maxTextSize = 16,
+		parent = coinPill,
+	})
+
+	-- buttons down the left
+	local rocks = sideButton(canvas, "Rocks", "🪨", "Rocks", 1, function()
+		Menu.open("Rocks")
+	end)
+	local rockDot = UI.new("Frame", {
+		Name = "Dot",
+		BackgroundColor3 = T.white,
+		BorderSizePixel = 0,
+		AnchorPoint = Vector2.new(1, 0),
+		Position = UDim2.new(1, -6, 0, 6),
+		Size = UDim2.fromOffset(18, 13),
+		Parent = rocks.root,
+	}, { UI.new("UICorner", { CornerRadius = UDim.new(0.5, 0) }), UI.stroke(T.white, 1.5, 0.3) }) :: Frame
+	local upgrade = sideButton(canvas, "Upgrade", "💪", "Upgrade", 2, function()
+		Net.send("Upgrade", 1)
+	end)
+	local upgradeCost = UI.text({
+		name = "Cost",
+		text = "",
+		size = UDim2.fromOffset(110, 22),
+		position = UDim2.new(1, 8, 0.5, 0),
+		anchor = Vector2.new(0, 0.5),
+		color = COIN_GOLD,
+		font = UI.BodyFont,
+		align = Enum.TextXAlignment.Left,
+		maxTextSize = 17,
+		shadow = true,
+		parent = upgrade.root,
+	})
+	local rebirth = sideButton(canvas, "Rebirth", "🔁", "Rebirth", 3, function()
+		Menu.open("Rebirth")
+	end)
+	local camera = sideButton(canvas, "Camera", "🎥", "Chase cam", 4, function()
+		RockFx.chaseEnabled = not RockFx.chaseEnabled
+		if not RockFx.chaseEnabled then
+			RockFx.stopChase()
+		end
+	end)
+
 	local hint = UI.text({
 		name = "Hint",
 		text = "",
-		size = UDim2.fromOffset(360, 26),
+		size = UDim2.fromOffset(420, 26),
 		position = UDim2.new(0.5, 0, 1, -118),
 		anchor = Vector2.new(0.5, 1),
 		font = UI.BodyFont,
@@ -172,7 +284,7 @@ local function build()
 	local flash = UI.text({
 		name = "Flash",
 		text = "",
-		size = UDim2.fromOffset(220, 40),
+		size = UDim2.fromOffset(240, 40),
 		position = UDim2.new(0.5, METER_X + METER_WIDTH / 2, 0.5, -METER_HEIGHT / 2 - 40),
 		anchor = Vector2.new(0.5, 0.5),
 		color = T.perfect,
@@ -182,82 +294,13 @@ local function build()
 	})
 	flash.TextTransparency = 1
 
-	-- your stone, bottom left
-	local card = UI.button({
-		name = "StoneCard",
-		text = "",
-		size = UDim2.fromOffset(230, 64),
-		position = UDim2.new(0, 18, 1, -18),
-		anchor = Vector2.new(0, 1),
-		parent = canvas,
-		onClick = function()
-			Journal.open("Stones")
-		end,
-	})
-	card.label.Visible = false
-	local dot = UI.new("Frame", {
-		Name = "Dot",
-		BackgroundColor3 = T.white,
-		BorderSizePixel = 0,
-		AnchorPoint = Vector2.new(0, 0.5),
-		Position = UDim2.new(0, 12, 0.5, 0),
-		Size = UDim2.fromOffset(40, 28),
-		Parent = card.root,
-	}, { UI.new("UICorner", { CornerRadius = UDim.new(0.5, 0) }), UI.stroke(T.white, 2, 0.4) }) :: Frame
-	local stoneName = UI.text({
-		name = "StoneName",
-		text = "Pebble",
-		size = UDim2.new(1, -110, 0, 26),
-		position = UDim2.fromOffset(62, 8),
-		align = Enum.TextXAlignment.Left,
-		maxTextSize = 22,
-		parent = card.root,
-	})
-	local stoneRarity = UI.text({
-		name = "Rarity",
-		text = "Common",
-		size = UDim2.new(1, -110, 0, 18),
-		position = UDim2.fromOffset(62, 36),
-		align = Enum.TextXAlignment.Left,
-		font = UI.BodyFont,
-		maxTextSize = 15,
-		parent = card.root,
-	})
-	UI.text({
-		text = "📖",
-		size = UDim2.fromOffset(34, 34),
-		position = UDim2.new(1, -10, 0.5, 0),
-		anchor = Vector2.new(1, 0.5),
-		maxTextSize = 26,
-		parent = card.root,
-	})
-
-	-- best throw and title, top centre
-	local bestPill = UI.glass({
-		Name = "Best",
-		AnchorPoint = Vector2.new(0.5, 0),
-		Position = UDim2.new(0.5, 0, 0, 10),
-		Size = UDim2.fromOffset(300, 36),
-		Parent = canvas,
-	})
-	local best = UI.text({
-		name = "Text",
-		text = "Skip your first stone",
-		size = UDim2.new(1, -20, 1, -8),
-		position = UDim2.fromScale(0.5, 0.5),
-		anchor = Vector2.new(0.5, 0.5),
-		font = UI.BodyFont,
-		maxTextSize = 18,
-		parent = bestPill,
-	})
-
 	-- the result of your throw, upper middle
 	local result = UI.new("Frame", {
 		Name = "Result",
 		BackgroundTransparency = 1,
 		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.fromScale(0.5, 0.28),
-		Size = UDim2.fromOffset(460, 90),
+		Position = UDim2.fromScale(0.5, 0.3),
+		Size = UDim2.fromOffset(520, 90),
 		Visible = false,
 		Parent = canvas,
 	}) :: Frame
@@ -265,6 +308,7 @@ local function build()
 		name = "Title",
 		text = "",
 		size = UDim2.new(1, 0, 0, 56),
+		color = COIN_GOLD,
 		maxTextSize = 52,
 		shadow = true,
 		parent = result,
@@ -278,6 +322,22 @@ local function build()
 		maxTextSize = 22,
 		shadow = true,
 		parent = result,
+	})
+
+	local waking = UI.glass({
+		Name = "Waking",
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.5),
+		Size = UDim2.fromOffset(380, 56),
+		Parent = canvas,
+	})
+	UI.text({
+		text = "The tide is coming in…",
+		size = UDim2.new(1, -24, 1, -14),
+		position = UDim2.fromScale(0.5, 0.5),
+		anchor = Vector2.new(0.5, 0.5),
+		maxTextSize = 26,
+		parent = waking,
 	})
 
 	-- the Throw button on touch screens (hold it like the mouse button)
@@ -322,37 +382,25 @@ local function build()
 		throwButton = button
 	end
 
-	local waking = UI.glass({
-		Name = "Waking",
-		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.fromScale(0.5, 0.5),
-		Size = UDim2.fromOffset(380, 56),
-		Parent = canvas,
-	})
-	UI.text({
-		text = "The lake is waking up…",
-		size = UDim2.new(1, -24, 1, -14),
-		position = UDim2.fromScale(0.5, 0.5),
-		anchor = Vector2.new(0.5, 0.5),
-		maxTextSize = 26,
-		parent = waking,
-	})
-
 	refs = {
 		meter = meter,
 		needle = needle,
 		fill = fill,
 		hint = hint,
-		stoneDot = dot,
-		stoneName = stoneName,
-		stoneRarity = stoneRarity,
-		best = best,
+		coins = coins,
+		details = details,
+		upgrade = upgrade,
+		upgradeCost = upgradeCost,
+		rebirth = rebirth,
+		rocks = rocks,
+		rockDot = rockDot,
+		camera = camera,
 		result = result,
 		resultTitle = resultTitle,
 		resultLine = resultLine,
 		flash = flash,
-		throwButton = throwButton,
 		waking = waking,
+		throwButton = throwButton,
 	}
 end
 
@@ -367,19 +415,13 @@ local function howToThrow(): string
 	return "Hold click to wind up, let go in the gold"
 end
 
-local HINTS: { [string]: string } = {
-	away = "Face the open water to throw",
-	high = "Climb down to throw",
-}
-
-local function frame()
+local function frame(dt: number)
 	local r = refs
 	if not r then
 		return
 	end
 	ThrowInput.update()
 	local state = ThrowInput.state
-	-- before the first spawn (the valley is still being shaped)
 	r.waking.Visible = Players.LocalPlayer.Character == nil
 	local near = state.charging or state.status ~= "far"
 	r.meter.Visible = near
@@ -390,37 +432,51 @@ local function frame()
 	r.needle.Position = UDim2.new(0, -6, 1 - power, 0)
 	r.fill.Size = UDim2.fromScale(1, power)
 	r.needle.Visible = state.charging
+	local snapshot = ClientState.get()
 	if state.charging then
 		r.hint.Text = ""
 	elseif state.status == "ok" then
-		local snapshot = ClientState.get()
 		local newcomer = not snapshot or snapshot.throws < 5
-		r.hint.Text = if ThrowInput.coolingDown() then "" elseif newcomer then howToThrow() else ""
+		r.hint.Text = if ThrowInput.coolingDown() or not newcomer then "" else howToThrow()
+	elseif state.status == "high" then
+		r.hint.Text = "Climb down to throw"
 	else
-		r.hint.Text = HINTS[state.status] or ""
+		local newcomer = not snapshot or snapshot.throws < 1
+		r.hint.Text = if newcomer and Players.LocalPlayer.Character
+			then "Walk down to the beach to skip a rock"
+			else ""
 	end
+	-- the coin counter rolls up smoothly to the real number
+	local target = if snapshot then snapshot.coins else 0
+	if shownCoins ~= target then
+		local step = (target - shownCoins) * math.min(dt * 8, 1)
+		shownCoins = if math.abs(target - shownCoins) < 1 then target else shownCoins + step
+		r.coins.Text = "🪙 " .. Format.short(shownCoins)
+	end
+	r.camera.root.BackgroundTransparency = if RockFx.chaseEnabled then UI.GLASS else 0.65
 end
 
-local function showStone(snapshot: Types.Snapshot)
+local function showState(snapshot: Types.Snapshot)
 	local r = refs
 	if not r then
 		return
 	end
-	local stone = StoneData.get(snapshot.equipped) or StoneData.get(StoneData.STARTER)
-	if not stone then
-		return
+	local rock = RockData.get(snapshot.equipped) or RockData.get(RockData.STARTER)
+	if rock then
+		r.rockDot.BackgroundColor3 = UI.rgb(rock.color)
 	end
-	r.stoneDot.BackgroundColor3 = UI.rgb(stone.color)
-	r.stoneName.Text = stone.name
-	r.stoneRarity.Text = stone.rarity
-	r.stoneRarity.TextColor3 = UI.rgb(StoneData.rarityInfo(stone.rarity).color)
-	if snapshot.bestSkips > 0 then
-		local distance = string.format("%.0f", snapshot.bestDistance)
-		local title = if snapshot.title then ` · {snapshot.title}` else ""
-		r.best.Text = `Best ×{snapshot.bestSkips} · {distance} studs{title}`
-	else
-		r.best.Text = "Skip your first stone"
-	end
+	local multiplier = Format.times(snapshot.coinMultiplier)
+	local best = if snapshot.bestDistance > 0
+		then ` · Longest {Format.distance(snapshot.bestDistance)}`
+		else ""
+	r.details.Text = `{multiplier} coins{best}`
+	r.upgradeCost.Text = "🪙 " .. Format.short(snapshot.strengthCost)
+	local canUpgrade = snapshot.coins >= snapshot.strengthCost
+	UI.setButton(r.upgrade, { color = if canUpgrade then T.good else T.glass })
+	r.upgrade.root.BackgroundTransparency = if canUpgrade then 0.1 else UI.GLASS
+	local canRebirth = snapshot.coins >= snapshot.rebirthCost
+	UI.setButton(r.rebirth, { color = if canRebirth then T.dusk else T.glass })
+	r.rebirth.root.BackgroundTransparency = if canRebirth then 0.05 else UI.GLASS
 end
 
 local function flashWord(text: string, color: Color3)
@@ -443,30 +499,21 @@ end
 
 -- How a finished throw reads to the player who threw it.
 function Hud.describe(event: Types.ThrowEvent): (string, string)
-	local lines: { string } = {}
-	local title: string
 	if event.verdict == "plop" then
-		title = "Plop."
-		table.insert(lines, "Too gentle. Hold a little longer")
+		return "Plop.", "Too gentle. Hold a little longer"
 	elseif event.verdict == "dive" then
-		title = "Sploosh!"
-		table.insert(lines, "Too hard, it dove straight in")
-	else
-		title = if event.skips == 1 then "1 skip" else `{event.skips} skips!`
-		if event.verdict == "shore" then
-			table.insert(lines, "All the way across the lake!")
-		end
-		if event.perfect then
-			table.insert(lines, "Perfect release")
-		end
-		table.insert(lines, string.format("%.0f studs", event.distance))
+		return "Sploosh!", "Too hard, it dove straight in"
 	end
-	if event.newBestSkips and event.skips > 0 then
-		table.insert(lines, 1, "New best!")
-	elseif event.newBestDistance and event.skips > 0 then
-		table.insert(lines, 1, "Your longest yet!")
+	local lines: { string } = {}
+	if event.newBest then
+		table.insert(lines, "New record!")
 	end
-	return title, table.concat(lines, " · ")
+	table.insert(lines, Format.distance(event.distance))
+	table.insert(lines, if event.skips == 1 then "1 skip" else `{event.skips} skips`)
+	if event.perfect then
+		table.insert(lines, "Perfect!")
+	end
+	return `+{Format.short(event.coins)} 🪙`, table.concat(lines, " · ")
 end
 
 local function showResult(event: Types.ThrowEvent)
@@ -479,12 +526,12 @@ local function showResult(event: Types.ThrowEvent)
 	local token = resultToken
 	r.resultTitle.Text = title
 	r.resultLine.Text = line
-	r.resultTitle.TextColor3 = if event.perfect then T.perfect else T.white
+	r.resultTitle.TextColor3 = if event.verdict == "skips" then COIN_GOLD else T.white
 	r.resultTitle.TextTransparency = 0
 	r.resultLine.TextTransparency = 0
 	r.result.Visible = true
 	UI.pop(r.result, 0.8)
-	if event.newBestSkips and event.skips > 0 then
+	if event.newBest and event.skips > 0 then
 		Audio.play("rare")
 	elseif event.skips >= 10 then
 		Audio.play("good")
@@ -505,20 +552,13 @@ end
 
 function Hud.init()
 	build()
-	ClientState.changed:connect(showStone)
+	ClientState.changed:connect(showState)
 	ClientState.landed:connect(showResult)
 	ThrowInput.released:connect(function(power: number)
 		if Skip.isPerfect(power) then
 			flashWord("Perfect!", T.perfect)
 		elseif power >= Skip.DIVE then
 			flashWord("Too hard!", T.coral)
-		end
-	end)
-	ThrowInput.refused:connect(function(status)
-		local text = HINTS[status]
-		if text then
-			flashWord(text, T.white)
-			Audio.play("bad")
 		end
 	end)
 end

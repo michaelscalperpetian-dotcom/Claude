@@ -10,6 +10,7 @@ local Net = require(ReplicatedStorage.Shared.Net)
 local RockData = require(ReplicatedStorage.Shared.Data.RockData)
 local RockModel = require(ReplicatedStorage.Shared.RockModel)
 local Types = require(ReplicatedStorage.Shared.Types)
+local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Notify = require(script.Parent.Parent.Lib.Notify)
 local Data = require(script.Parent.Data)
 local Progress = require(script.Parent.Progress)
@@ -194,7 +195,7 @@ function Shop.rebirth(player: Player): Refusal?
 	local multiplier = Economy.coinMultiplier(Economy.statsOf(profile))
 	Notify.send(
 		player,
-		`🔁 Rebirth {profile.rebirths}! Every throw now pays x{string.format("%.2f", multiplier)}`,
+		`🔁 Rebirth {profile.rebirths}! Every throw now pays {Format.times(multiplier)} coins`,
 		"rare"
 	)
 	Progress.check(player)

@@ -1,11 +1,11 @@
 --!strict
 -- Gentle messages from the server, stacked near the top of the screen, and
--- a bigger card when you pick up a stone ("You found Slate! New!").
+-- a bigger banner when you reach an island far out at sea.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Net = require(ReplicatedStorage.Shared.Net)
-local StoneData = require(ReplicatedStorage.Shared.Data.StoneData)
+local IslandData = require(ReplicatedStorage.Shared.Data.IslandData)
 local Audio = require(script.Parent.Audio)
 local UI = require(script.Parent.Parent.Lib.UI)
 
@@ -22,7 +22,7 @@ local STYLE_COLORS: { [string]: Color3 } = {
 	rare = T.perfect,
 }
 
--- Messages and found-stone cards share one stack above the hint line,
+-- Messages and island banners share one stack above the hint line,
 -- newest at the bottom.
 local stack: Frame? = nil
 local alive: { [Frame]: boolean } = {}
@@ -90,48 +90,34 @@ function Toasts.show(text: string, style: string?)
 	end
 end
 
--- "New stone: …" card for a stone picked up off the beach.
-function Toasts.found(id: string, isNew: boolean, owned: number)
-	local stone = StoneData.get(id)
-	if not stack or not stone then
+-- A big banner: an island reached.
+function Toasts.island(id: string)
+	local island = IslandData.get(id)
+	if not stack or not island then
 		return
 	end
-	local rarityColor = UI.rgb(StoneData.rarityInfo(stone.rarity).color)
-	local card = UI.glass({ Name = "Found", Size = UDim2.fromOffset(480, 84) })
-	UI.new("Frame", {
-		Name = "Swatch",
-		BackgroundColor3 = UI.rgb(stone.color),
-		BorderSizePixel = 0,
-		AnchorPoint = Vector2.new(0, 0.5),
-		Position = UDim2.new(0, 16, 0.5, 0),
-		Size = UDim2.fromOffset(58, 40),
-		Parent = card,
-	}, { UI.new("UICorner", { CornerRadius = UDim.new(0.5, 0) }), UI.stroke(T.white, 2, 0.4) })
+	local card = UI.glass({ Name = "Island", Size = UDim2.fromOffset(480, 84) })
+	card.BackgroundColor3 = T.waterDeep
 	local title = UI.text({
 		name = "Title",
-		text = if isNew then `New stone: {stone.name}!` else `Another {stone.name}`,
-		size = UDim2.new(1, -104, 0, 30),
-		position = UDim2.fromOffset(88, 9),
-		align = Enum.TextXAlignment.Left,
-		maxTextSize = 26,
+		text = `🏝️ You reached {island.name}!`,
+		size = UDim2.new(1, -24, 0, 34),
+		position = UDim2.fromOffset(12, 8),
+		maxTextSize = 28,
 		parent = card,
 	})
 	local line = UI.text({
 		name = "Line",
-		text = if isNew
-			then `{stone.rarity} · {stone.blurb}`
-			else `{stone.rarity} · you have {owned} now`,
-		size = UDim2.new(1, -104, 0, 34),
-		position = UDim2.fromOffset(88, 42),
-		align = Enum.TextXAlignment.Left,
-		valign = Enum.TextYAlignment.Top,
-		color = if isNew then UI.lighten(rarityColor, 0.25) else T.white,
+		text = `+{math.floor(island.bonus * 100 + 0.5)}% coins from every throw, forever`,
+		size = UDim2.new(1, -24, 0, 26),
+		position = UDim2.fromOffset(12, 46),
+		color = T.perfect,
 		font = UI.BodyFont,
-		maxTextSize = 17,
+		maxTextSize = 18,
 		parent = card,
 	})
-	push(card, if isNew then 5 else 2.5, { title, line })
-	Audio.play(if isNew then "rare" else "pickup")
+	push(card, 5, { title, line })
+	Audio.play("rare")
 end
 
 function Toasts.init()
@@ -155,8 +141,8 @@ function Toasts.init()
 	Net.listen("Notify", function(text: string, style: string)
 		Toasts.show(text, style)
 	end)
-	Net.listen("Found", function(id: string, isNew: boolean, owned: number)
-		Toasts.found(id, isNew, owned)
+	Net.listen("Island", function(id: string)
+		Toasts.island(id)
 	end)
 end
 

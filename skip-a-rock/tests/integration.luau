@@ -102,7 +102,19 @@ describe("World", function()
 	it("builds the lobby and everything out at sea", function()
 		local root = env.workspace:FindFirstChild("SkipARock")
 		ok(root, "SkipARock folder")
-		for _, name in { "Fences", "Piers", "Beach", "Boardwalk", "Lighthouse", "Forest", "DistanceMarkers", "Islands", "Spawn" } do
+		for _, name in
+			{
+				"Fences",
+				"Piers",
+				"Beach",
+				"Boardwalk",
+				"Lighthouse",
+				"Forest",
+				"DistanceMarkers",
+				"Islands",
+				"Spawn",
+			}
+		do
 			ok(root:FindFirstChild(name), "has " .. name)
 		end
 		eq(#root.Piers:GetChildren(), #Sea.PIER_XS, "piers")
@@ -197,7 +209,10 @@ describe("World", function()
 		for _, px in Sea.PIER_XS do
 			for z = Scenery.SHORE_WALL, Sea.PIER_END, 1 do
 				for _, side in { -1, 1 } do
-					ok(walled(Vector3.new(px + side * (Sea.PIER_WIDTH / 2 + 0.25), 3, z), 0.05), `pier side at {px}, {z}`)
+					ok(
+						walled(Vector3.new(px + side * (Sea.PIER_WIDTH / 2 + 0.25), 3, z), 0.05),
+						`pier side at {px}, {z}`
+					)
 				end
 			end
 			ok(walled(Vector3.new(px, 3, Sea.PIER_END + 0.25), 0.05), `pier end at {px}`)
@@ -236,7 +251,13 @@ describe("Joining", function()
 	end)
 	it("shows coins, longest throw and rebirths on the player list", function()
 		local stats = alice:FindFirstChild("leaderstats")
-		ok(stats and stats:FindFirstChild("Coins") and stats:FindFirstChild("Longest") and stats:FindFirstChild("Rebirths"), "stats")
+		ok(
+			stats
+				and stats:FindFirstChild("Coins")
+				and stats:FindFirstChild("Longest")
+				and stats:FindFirstChild("Rebirths"),
+			"stats"
+		)
 		eq(stats.Coins.Value, "0")
 	end)
 	it("gets a full snapshot once the client is ready", function()
@@ -288,7 +309,11 @@ describe("Throwing", function()
 		env.send(alice, "Release", SWEET_HOLD)
 		eq(alice.Character.HeldRock.Transparency, 1, "hidden")
 		env.advance(Config.THROW_COOLDOWN + 0.1)
-		eq(alice.Character.HeldRock.Transparency, alice.Character.HeldRock:GetAttribute("BaseTransparency"), "back")
+		eq(
+			alice.Character.HeldRock.Transparency,
+			alice.Character.HeldRock:GetAttribute("BaseTransparency"),
+			"back"
+		)
 	end)
 	it("can't throw again straight away", function()
 		env.send(alice, "BeginCharge")
@@ -455,7 +480,8 @@ describe("Treasure", function()
 		eq(S.Treasure.count(), Config.TREASURE_COUNT - 1)
 		env.advance(Config.TREASURE_RESPAWN_MAX + 1)
 		eq(S.Treasure.count(), Config.TREASURE_COUNT, "more washes up")
-		local early = S.Treasure.reward({ strength = 0, rebirths = 0, equipped = "pebble", islands = {} })
+		local early =
+			S.Treasure.reward({ strength = 0, rebirths = 0, equipped = "pebble", islands = {} })
 		ok(reward > early, "worth more further along")
 	end)
 	it("can't be picked up from across the beach", function()
@@ -478,8 +504,14 @@ describe("Leaderboards", function()
 		S.Leaderboards.refresh()
 		local boards = S.World.get().boards
 		eq(boards.Distance.Row1.Player.Text, "Alice")
-		ok(string.find(boards.Distance.Row1.Score.Text, "3.2T", 1, true), boards.Distance.Row1.Score.Text)
-		ok(string.find(boards.Coins.Row1.Score.Text, "4.5Qa", 1, true), boards.Coins.Row1.Score.Text)
+		ok(
+			string.find(boards.Distance.Row1.Score.Text, "3.2T", 1, true),
+			boards.Distance.Row1.Score.Text
+		)
+		ok(
+			string.find(boards.Coins.Row1.Score.Text, "4.5Qa", 1, true),
+			boards.Coins.Row1.Score.Text
+		)
 		eq(boards.Rebirths.Row1.Score.Text, "1")
 		eq(boards.Distance.Row2.Player.Text, "Bob")
 		eq(boards.Distance.Row3.Player.Text, "")
@@ -489,7 +521,10 @@ describe("Leaderboards", function()
 		local board = BoardData.BOARDS[1]
 		for _, score in { 0, 1, 1234, 9e15, 1e30 } do
 			local stored = BoardData.encode(board, score)
-			ok(stored == math.floor(stored) and stored >= 0 and stored < 2 ^ 53, "a whole number in range")
+			ok(
+				stored == math.floor(stored) and stored >= 0 and stored < 2 ^ 53,
+				"a whole number in range"
+			)
 			local back = BoardData.decode(board, stored)
 			ok(math.abs(back - score) <= score * 1e-6 + 1e-6, `round trip {score}`)
 		end
@@ -541,16 +576,19 @@ describe("Test panel", function()
 end)
 
 describe("Safety nets", function()
-	it("anyone who ends up in the sea is put back by the spawn; piers and beach are fine", function()
-		env.moveTo(alice, Vector3.new(0, Sea.PIER_TOP + 3, 30))
-		eq(S.World.rescue(alice), false, "on a pier")
-		env.moveTo(alice, BEACH)
-		eq(S.World.rescue(alice), false, "on the beach")
-		env.moveTo(alice, Vector3.new(30, 0.5, 40))
-		eq(S.World.rescue(alice), true, "swimming")
-		local p = alice.Character.HumanoidRootPart.CFrame.Position
-		ok((p - S.World.get().spawn.CFrame.Position).Magnitude < 6, "by the spawn")
-	end)
+	it(
+		"anyone who ends up in the sea is put back by the spawn; piers and beach are fine",
+		function()
+			env.moveTo(alice, Vector3.new(0, Sea.PIER_TOP + 3, 30))
+			eq(S.World.rescue(alice), false, "on a pier")
+			env.moveTo(alice, BEACH)
+			eq(S.World.rescue(alice), false, "on the beach")
+			env.moveTo(alice, Vector3.new(30, 0.5, 40))
+			eq(S.World.rescue(alice), true, "swimming")
+			local p = alice.Character.HumanoidRootPart.CFrame.Position
+			ok((p - S.World.get().spawn.CFrame.Position).Magnitude < 6, "by the spawn")
+		end
+	)
 	it("a respawned character gets its rock back", function()
 		alice.Character:Destroy()
 		local character = env.makeCharacter(alice)

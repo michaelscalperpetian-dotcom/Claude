@@ -12,10 +12,12 @@ local UI = require(script.Parent.Parent.Lib.UI)
 local DevPanel = {}
 
 local ACTIONS: { { action: string, label: string } } = {
-	{ action = "stones", label = "🪨 Every stone" },
+	{ action = "coins", label = "💰 Coins" },
+	{ action = "strength", label = "💪 +10 strength" },
+	{ action = "everything", label = "🪨 All rocks & isles" },
 	{ action = "night", label = "🌙 Night" },
 	{ action = "day", label = "☀️ Day" },
-	{ action = "glints", label = "✨ New glints" },
+	{ action = "treasure", label = "✨ New treasure" },
 	{ action = "reset", label = "🧽 Start over" },
 }
 
@@ -27,7 +29,7 @@ function DevPanel.init()
 		Name = "Panel",
 		AnchorPoint = Vector2.new(1, 0),
 		Position = UDim2.new(1, -16, 0, 58),
-		Size = UDim2.fromOffset(176, 14 + #ACTIONS * 44),
+		Size = UDim2.fromOffset(196, 14 + #ACTIONS * 44),
 		Visible = false,
 		Parent = canvas,
 	})

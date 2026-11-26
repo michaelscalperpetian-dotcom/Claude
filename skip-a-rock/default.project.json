@@ -1,5 +1,5 @@
 {
-  "name": "StillLake",
+  "name": "SkipARock",
   "tree": {
     "$className": "DataModel",
     "ReplicatedStorage": {
@@ -42,9 +42,9 @@
             24
           ],
           "Color": [
-            0.33,
-            0.67,
-            0.8
+            0.85,
+            0.78,
+            0.6
           ]
         },
         "Sign": {
@@ -86,7 +86,7 @@
               },
               "BackgroundTransparency": 1,
               "TextScaled": true,
-              "Text": "Still Lake\nPress Play (F5): the lake builds itself when the game starts!",
+              "Text": "Skip a Rock\nPress Play (F5): the beach and the ocean build themselves when the game starts!",
               "TextColor3": [
                 1,
                 1,
@@ -101,23 +101,23 @@
     "Lighting": {
       "$properties": {
         "Technology": "Future",
-        "ClockTime": 16.5,
-        "GeographicLatitude": 38,
-        "Brightness": 2.6,
+        "ClockTime": 14.5,
+        "GeographicLatitude": 30,
+        "Brightness": 2.8,
         "Ambient": [
-          0.36,
-          0.36,
-          0.42
+          0.4,
+          0.42,
+          0.48
         ],
         "OutdoorAmbient": [
-          0.5,
-          0.5,
-          0.56
+          0.55,
+          0.57,
+          0.62
         ],
         "ColorShift_Top": [
           1,
-          0.9,
-          0.76
+          0.94,
+          0.84
         ],
         "ColorShift_Bottom": [
           0,
@@ -142,20 +142,20 @@
       "Atmosphere": {
         "$className": "Atmosphere",
         "$properties": {
-          "Density": 0.3,
-          "Offset": 0.25,
+          "Density": 0.34,
+          "Offset": 0.2,
           "Color": [
-            0.82,
-            0.8,
-            0.86
+            0.78,
+            0.86,
+            0.95
           ],
           "Decay": [
-            0.42,
-            0.46,
-            0.56
+            0.5,
+            0.62,
+            0.78
           ],
-          "Glare": 0.45,
-          "Haze": 1.6
+          "Glare": 0.5,
+          "Haze": 2.2
         }
       },
       "Bloom": {
@@ -169,13 +169,13 @@
       "ColorCorrection": {
         "$className": "ColorCorrectionEffect",
         "$properties": {
-          "Brightness": 0.01,
-          "Contrast": 0.09,
-          "Saturation": 0.08,
+          "Brightness": 0.02,
+          "Contrast": 0.08,
+          "Saturation": 0.14,
           "TintColor": [
             1.0,
-            0.97,
-            0.94
+            0.99,
+            0.97
           ]
         }
       },

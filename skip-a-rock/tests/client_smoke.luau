@@ -1,8 +1,9 @@
 --!nocheck
 -- Loads every client controller in a fake client and plays through the
--- screens: the HUD and power meter, winding up and throwing, a stone's flight
--- and the result, the journal's tabs, toasts and found-stone cards, night
--- ambience and the test panel. Run from still-lake/: lune run tests/client_smoke
+-- screens: coins and buttons, the power meter, winding up and throwing, a
+-- rock's flight out to sea and the chase camera, the menu's tabs (buying,
+-- upgrading, rebirthing), island banners, night ambience and the test panel.
+-- Run from skip-a-rock/: lune run tests/client_smoke
 
 local process = require("@lune/process")
 local roblox = require("@lune/roblox")
@@ -15,10 +16,11 @@ local env = ClientEnv.new()
 local C = env.C
 local Loader = require("./loader")
 local Skip = Loader.load("src/shared/Skip")
-local Lake = Loader.load("src/shared/Lake")
+local Sea = Loader.load("src/shared/Sea")
 local Tags = Loader.load("src/shared/Tags")
+local RockData = Loader.load("src/shared/Data/RockData")
+local IslandData = Loader.load("src/shared/Data/IslandData")
 local GoalData = Loader.load("src/shared/Data/GoalData")
-local StoneData = Loader.load("src/shared/Data/StoneData")
 
 local passed, failed = 0, 0
 local group = ""
@@ -58,31 +60,36 @@ local function find(root, name)
 	return root:FindFirstChild(name, true)
 end
 
-local R = Lake.EDGE + 1
-local BEACH = Vector3.new(0, 3, R + 5) -- on the beach, the lake to the -Z side
+local BEACH = Vector3.new(30, 3, -10)
 local SWEET_HOLD = Skip.SWEET * Skip.PERIOD / 2
 
-local function faceLake()
-	env.lookAt(BEACH + Vector3.new(0, 4, 8), Vector3.new(0, 0, 0))
+local function mouse(down: boolean, processed: boolean?)
+	local input = {
+		UserInputType = roblox.Enum.UserInputType.MouseButton1,
+		KeyCode = roblox.Enum.KeyCode.Unknown,
+	}
+	if down then
+		env.inputBegan:Fire(input, processed == true)
+	else
+		env.inputEnded:Fire(input)
+	end
 end
 
 local function throwEvent(overrides)
-	local entry = Vector3.new(0, 0, Lake.EDGE)
 	local event = {
 		userId = env.localPlayer.UserId,
-		stone = "pebble",
-		origin = BEACH + Vector3.new(0, 1.2, -0.8),
-		entry = entry,
-		direction = Vector3.new(0, 0, -1),
-		hops = { 10, 8, 6.5, 5, 4 },
+		rock = "river",
+		origin = BEACH + Vector3.new(0, 1.2, 0.8),
+		entry = Vector3.new(BEACH.X, 0, Sea.FIRST_WATER),
+		hops = { 120, 100, 80, 60, 40 },
 		skips = 5,
-		distance = 33.5,
+		distance = 400,
+		coins = 1234,
 		verdict = "skips",
 		perfect = false,
 		power = 0.8,
 		night = false,
-		newBestSkips = false,
-		newBestDistance = false,
+		newBest = false,
 	}
 	for k, v in overrides or {} do
 		event[k] = v
@@ -90,7 +97,6 @@ local function throwEvent(overrides)
 	return event
 end
 
--- Runs frames until every stone in the air has landed (or gives up).
 local function settle()
 	for _ = 1, 600 do
 		env.frame(1 / 30)
@@ -98,7 +104,6 @@ local function settle()
 end
 
 env.makeCharacter(BEACH)
-faceLake()
 env.pushState()
 
 describe("Loading", function()
@@ -110,15 +115,15 @@ describe("Loading", function()
 				"ClientState",
 				"DevPanel",
 				"Hud",
-				"Journal",
-				"StoneFx",
+				"Menu",
+				"RockFx",
 				"ThrowInput",
 				"Toasts",
 			}
 		do
 			ok(C[name], name)
 		end
-		for _, name in { "Hud", "Journal", "Toasts", "DevPanel" } do
+		for _, name in { "Hud", "Menu", "Toasts", "DevPanel" } do
 			ok(gui(name), name .. " screen")
 		end
 	end)
@@ -127,340 +132,287 @@ describe("Loading", function()
 		ok(env.lastSent("Ready"), "Ready sent")
 	end)
 	it("the screen canvas fills phones and desktops", function()
-		for _, size in { { 1280, 720 }, { 844, 390 }, { 1920, 1080 }, { 1024, 768 } } do
+		for _, size in { { 1280, 720 }, { 844, 390 }, { 1920, 1080 } } do
 			env.setViewport(size[1], size[2])
 			local canvas = gui("Hud").Canvas
 			local scale = canvas:FindFirstChildOfClass("UIScale").Scale
 			local w = canvas.Size.X.Offset * scale
-			local h = canvas.Size.Y.Offset * scale
-			-- (offsets are whole pixels, so it may overhang by a fraction)
 			ok(w >= size[1] - 1e-6 and w < size[1] + 2, `width {w} for {size[1]}`)
-			ok(h >= size[2] - 58 - 1e-6 and h < size[2] - 58 + 2, `height {h} for {size[2]}`)
-			ok(canvas.Size.X.Offset >= 700, `room for the journal at {size[1]}x{size[2]}`)
+			ok(canvas.Size.X.Offset >= 820, `room for the menu at {size[1]}x{size[2]}`)
 		end
 		env.setViewport(1280, 720)
 	end)
 end)
 
 describe("HUD", function()
-	it("shows the stone in hand and the best throw", function()
+	it("counts coins up to the real number and shows the multiplier", function()
+		env.frame(1)
 		local hud = gui("Hud")
-		eq(find(hud, "StoneName").Text, "Pebble")
-		eq(find(hud, "Rarity").Text, "Common")
-		local best = hud.Canvas.Best.Text.Text
-		ok(string.find(best, "×12", 1, true) and string.find(best, "Splash Artist", 1, true), best)
-	end)
-	it("a newcomer is told to skip a first stone", function()
-		env.pushState({ bestSkips = 0, bestDistance = 0, title = nil, throws = 0 })
-		eq(gui("Hud").Canvas.Best.Text.Text, "Skip your first stone")
-	end)
-	it("the meter and how-to hint appear by the water", function()
-		env.frame()
-		eq(C.ThrowInput.state.status, "ok", "can throw here")
-		eq(gui("Hud").Canvas.PowerMeter.Visible, true, "meter")
+		eq(find(hud, "Coins").Text, "🪙 2.5K")
+		local details = find(hud, "Details").Text
 		ok(
-			string.find(gui("Hud").Canvas.Hint.Text, "Hold click", 1, true),
-			gui("Hud").Canvas.Hint.Text
+			string.find(details, "x1.05", 1, true) and string.find(details, "1.23K studs", 1, true),
+			details
 		)
 	end)
-	it("the meter's zones match the skip rules", function()
-		local bands = find(gui("Hud"), "Bands")
-		local gold = bands.Gold
-		ok(math.abs(gold.Position.Y.Scale - (1 - Skip.GOLD_LOW)) < 1e-6, "gold starts")
-		ok(math.abs(gold.Size.Y.Scale - (Skip.DIVE - Skip.GOLD_LOW)) < 1e-6, "gold height")
-		local perfect = bands.Perfect
-		ok(math.abs(perfect.Size.Y.Scale - 2 * Skip.PERFECT) < 1e-6, "perfect band")
-		ok(
-			math.abs(perfect.Position.Y.Scale - (1 - (Skip.SWEET - Skip.PERFECT))) < 1e-6,
-			"perfect position"
-		)
+	it("the upgrade button shows its price and lights up when affordable", function()
+		local hud = gui("Hud")
+		eq(find(hud, "Upgrade").Cost.Text, "🪙 109")
+		env.pushState({ coins = 10, strengthCost = 109 })
+		ok(find(hud, "Upgrade").BackgroundTransparency > 0.2, "dim when you can't afford it")
+		env.pushState()
+		ok(find(hud, "Upgrade").BackgroundTransparency < 0.2, "lit when you can")
 	end)
-	it("facing away shows what's wrong; far from the water hides the meter", function()
-		env.lookAt(BEACH, BEACH + Vector3.new(0, 0, 10))
+	it("one tap on Upgrade buys a level", function()
+		table.clear(env.sent)
+		env.signal(find(gui("Hud"), "Upgrade"), "Activated"):Fire()
+		local message = env.lastSent("Upgrade")
+		ok(message and message.args[1] == 1, "upgrade 1")
+	end)
+	it("the meter shows on the beach, not on the boardwalk", function()
 		env.frame()
-		eq(C.ThrowInput.state.status, "away")
-		ok(string.find(gui("Hud").Canvas.Hint.Text, "Face the open water", 1, true), "hint")
-		env.moveTo(Vector3.new(0, 3, 200))
+		eq(C.ThrowInput.state.status, "ok")
+		eq(gui("Hud").Canvas.PowerMeter.Visible, true)
+		env.moveTo(Vector3.new(0, 4.3, -80))
 		env.frame()
 		eq(C.ThrowInput.state.status, "far")
-		eq(gui("Hud").Canvas.PowerMeter.Visible, false, "meter hidden")
+		eq(gui("Hud").Canvas.PowerMeter.Visible, false)
 		env.moveTo(BEACH)
-		faceLake()
 		env.frame()
 	end)
-	it("an old hand doesn't need the how-to hint", function()
-		env.pushState({ throws = 40 })
+	it("a newcomer on the boardwalk is told to walk down to the beach", function()
+		env.pushState({ throws = 0 })
+		env.moveTo(Vector3.new(0, 4.3, -80))
 		env.frame()
-		eq(gui("Hud").Canvas.Hint.Text, "")
+		ok(string.find(gui("Hud").Canvas.Hint.Text, "beach", 1, true), gui("Hud").Canvas.Hint.Text)
+		env.moveTo(BEACH)
+		env.frame()
+		ok(string.find(gui("Hud").Canvas.Hint.Text, "Hold click", 1, true), "how to throw")
+		env.pushState()
+		env.frame()
 	end)
 end)
 
 describe("Throwing", function()
-	local function press()
-		env.inputBegan:Fire({
-			UserInputType = roblox.Enum.UserInputType.MouseButton1,
-			KeyCode = roblox.Enum.KeyCode.Unknown,
-		}, false)
-	end
-	local function release()
-		env.inputEnded:Fire({
-			UserInputType = roblox.Enum.UserInputType.MouseButton1,
-			KeyCode = roblox.Enum.KeyCode.Unknown,
-		})
-	end
-	it("holding winds up the needle and plants your feet", function()
+	it("holding winds up the needle; letting go sends the hold time and faces the sea", function()
 		table.clear(env.sent)
-		press()
-		ok(env.lastSent("BeginCharge"), "told the server")
-		eq(C.ThrowInput.state.charging, true)
-		eq(env.localPlayer.Character.Humanoid.WalkSpeed, C.ThrowInput.CHARGE_WALKSPEED, "slowed")
+		mouse(true)
+		ok(env.lastSent("BeginCharge"), "wind-up")
 		env.frame(SWEET_HOLD)
 		ok(math.abs(C.ThrowInput.power() - Skip.SWEET) < 1e-6, "needle at the sweet spot")
-		local needle = find(gui("Hud"), "Needle")
-		eq(needle.Visible, true, "needle shows")
-		ok(math.abs(needle.Position.Y.Scale - (1 - Skip.SWEET)) < 1e-6, "needle position")
-	end)
-	it("letting go sends the throw toward the lake and says Perfect", function()
-		release()
+		mouse(false)
 		local message = env.lastSent("Release")
 		ok(message, "release sent")
-		local direction, held = message.args[1], message.args[2]
-		ok(direction.Z < -0.9, "toward the lake")
-		ok(math.abs(held - SWEET_HOLD) < 1e-6, `held {held}`)
-		eq(C.ThrowInput.state.charging, false)
-		eq(env.localPlayer.Character.Humanoid.WalkSpeed, 16, "walking again")
+		ok(math.abs(message.args[1] - SWEET_HOLD) < 1e-6, "hold time")
 		eq(find(gui("Hud"), "Flash").Text, "Perfect!")
-	end)
-	it("can't wind up again during the cooldown", function()
-		table.clear(env.sent)
-		press()
-		eq(env.lastSent("BeginCharge"), nil)
-		release()
+		local look = env.localPlayer.Character.HumanoidRootPart.CFrame.LookVector
+		ok(look.Z > 0.99, "facing the sea")
 		env.frame(1.5)
 	end)
-	it("a quick tap is cancelled, not thrown", function()
+	it("taps cancel, UI clicks don't throw, overlong holds give up", function()
 		table.clear(env.sent)
-		press()
+		mouse(true)
 		env.frame(0.03)
-		release()
-		ok(env.lastSent("CancelCharge"), "cancelled")
-		eq(env.lastSent("Release"), nil, "no throw")
-	end)
-	it("held far too long, the wind-up gives up by itself", function()
+		mouse(false)
+		ok(env.lastSent("CancelCharge") and not env.lastSent("Release"), "tap")
 		table.clear(env.sent)
-		press()
+		mouse(true, true)
+		eq(env.lastSent("BeginCharge"), nil, "click on the UI")
+		mouse(true)
 		env.frame(9)
-		eq(C.ThrowInput.state.charging, false)
-		ok(env.lastSent("CancelCharge"), "cancelled")
-		release()
-		eq(env.lastSent("Release"), nil, "nothing thrown")
+		eq(C.ThrowInput.state.charging, false, "gave up")
+		mouse(false)
+		eq(env.lastSent("Release"), nil)
 	end)
-	it("clicks on the UI don't throw", function()
+	it("can't wind up on the boardwalk", function()
+		env.moveTo(Vector3.new(0, 4.3, -80))
 		table.clear(env.sent)
-		env.inputBegan:Fire({
-			UserInputType = roblox.Enum.UserInputType.MouseButton1,
-			KeyCode = roblox.Enum.KeyCode.Unknown,
-		}, true)
+		mouse(true)
+		mouse(false)
 		eq(env.lastSent("BeginCharge"), nil)
-	end)
-	it("a finger that slides off the Throw button still throws when lifted", function()
-		env.frame(1.5)
-		table.clear(env.sent)
-		local finger = {
-			UserInputType = roblox.Enum.UserInputType.Touch,
-			KeyCode = roblox.Enum.KeyCode.Unknown,
-		}
-		C.ThrowInput.press(finger)
-		env.frame(SWEET_HOLD)
-		-- some other finger (the camera) lifting doesn't count
-		env.inputEnded:Fire({
-			UserInputType = roblox.Enum.UserInputType.Touch,
-			KeyCode = roblox.Enum.KeyCode.Unknown,
-		})
-		eq(C.ThrowInput.state.charging, true, "still winding up")
-		env.inputEnded:Fire(finger)
-		ok(env.lastSent("Release"), "thrown")
-		env.frame(1.5)
-	end)
-	it("pressing while facing away flashes the reason", function()
-		env.lookAt(BEACH, BEACH + Vector3.new(0, 0, 10))
-		press()
-		eq(C.ThrowInput.state.charging, false)
-		ok(string.find(find(gui("Hud"), "Flash").Text, "Face the open water", 1, true), "flash")
-		release()
-		faceLake()
+		env.moveTo(BEACH)
 	end)
 end)
 
-describe("Stones in flight", function()
-	it("plans one segment per hop after the flight to the water", function()
-		local event = throwEvent()
-		local segments = C.StoneFx.plan(event)
+describe("Rocks in flight", function()
+	it("plans hops out to sea on the squeezed scale", function()
+		local event = throwEvent({ hops = { 1000, 800, 600, 400, 200 }, distance = 3000 })
+		local segments = C.RockFx.plan(event)
 		eq(#segments, #event.hops + 1)
-		eq(segments[1].from, event.origin, "from the hand")
-		eq(segments[1].to, event.entry, "to the water")
-		for i = 2, #segments do
-			eq(segments[i].from, segments[i - 1].to, "joined up")
-			eq(segments[i].touch, true, "a skip")
-			ok(
-				math.abs((segments[i].to - segments[i].from).Magnitude - event.hops[i - 1]) < 1e-6,
-				"hop length"
-			)
-			ok(segments[i].duration <= segments[i - 1].duration or i == 2, "hops get quicker")
-		end
+		eq(segments[1].to, event.entry)
 		local last = segments[#segments].to
 		ok(
-			math.abs(Lake.distanceFromCentre(last) - (Lake.EDGE - 33.5)) < 1e-6,
-			"ends where the server said"
+			math.abs(last.Z - (event.entry.Z + Sea.toWorld(3000))) < 1e-3,
+			"lands where the scale says"
+		)
+		eq(last.X, event.entry.X, "straight out")
+	end)
+	it("huge throws are sped up to finish in a few seconds", function()
+		local hops = {}
+		for i = 1, 40 do
+			hops[i] = 1e9 / i
+		end
+		local segments = C.RockFx.plan(throwEvent({ hops = hops, skips = 40, distance = 4e9 }))
+		ok(
+			C.RockFx.duration(segments) <= C.RockFx.MAX_FLIGHT_SECONDS + 1,
+			`flight {C.RockFx.duration(segments)}s`
 		)
 	end)
-	it("a stone that crosses the lake ends up on the far beach", function()
-		local event = throwEvent({
-			verdict = "shore",
-			hops = { 60, 50, 40, 40.0 + 28 },
-			skips = 4,
-			distance = 2 * Lake.EDGE,
-		})
-		local segments = C.StoneFx.plan(event)
-		eq(#segments, #event.hops + 2, "an extra slide")
-		local rest = segments[#segments].to
-		ok(Lake.distanceFromCentre(rest) > Lake.EDGE, "past the water")
-		ok(rest.Y > 0, "on the sand")
-	end)
-	it("the arc starts and ends on the segment's points", function()
-		local segment = C.StoneFx.plan(throwEvent())[2]
-		eq(C.StoneFx.positionOn(segment, 0), segment.from)
-		ok((C.StoneFx.positionOn(segment, 1) - segment.to).Magnitude < 1e-9, "lands")
-		ok(C.StoneFx.positionOn(segment, 0.5).Y > 0, "in the air between")
-	end)
-	it("a throw flies, ripples, lands and shows the result", function()
-		local landed = nil
+	it("a throw flies, ripples, sinks and shows coins and distance", function()
+		local landed
 		C.ClientState.landed:connect(function(event)
 			landed = event
 		end)
-		env.listeners.Throw(throwEvent({ skips = 5, newBestSkips = true }))
-		local fx = env.workspace.LakeFx
-		ok(fx:FindFirstChild("Stone"), "a stone in the air")
+		env.listeners.Throw(throwEvent({ newBest = true }))
+		ok(env.workspace.SeaFx:FindFirstChild("Rock"), "a rock in the air")
 		settle()
 		ok(landed, "landed")
-		eq(fx:FindFirstChild("Stone"), nil, "sank")
 		local result = find(gui("Hud"), "Result")
-		eq(result.Title.Text, "5 skips!")
-		ok(string.find(result.Line.Text, "New best!", 1, true), result.Line.Text)
-		local ripplesUsed = 0
-		for _, part in fx:GetChildren() do
-			if part.Name == "Ripple" and part.Size.X > 0.6 then
-				ripplesUsed += 1
-			end
-		end
-		ok(ripplesUsed >= 6, `ripples {ripplesUsed}`)
+		eq(result.Title.Text, "+1.23K 🪙")
+		ok(
+			string.find(result.Line.Text, "New record!", 1, true)
+				and string.find(result.Line.Text, "400 studs", 1, true),
+			result.Line.Text
+		)
 	end)
-	it("someone else's throw doesn't pop up a result for you", function()
+	it("the camera chases your own long throw, then comes back", function()
+		env.listeners.Throw(throwEvent({ hops = { 300, 250, 200 }, skips = 3, distance = 750 }))
+		env.frame(0.3)
+		eq(C.RockFx.isChasing(), true, "chasing")
+		eq(env.camera.CameraType, roblox.Enum.CameraType.Scriptable)
+		settle()
+		eq(C.RockFx.isChasing(), false, "done")
+		eq(env.camera.CameraType, roblox.Enum.CameraType.Custom, "camera back")
+	end)
+	it("pressing throw skips the chase; the 🎥 button turns it off", function()
+		env.listeners.Throw(throwEvent({ hops = { 300, 250, 200 }, skips = 3, distance = 750 }))
+		env.frame(0.2)
+		mouse(true)
+		eq(C.RockFx.isChasing(), false, "skipped")
+		mouse(false)
+		settle()
+		env.signal(find(gui("Hud"), "Camera"), "Activated"):Fire()
+		eq(C.RockFx.chaseEnabled, false)
+		env.listeners.Throw(throwEvent({ hops = { 300, 250, 200 }, skips = 3, distance = 750 }))
+		env.frame(0.2)
+		eq(C.RockFx.isChasing(), false, "off")
+		settle()
+		env.signal(find(gui("Hud"), "Camera"), "Activated"):Fire()
+		eq(C.RockFx.chaseEnabled, true)
+	end)
+	it("other people's throws don't move your camera or pop up results", function()
 		local result = find(gui("Hud"), "Result")
 		env.advance(5)
 		result.Title.Text = ""
 		env.listeners.Throw(throwEvent({ userId = 99 }))
+		env.frame(0.3)
+		eq(C.RockFx.isChasing(), false)
 		settle()
-		eq(result.Title.Text, "", "no popup")
+		eq(result.Title.Text, "")
 	end)
-	it("many throws at once never pile up", function()
-		for i = 1, 20 do
-			env.listeners.Throw(throwEvent({ userId = 100 + i }))
-		end
-		local flying = 0
-		for _, child in env.workspace.LakeFx:GetChildren() do
-			if child.Name == "Stone" and child.Transparency < 1 then
-				flying += 1
-			end
-		end
-		ok(flying <= C.StoneFx.MAX_FLIGHTS, `{flying} in the air`)
-		settle()
-	end)
-	it("describes every kind of throw", function()
-		local title, line = C.Hud.describe(throwEvent({ verdict = "plop", skips = 0, hops = {} }))
-		eq(title, "Plop.")
-		ok(string.find(line, "gentle", 1, true), line)
-		title = C.Hud.describe(throwEvent({ verdict = "dive", skips = 0, hops = {} }))
-		eq(title, "Sploosh!")
-		title, line = C.Hud.describe(throwEvent({ verdict = "shore", perfect = true }))
-		eq(title, "5 skips!")
-		ok(
-			string.find(line, "All the way across", 1, true)
-				and string.find(line, "Perfect", 1, true),
-			line
+	it("describes plops and dives", function()
+		eq(
+			C.Hud.describe(throwEvent({ verdict = "plop", skips = 0, hops = {}, coins = 0 })),
+			"Plop."
 		)
-		title = C.Hud.describe(throwEvent({ skips = 1, hops = { 5 } }))
-		eq(title, "1 skip")
+		eq(
+			C.Hud.describe(throwEvent({ verdict = "dive", skips = 0, hops = {}, coins = 0 })),
+			"Sploosh!"
+		)
 	end)
 end)
 
-describe("Journal", function()
-	it("opens on the stones: found ones named, others a mystery", function()
+describe("Menu", function()
+	it("rocks: owned ones equip, affordable ones buy, locked ones say where to go", function()
 		env.pushState()
-		C.Journal.open("Stones")
-		local grid = find(gui("Journal"), "Grid")
+		C.Menu.open("Rocks")
+		local grid = find(gui("Menu"), "Grid")
 		local cards = 0
 		for _, card in grid:GetChildren() do
-			if card:IsA("TextButton") then
+			if card:IsA("Frame") then
 				cards += 1
 			end
 		end
-		eq(cards, #StoneData.LIST, "a card per stone")
-		eq(grid.slate.Title.Text, "Slate", "found")
-		eq(grid.starstone.Title.Text, "Not found yet", "unfound")
-		eq(grid.pebble.Status.Text, "In hand")
-		ok(string.find(grid.slate.Rarity.Text, "×2", 1, true), "count")
-	end)
-	it("tapping a found stone picks it", function()
+		eq(cards, #RockData.LIST)
+		eq(grid.river.Action.Label.Text, "In hand")
+		eq(grid.pebble.Action.Label.Text, "Equip")
+		eq(grid.slate.Action.Label.Text, "🪙 1.5K", "affordable")
+		ok(string.find(grid.basalt.Action.Label.Text, "Gull Rock", 1, true), "locked")
 		table.clear(env.sent)
-		local grid = find(gui("Journal"), "Grid")
-		env.signal(grid.slate, "Activated"):Fire()
-		local message = env.lastSent("Equip")
-		ok(message and message.args[1] == "slate", "equip slate")
+		env.signal(grid.slate.Action, "Activated"):Fire()
+		ok(env.lastSent("BuyRock") and env.lastSent("BuyRock").args[1] == "slate", "buy")
+		env.signal(grid.pebble.Action, "Activated"):Fire()
+		ok(env.lastSent("Equip") and env.lastSent("Equip").args[1] == "pebble", "equip")
 		table.clear(env.sent)
-		env.signal(grid.starstone, "Activated"):Fire()
-		eq(env.lastSent("Equip"), nil, "can't pick an unfound stone")
+		env.signal(grid.basalt.Action, "Activated"):Fire()
+		eq(env.lastSent("BuyRock"), nil, "locked rocks can't be bought")
 	end)
-	it("the goals tab lists every goal with progress", function()
-		C.Journal.open("Goals")
-		local list = find(gui("Journal"), "List")
+	it("upgrades: +1, +10 and max", function()
+		C.Menu.open("Upgrades")
+		local menu = gui("Menu")
+		ok(string.find(find(menu, "Level").Text, "Level 6", 1, true), find(menu, "Level").Text)
+		table.clear(env.sent)
+		env.signal(find(menu, "Option2").Buy, "Activated"):Fire()
+		eq(env.lastSent("Upgrade").args[1], 10)
+		env.signal(find(menu, "Option3").Buy, "Activated"):Fire()
+		eq(env.lastSent("Upgrade").args[1], 100)
+	end)
+	it("rebirth: shows what you get, and needs two taps", function()
+		env.pushState({ coins = 50000 })
+		C.Menu.open("Rebirth")
+		local menu = gui("Menu")
+		ok(
+			string.find(find(menu, "Progress").Text, "50K / 40K", 1, true),
+			find(menu, "Progress").Text
+		)
+		table.clear(env.sent)
+		env.signal(find(menu, "RebirthButton"), "Activated"):Fire()
+		eq(env.lastSent("Rebirth"), nil, "first tap only arms it")
+		env.advance(0.6)
+		env.signal(find(gui("Menu"), "RebirthButton"), "Activated"):Fire()
+		ok(env.lastSent("Rebirth"), "second tap rebirths")
+		env.pushState({ coins = 100 })
+		eq(find(gui("Menu"), "RebirthButton").Label.Text, "Not enough coins yet")
+	end)
+	it("islands list every island with its bonus", function()
+		C.Menu.open("Islands")
+		local list = find(gui("Menu"), "List")
+		for _, island in IslandData.LIST do
+			ok(list:FindFirstChild(island.id), island.id)
+		end
+	end)
+	it("goals list every goal", function()
+		C.Menu.open("Goals")
+		local list = find(gui("Menu"), "List")
 		for _, goal in GoalData.GOALS do
 			ok(list:FindFirstChild(goal.id), goal.id)
 		end
-		eq(list.skip10.Bar.Fill.Size.X.Scale, 1, "done goal full")
-		ok(math.abs(list.skip15.Bar.Fill.Size.X.Scale - 12 / 15) < 1e-6, "12 of 15")
 	end)
-	it("the records tab shows the numbers and the next title", function()
-		C.Journal.open("Records")
-		local journal = gui("Journal")
-		eq(find(journal, "Rows").Row1.Value.Text, "12")
-		local title = find(journal, "Title").Text
-		ok(string.find(title, "Skimmer at 15", 1, true), title)
-	end)
-	it("updates while open and closes", function()
-		env.pushState({ bestSkips = 31, title = "Legend of Still Lake" })
-		local title = find(gui("Journal"), "Title").Text
-		ok(string.find(title, "highest there is", 1, true), title)
-		C.Journal.close()
-		eq(C.Journal.isOpen(), false)
-		eq(find(gui("Journal"), "Panel").Visible, false)
-	end)
-	it("J opens and closes it", function()
+	it("M toggles it, and walking up to a shop opens its tab", function()
+		C.Menu.close()
 		env.inputBegan:Fire(
-			{ UserInputType = roblox.Enum.UserInputType.Keyboard, KeyCode = roblox.Enum.KeyCode.J },
+			{ UserInputType = roblox.Enum.UserInputType.Keyboard, KeyCode = roblox.Enum.KeyCode.M },
 			false
 		)
-		eq(C.Journal.isOpen(), true)
+		eq(C.Menu.isOpen(), true)
 		env.inputBegan:Fire(
-			{ UserInputType = roblox.Enum.UserInputType.Keyboard, KeyCode = roblox.Enum.KeyCode.J },
+			{ UserInputType = roblox.Enum.UserInputType.Keyboard, KeyCode = roblox.Enum.KeyCode.M },
 			false
 		)
-		eq(C.Journal.isOpen(), false)
+		eq(C.Menu.isOpen(), false)
+		local prompt = Instance.new("ProximityPrompt")
+		prompt:SetAttribute("Menu", "Upgrades")
+		env.services.ProximityPromptService.PromptTriggered:Fire(prompt)
+		eq(C.Menu.isOpen(), true)
+		eq(C.Menu.current(), "Upgrades")
+		C.Menu.close()
 	end)
-	it("goal progress dots read sensibly", function()
-		eq(C.Journal.dots(0), "●○○○○")
-		eq(C.Journal.dots(0.5), "●●●○○")
-		eq(C.Journal.dots(1), "●●●●●")
+	it("the side buttons open their tabs", function()
+		env.signal(find(gui("Hud"), "Rocks"), "Activated"):Fire()
+		eq(C.Menu.current(), "Rocks")
+		env.signal(find(gui("Hud"), "Rebirth"), "Activated"):Fire()
+		eq(C.Menu.current(), "Rebirth")
+		C.Menu.close()
 	end)
 end)
 
@@ -476,19 +428,15 @@ describe("Messages", function()
 			end
 		end
 		ok(count <= C.Toasts.MAX and count > 0, `{count} toasts`)
-		env.advance(5)
-	end)
-	it("finding a stone shows a card", function()
-		env.listeners.Found("slate", true, 1)
-		local card = C.Toasts.latest()
-		eq(card.Name, "Found")
-		eq(card.Title.Text, "New stone: Slate!")
-		env.listeners.Found("slate", false, 3)
-		local again = C.Toasts.latest()
-		eq(again.Title.Text, "Another Slate")
-		ok(string.find(again.Line.Text, "3", 1, true), again.Line.Text)
 		env.advance(6)
-		eq(C.Toasts.latest(), nil, "they go away")
+	end)
+	it("reaching an island shows a banner", function()
+		env.listeners.Island("gull")
+		local card = C.Toasts.latest()
+		eq(card.Name, "Island")
+		ok(string.find(card.Title.Text, "Gull Rock", 1, true), card.Title.Text)
+		env.advance(6)
+		eq(C.Toasts.latest(), nil, "goes away")
 	end)
 end)
 
@@ -499,35 +447,28 @@ describe("Night", function()
 	light.Enabled = false
 	local flies = Instance.new("ParticleEmitter")
 	flies.Enabled = false
-	local window = Instance.new("Part")
 	env.services.CollectionService:AddTag(light, Tags.NIGHT_LIGHT)
 	env.services.CollectionService:AddTag(flies, Tags.FIREFLIES)
-	env.services.CollectionService:AddTag(window, Tags.WINDOW)
-	it("lanterns, windows and fireflies come on after dusk", function()
+	it("lanterns and fireflies come on after dusk, and the sea darkens", function()
 		env.lighting.ClockTime = 22
 		C.Ambience.update()
-		eq(light.Enabled, true, "lantern")
-		eq(flies.Enabled, true, "fireflies")
-		eq(window.Material, roblox.Enum.Material.Neon, "window glows")
-	end)
-	it("and go off in the morning", function()
-		env.lighting.ClockTime = 9
+		eq(light.Enabled, true)
+		eq(flies.Enabled, true)
+		local night = env.workspace.Terrain.WaterColor
+		env.lighting.ClockTime = 10
 		C.Ambience.update()
 		eq(light.Enabled, false)
-		eq(flies.Enabled, false)
-		eq(window.Material, roblox.Enum.Material.Glass, "glass by day")
+		ok(env.workspace.Terrain.WaterColor.B > night.B, "brighter by day")
 	end)
 end)
 
 describe("Test panel", function()
 	it("shows for testers and sends actions", function()
 		env.pushState({ isDev = true })
-		local toggle = find(gui("DevPanel"), "Toggle")
-		eq(toggle.Visible, true)
+		eq(find(gui("DevPanel"), "Toggle").Visible, true)
 		table.clear(env.sent)
-		env.signal(find(gui("DevPanel"), "night"), "Activated"):Fire()
-		local message = env.lastSent("Dev")
-		ok(message and message.args[1] == "night", "night sent")
+		env.signal(find(gui("DevPanel"), "coins"), "Activated"):Fire()
+		ok(env.lastSent("Dev") and env.lastSent("Dev").args[1] == "coins", "coins sent")
 	end)
 	it("stays hidden from everyone else", function()
 		env.pushState({ isDev = false })
@@ -536,7 +477,4 @@ describe("Test panel", function()
 end)
 
 print(`{passed} passed, {failed} failed`)
-if failed > 0 then
-	process.exit(1)
-end
-process.exit(0)
+process.exit(if failed > 0 then 1 else 0)

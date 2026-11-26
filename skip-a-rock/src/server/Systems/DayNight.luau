@@ -1,5 +1,5 @@
 --!strict
--- Turns the sun. The server sets Lighting.ClockTime from the shared server
+-- Turns the sun over the sea. The server sets Lighting.ClockTime from the shared server
 -- clock (so every player sees the same sky) and softens the light at night:
 -- a cool blue ambient, a dimmer sun and denser haze. Lanterns, windows and
 -- fireflies are switched on by each client (see the Ambience controller).
@@ -26,12 +26,12 @@ type Look = {
 
 -- (keep DAY in step with Lighting in default.project.json)
 local DAY: Look = {
-	brightness = 2.6,
-	ambient = Color3.new(0.36, 0.36, 0.42),
-	outdoor = Color3.new(0.5, 0.5, 0.56),
-	shiftTop = Color3.new(1, 0.9, 0.76),
-	haze = 1.6,
-	atmosphere = Color3.new(0.82, 0.8, 0.86),
+	brightness = 2.8,
+	ambient = Color3.new(0.4, 0.42, 0.48),
+	outdoor = Color3.new(0.55, 0.57, 0.62),
+	shiftTop = Color3.new(1, 0.94, 0.84),
+	haze = 2.2,
+	atmosphere = Color3.new(0.78, 0.86, 0.95),
 }
 
 local NIGHT: Look = {

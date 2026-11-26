@@ -1,32 +1,32 @@
 --!strict
 -- Winding up and letting go. Hold the left mouse button (or the Throw button
 -- on a phone, or R2 on a gamepad) to start the power needle swinging, and let
--- go to throw where the camera is looking. The client only says when you
--- pressed and let go; the server decides how the throw goes.
+-- go to throw. Rocks always fly straight out to sea. The client only says
+-- when you pressed and let go; the server decides how the throw goes.
 --
 -- Every frame it also works out whether a throw from here would work, so the
--- HUD can show the meter only by the water and say what's wrong.
+-- HUD can show the meter only on the beach and the piers.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
-local Workspace = game:GetService("Workspace")
 
 local Config = require(ReplicatedStorage.Shared.Config)
-local Lake = require(ReplicatedStorage.Shared.Lake)
+local Sea = require(ReplicatedStorage.Shared.Sea)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Skip = require(ReplicatedStorage.Shared.Skip)
 local Signal = require(ReplicatedStorage.Shared.Util.Signal)
 local Audio = require(script.Parent.Audio)
+local RockFx = require(script.Parent.RockFx)
 
 local ThrowInput = {}
 
 ThrowInput.CHARGE_WALKSPEED = 4 -- you plant your feet while winding up
 
--- "far": nowhere near the water (no meter). "away": by the water but facing
--- the wrong way, or with no room. "high": up on something. "ok": ready.
-export type Status = "far" | "away" | "high" | "ok"
+-- "far": not on the beach or a pier (no meter). "high": up on something.
+-- "ok": ready.
+export type Status = "far" | "high" | "ok"
 
 export type State = {
 	status: Status,
@@ -62,17 +62,6 @@ local function parts(): (BasePart?, Humanoid?)
 	return root, humanoid
 end
 
--- Where a throw would go: along the camera's view, flattened.
-function ThrowInput.direction(): Vector3?
-	local camera = Workspace.CurrentCamera
-	local flat = camera and Lake.flatten(camera.CFrame.LookVector)
-	if flat then
-		return flat
-	end
-	local root = parts()
-	return root and Lake.flatten(root.CFrame.LookVector)
-end
-
 -- Would a throw from where the player stands work right now?
 function ThrowInput.check(): Status
 	local root, humanoid = parts()
@@ -80,22 +69,11 @@ function ThrowInput.check(): Status
 		return "far"
 	end
 	local position = root.CFrame.Position
-	if Lake.distanceFromCentre(position) > Lake.EDGE + Config.THROW_REACH then
-		return "far"
-	end
-	if position.Y > Config.MAX_THROW_HEIGHT then
+	if position.Y > Config.MAX_THROW_HEIGHT and position.Z >= Config.THROW_ZONE_BACK then
 		return "high"
 	end
-	local direction = ThrowInput.direction()
-	if not direction then
-		return "away"
-	end
-	local entry, reach = Lake.entry(position, direction)
-	if not entry or reach > Config.THROW_REACH then
-		return "away"
-	end
-	if Lake.openWater(entry, direction) < Lake.MIN_OPEN_WATER then
-		return "away"
+	if not Sea.canThrowFrom(position) then
+		return "far"
 	end
 	return "ok"
 end
@@ -148,6 +126,8 @@ function ThrowInput.press(touch: InputObject?)
 	if state.charging then
 		return
 	end
+	-- pressing throw while the camera chases a rock brings it straight back
+	RockFx.stopChase()
 	local status: Status = ThrowInput.check() :: Status
 	state.status = status
 	if status ~= "ok" then
@@ -178,16 +158,16 @@ function ThrowInput.letGo()
 		stopCharging(true)
 		return
 	end
-	local direction = ThrowInput.direction()
 	local root = parts()
-	if not direction or not root then
+	if not root then
 		stopCharging(true)
 		return
 	end
 	stopCharging(false)
-	-- face the throw
-	root.CFrame = CFrame.lookAt(root.CFrame.Position, root.CFrame.Position + direction)
-	Net.send("Release", direction, held)
+	-- face the sea for the throw
+	local p = root.CFrame.Position
+	root.CFrame = CFrame.lookAt(p, p + Sea.FORWARD)
+	Net.send("Release", held)
 	state.lastThrowAt = os.clock()
 	Audio.play("throw")
 	ThrowInput.released:fire(Skip.power(held))

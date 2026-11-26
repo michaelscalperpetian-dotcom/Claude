@@ -36,11 +36,11 @@ jobs:
       - name: Build place file
         run: rojo build default.project.json -o RaiseADino.rbxlx
 
-  still-lake:
+  skip-a-rock:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: still-lake
+        working-directory: skip-a-rock
     steps:
       - uses: actions/checkout@v4
 
@@ -55,7 +55,7 @@ jobs:
       - name: Lint
         run: selene src
 
-      - name: Unit tests (skip rules, lake, stones, goals, day cycle)
+      - name: Unit tests (economy and pacing, sea, coast, rocks, goals)
         run: lune run tests/run
 
       - name: Server integration test (full play session)
@@ -65,4 +65,4 @@ jobs:
         run: lune run tests/client_smoke
 
       - name: Build place file
-        run: rojo build default.project.json -o StillLake.rbxlx
+        run: rojo build default.project.json -o SkipARock.rbxlx

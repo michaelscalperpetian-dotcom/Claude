@@ -44,6 +44,21 @@ function Format.commas(value: number): string
 	return (if value < 0 then "-" else "") .. out
 end
 
+-- A multiplier: "x1.6", "x12", "x3.4K" (small ones keep their decimals).
+function Format.times(value: number): string
+	if value ~= value then
+		return "x1"
+	elseif value < 10 then
+		local text = string.format("%.2f", value)
+		text = string.gsub(text, "0+$", "")
+		text = string.gsub(text, "%.$", "")
+		return "x" .. text
+	elseif value < 1000 then
+		return "x" .. tostring(math.floor(value + 0.5))
+	end
+	return "x" .. Format.short(value)
+end
+
 -- A distance in studs: "84 studs", "12.4K studs".
 function Format.distance(studs: number): string
 	return Format.short(studs) .. " studs"

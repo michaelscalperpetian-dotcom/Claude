@@ -2,7 +2,7 @@
 -- Builds the real client UI in the Lune client environment and writes each
 -- screen state to JSON for the repo's tools/preview/render_ui.py.
 --
--- Usage (from still-lake/): lune run tools/export_ui [outDir]
+-- Usage (from skip-a-rock/): lune run tools/export_ui [outDir] [touch]
 
 local fs = require("@lune/fs")
 local process = require("@lune/process")
@@ -38,74 +38,95 @@ end
 
 local env = ClientEnv.new({ touch = touch })
 local C = env.C
-local BEACH = Vector3.new(0, 3, 115)
+local Sea = require("../tests/loader").load("src/shared/Sea")
+local BEACH = Vector3.new(30, 3, -10)
 env.makeCharacter(BEACH)
-env.lookAt(BEACH + Vector3.new(0, 4, 8), Vector3.new(0, 0, 0))
 
--- a newcomer by the water: meter, hint
-env.pushState({ bestSkips = 0, bestDistance = 0, title = nil, throws = 1 })
-env.frame()
+-- on the beach, a newcomer
+env.pushState({
+	coins = 45,
+	strengthCost = 20,
+	throws = 1,
+	bestDistance = 86,
+	coinMultiplier = 1,
+	title = nil,
+})
+env.frame(2)
 capture(env, "hud")
 
--- winding up, the needle in the gold
-env.pushState()
+-- mid-game: winding up, the needle in the gold
+env.pushState({
+	coins = 182400,
+	strength = 18,
+	strengthCost = 3410,
+	coinMultiplier = 1.58,
+	rebirths = 1,
+	rebirthCost = 280000,
+})
+env.frame(2)
 C.ThrowInput.press()
 env.frame(0.62)
 capture(env, "charging")
 C.ThrowInput.letGo()
 
 -- a finished throw
-local Lake = require("../tests/loader").load("src/shared/Lake")
-env.listeners.Throw({
-	userId = env.localPlayer.UserId,
-	stone = "slate",
-	origin = BEACH + Vector3.new(0, 1.2, -0.8),
-	entry = Vector3.new(0, 0, Lake.EDGE),
-	direction = Vector3.new(0, 0, -1),
-	hops = { 14, 12, 10, 8.5, 7, 6, 5, 4, 3.4, 2.8, 2.3, 1.9, 1.6, 1.3 },
-	skips = 14,
-	distance = 80.2,
-	verdict = "skips",
-	perfect = true,
-	power = 0.86,
-	night = false,
-	newBestSkips = true,
-	newBestDistance = true,
-})
+C.RockFx.chaseEnabled = false
 local landed = false
 C.ClientState.landed:connect(function()
 	landed = true
 end)
-for _ = 1, 300 do
+env.listeners.Throw({
+	userId = env.localPlayer.UserId,
+	rock = "slate",
+	origin = BEACH + Vector3.new(0, 1.2, 0.8),
+	entry = Vector3.new(BEACH.X, 0, Sea.FIRST_WATER),
+	hops = { 900, 700, 500, 300, 200, 120, 80, 50 },
+	skips = 8,
+	distance = 2850,
+	coins = 12700,
+	verdict = "skips",
+	perfect = true,
+	power = 0.86,
+	night = false,
+	newBest = true,
+})
+for _ = 1, 400 do
 	if landed then
 		break
 	end
 	env.frame(1 / 30)
 end
 env.frame(0.3)
-env.listeners.Notify("🌊 Goal complete: 10 skips in one throw", "good")
-env.listeners.Notify("✦ New title: Splash Artist ✦", "rare")
+env.listeners.Notify("🎯 Goal complete: Make a perfect release", "good")
 capture(env, "result")
 
--- the journal
+-- the menu
 env.advance(6)
 env.pushState({
-	stones = { pebble = 1, river = 3, slate = 2, seaglass = 1, jade = 1, moonstone = 1 },
-	equipped = "slate",
+	coins = 182400,
+	strength = 18,
+	strengthCost = 3410,
+	rebirths = 1,
+	rebirthCost = 280000,
+	coinMultiplier = 1.58,
+	rocks = { pebble = true, river = true, slate = true, seaglass = true },
+	equipped = "seaglass",
+	islands = { buoy = true, gull = true },
+	bestDistance = 2850,
 })
-C.Journal.open("Stones")
-capture(env, "journal_stones")
-C.Journal.open("Goals")
-capture(env, "journal_goals", "desktop")
-C.Journal.open("Records")
-capture(env, "journal_records", "desktop")
-C.Journal.close()
+C.Menu.open("Rocks")
+capture(env, "menu_rocks")
+C.Menu.open("Upgrades")
+capture(env, "menu_upgrades", "desktop")
+C.Menu.open("Rebirth")
+capture(env, "menu_rebirth", "desktop")
+C.Menu.open("Islands")
+capture(env, "menu_islands", "desktop")
+C.Menu.close()
 
--- picking up a stone, and the test panel open
-env.listeners.Found("moonstone", true, 1)
-local panel = env.playerGui.DevPanel.Canvas.Panel
-panel.Visible = true
-env.listeners.Notify("✨ Bob found a Starstone!", "rare")
-capture(env, "found")
+-- an island reached, and the test panel open
+env.listeners.Island("palm")
+env.playerGui.DevPanel.Canvas.Panel.Visible = true
+capture(env, "island")
 
 process.exit(0)

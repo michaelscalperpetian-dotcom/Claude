@@ -1,20 +1,19 @@
 --!strict
--- The lake's mood through the day. As dusk falls the lanterns and cabin
--- windows light up, fireflies drift over the beach and the water darkens;
--- by morning it all fades back. Now and then a fish rises somewhere on the
--- lake and leaves a ring on the water.
+-- The seaside's mood through the day. As dusk falls the lanterns and the
+-- lighthouse light up, fireflies drift over the beach and the sea darkens;
+-- by morning it all fades back. Now and then a fish jumps somewhere in the
+-- bay and leaves a ring on the water.
 
 local CollectionService = game:GetService("CollectionService")
 local Lighting = game:GetService("Lighting")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 
-local Config = require(ReplicatedStorage.Shared.Config)
 local DayCycle = require(ReplicatedStorage.Shared.DayCycle)
 local Palette = require(ReplicatedStorage.Shared.Palette)
 local Tags = require(ReplicatedStorage.Shared.Tags)
 local Audio = require(script.Parent.Audio)
-local StoneFx = require(script.Parent.StoneFx)
+local RockFx = require(script.Parent.RockFx)
 
 local Ambience = {}
 
@@ -59,10 +58,8 @@ function Ambience.update()
 end
 
 local function fishRise()
-	local angle = math.random() * 2 * math.pi
-	local radius = math.sqrt(math.random()) * (Config.LAKE_RADIUS - 12)
-	local spot = Vector3.new(math.sin(angle) * radius, 0, math.cos(angle) * radius)
-	StoneFx.ripple(spot, 4 + math.random() * 3)
+	local spot = Vector3.new((math.random() - 0.5) * 400, 0, 70 + math.random() * 250)
+	RockFx.ripple(spot, 4 + math.random() * 3)
 	if math.random() < 0.5 then
 		Audio.at(spot, "water", 2.2 + math.random() * 0.4, 0.12)
 	end

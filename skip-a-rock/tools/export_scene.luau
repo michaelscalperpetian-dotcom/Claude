@@ -1,9 +1,9 @@
 --!nocheck
--- Builds Still Lake with the real server code, puts a couple of skippers on
--- the beach and a dock, and writes every visible part to JSON for the repo's
--- tools/preview/render3d.py.
+-- Builds Skip a Rock with the real server code, puts a few skippers on the
+-- beach, a pier and the boardwalk, and writes every visible part (and the
+-- terrain as a height grid) to JSON for tools/render_terrain.py.
 --
--- Usage (from still-lake/): lune run tools/export_scene [outDir]
+-- Usage (from skip-a-rock/): lune run tools/export_scene [outDir]
 
 local fs = require("@lune/fs")
 local process = require("@lune/process")
@@ -16,7 +16,6 @@ local outDir = process.args[1] or "tools/out"
 fs.writeDir(outDir)
 
 local env = ServerEnv.new()
-local Lake = require("../tests/loader").load("src/shared/Lake")
 
 local function stand(name, position, lookAt)
 	local player = env.makePlayer(name)
@@ -26,21 +25,9 @@ local function stand(name, position, lookAt)
 	return player
 end
 
-local angle = Lake.DOCK_ANGLES[1]
-stand(
-	"Alice",
-	roblox.Vector3.new(math.sin(0.5) * 114, 3, math.cos(0.5) * 114),
-	roblox.Vector3.new(0, 3, 0)
-)
-stand(
-	"Bob",
-	roblox.Vector3.new(
-		math.sin(angle) * (Lake.DOCK_INNER + 2),
-		4.2,
-		math.cos(angle) * (Lake.DOCK_INNER + 2)
-	),
-	roblox.Vector3.new(0, 4.2, 0)
-)
+stand("Alice", roblox.Vector3.new(30, 3, -10), roblox.Vector3.new(30, 3, 100))
+stand("Bob", roblox.Vector3.new(60, 4.8, 52), roblox.Vector3.new(60, 4.8, 200))
+stand("Cara", roblox.Vector3.new(-40, 4.3, -80), roblox.Vector3.new(-40, 4.3, 100))
 
 -- (not the whole workspace: Terrain counts as a part, and is drawn separately)
 local parts = {}
@@ -65,9 +52,9 @@ local Ground = require("../tests/loader").load("src/server/Lib/Ground")
 local Palette = require("../tests/loader").load("src/shared/Palette")
 local step = 4
 local heights, materials = {}, {}
-for z = -Land.SIZE, Land.SIZE, step do
+for z = Land.SOUTH, Land.NORTH, step do
 	local hrow, mrow = {}, {}
-	for x = -Land.SIZE, Land.SIZE, step do
+	for x = Land.WEST, Land.EAST, step do
 		local h = Land.height(x, z)
 		table.insert(hrow, math.floor(h * 100 + 0.5) / 100)
 		table.insert(mrow, Land.material(x, z, h, Land.slope(x, z)))
@@ -79,11 +66,12 @@ local colors = {}
 for _, tint in Ground.COLORS do
 	colors[tostring(tint.material.Name)] = { tint.color.R, tint.color.G, tint.color.B }
 end
-local water = Palette.lakeDay
+local water = Palette.seaDay
 fs.writeFile(
 	outDir .. "/terrain.json",
 	serde.encode("json", {
-		origin = -Land.SIZE,
+		originX = Land.WEST,
+		originZ = Land.SOUTH,
 		step = step,
 		heights = heights,
 		materials = materials,

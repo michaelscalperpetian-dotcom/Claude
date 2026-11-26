@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Preview renderer for Still Lake: terrain + water + parts.
+"""Preview renderer for Skip a Rock: terrain + the open ocean + parts.
 
 Ray-marches the height grid written by export_scene.luau (terrain.json), shades
 it by material with a sun, soft sky light, heightfield shadows and haze, draws
@@ -28,9 +28,11 @@ import render3d  # noqa: E402
 
 class Heightfield:
     def __init__(self, data: dict):
-        self.origin = float(data["origin"])
+        self.ox = float(data["originX"])
+        self.oz = float(data["originZ"])
         self.step = float(data["step"])
         self.h = np.array(data["heights"], dtype=np.float64)  # [z][x]
+        self.nz, self.nx = self.h.shape
         names = sorted({m for row in data["materials"] for m in row})
         self.names = names
         lookup = {n: i for i, n in enumerate(names)}
@@ -40,16 +42,15 @@ class Heightfield:
             palette.append(data["colors"].get(n, [0.5, 0.5, 0.5]))
         self.palette = np.array(palette, dtype=np.float64)
         self.water = np.array(data["water"], dtype=np.float64)
-        self.n = self.h.shape[0]
         # a little per-cell colour variation, like terrain texture
         rng = np.random.default_rng(3)
         self.grain = 1 + (rng.random(self.h.shape) - 0.5) * 0.12
 
     def _cell(self, x, z):
-        gx = (x - self.origin) / self.step
-        gz = (z - self.origin) / self.step
-        gx = np.clip(gx, 0, self.n - 1.001)
-        gz = np.clip(gz, 0, self.n - 1.001)
+        gx = (x - self.ox) / self.step
+        gz = (z - self.oz) / self.step
+        gx = np.clip(gx, 0, self.nx - 1.001)
+        gz = np.clip(gz, 0, self.nz - 1.001)
         i0 = np.floor(gx).astype(np.int64)
         k0 = np.floor(gz).astype(np.int64)
         return gx - i0, gz - k0, i0, k0
@@ -73,11 +74,16 @@ class Heightfield:
         return self.palette[self.mat[k0, i0]] * self.grain[k0, i0][:, None]
 
     def inside(self, x, z):
-        half = -self.origin
-        return (np.abs(x) < half) & (np.abs(z) < half)
+        x1 = self.ox + (self.nx - 1) * self.step
+        z1 = self.oz + (self.nz - 1) * self.step
+        return (x > self.ox) & (x < x1) & (z > self.oz) & (z < z1)
+
+    def height_or_sea(self, x, z):
+        """Ground height on the grid; deep sea floor out in the open ocean."""
+        return np.where(self.inside(x, z), self.height(x, z), -30.0)
 
 
-def march(field: Heightfield, origins, dirs, far=2200.0, steps=420):
+def march(field: Heightfield, origins, dirs, far=9000.0, steps=520):
     """First hit with the ground or the water surface (y = 0 over the lake)."""
     n = len(dirs)
     t = np.full(n, 0.5)
@@ -90,10 +96,10 @@ def march(field: Heightfield, origins, dirs, far=2200.0, steps=420):
         if len(idx) == 0:
             break
         p = origins[idx] + dirs[idx] * t[idx, None]
-        h = field.height(p[:, 0], p[:, 2])
+        h = field.height_or_sea(p[:, 0], p[:, 2])
         below = p[:, 1] < h
         water = (p[:, 1] < 0) & (h < 0) & ~below
-        out = ~field.inside(p[:, 0], p[:, 2]) | (t[idx] > far)
+        out = t[idx] > far
         done = below | water | out
         if np.any(below):
             # refine the ground hit between the last two samples
@@ -116,7 +122,7 @@ def march(field: Heightfield, origins, dirs, far=2200.0, steps=420):
         prev_t[idx] = t[idx]
         # step grows with distance and with clearance above the ground
         clearance = np.maximum(p[:, 1] - np.maximum(h, 0), 0)
-        t[idx] += np.clip(0.35 * clearance + t[idx] * 0.004, 0.25, 25)
+        t[idx] += np.clip(0.35 * clearance + t[idx] * 0.004, 0.25, 60)
     return hit_t, hit_kind
 
 
@@ -126,7 +132,7 @@ def shadowed(field: Heightfield, points, sun, steps=48):
     for _ in range(steps):
         p = points + sun[None, :] * t[:, None]
         h = field.height(p[:, 0], p[:, 2])
-        lit &= p[:, 1] > h - 0.2
+        lit &= (p[:, 1] > h - 0.2) | ~field.inside(p[:, 0], p[:, 2])
         t += np.clip(t * 0.15, 1.0, 40)
     return ~lit
 
@@ -162,7 +168,7 @@ def render(field: Heightfield, scene: dict, eye, target, fov, w, h):
     water = kind == 2
     if np.any(water):
         p = origins[water] + dirs[water] * hit_t[water, None]
-        bed = field.height(p[:, 0], p[:, 2])
+        bed = field.height_or_sea(p[:, 0], p[:, 2])
         depthw = np.clip(-bed, 0, 20)
         # what lies under the water, fading with depth
         under = field.albedo(p[:, 0], p[:, 2]) * 0.75

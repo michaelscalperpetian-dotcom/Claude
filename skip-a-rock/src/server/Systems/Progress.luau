@@ -93,10 +93,13 @@ end
 local function stat(player: Player, name: string, value: string | number)
 	local stats = player:FindFirstChild("leaderstats")
 	local holder = stats and stats:FindFirstChild(name)
-	if holder and holder:IsA("StringValue") and type(value) == "string" then
-		holder.Value = value
-	elseif holder and holder:IsA("IntValue") and type(value) == "number" then
-		holder.Value = value
+	local fits = holder
+		and (
+			(holder:IsA("StringValue") and type(value) == "string")
+			or (holder:IsA("IntValue") and type(value) == "number")
+		)
+	if fits then
+		(holder :: any).Value = value
 	end
 end
 
@@ -119,12 +122,7 @@ function Progress.check(player: Player)
 	for _, island in IslandData.LIST do
 		if not profile.islands[island.id] and profile.bestDistance >= island.distance then
 			profile.islands[island.id] = true
-			Net.fire(player, "Island", island.id)
-			Notify.send(
-				player,
-				`🏝️ You reached {island.name}! +{math.floor(island.bonus * 100 + 0.5)}% coins forever`,
-				"rare"
-			)
+			Net.fire(player, "Island", island.id) -- the client shows a banner
 		end
 	end
 	local stats = Progress.stats(profile)

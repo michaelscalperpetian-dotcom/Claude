@@ -148,7 +148,7 @@ function ClientEnv.new(options: Options?)
 		local root = Instance.new("Part")
 		root.Name = "HumanoidRootPart"
 		root.Size = Vector3.new(2, 2, 1)
-		root.CFrame = roblox.CFrame.new(position or Vector3.new(0, 3, 116))
+		root.CFrame = roblox.CFrame.new(position or Vector3.new(30, 3, -10))
 		root.Parent = character
 		local humanoid = Instance.new("Humanoid")
 		humanoid.Health = 100
@@ -218,6 +218,7 @@ function ClientEnv.new(options: Options?)
 			end,
 		},
 		SoundService = dataModel:GetService("SoundService"),
+		ProximityPromptService = { PromptTriggered = Common.signal() },
 		UserInputService = {
 			TouchEnabled = opts.touch == true,
 			KeyboardEnabled = opts.touch ~= true,
@@ -296,7 +297,7 @@ function ClientEnv.new(options: Options?)
 		end
 	end
 	-- the start() functions that only hook up per-frame updates
-	for _, name in { "Hud", "StoneFx", "ThrowInput" } do
+	for _, name in { "Hud", "RockFx", "ThrowInput" } do
 		C[name].start()
 	end
 	env.C = C
@@ -304,17 +305,24 @@ function ClientEnv.new(options: Options?)
 	-- A realistic snapshot; override fields per test.
 	function env.snapshot(overrides)
 		local base = {
-			stones = { pebble = 1, slate = 2, seaglass = 1 },
-			equipped = "pebble",
+			coins = 2500,
+			totalCoins = 9000,
+			strength = 6,
+			rocks = { pebble = true, river = true },
+			equipped = "river",
+			rebirths = 0,
+			islands = { buoy = true },
+			bestDistance = 1234,
 			bestSkips = 12,
-			bestDistance = 64.3,
-			nightSkips = 0,
-			shore = false,
 			throws = 40,
 			totalSkips = 250,
 			perfects = 3,
-			goals = { skip1 = true, skip5 = true, skip10 = true, perfect1 = true },
-			title = "Splash Artist",
+			goals = { skip1 = true, skip10 = true, perfect1 = true },
+			coinMultiplier = 1.05,
+			distanceMultiplier = 2.83,
+			strengthCost = 109,
+			rebirthCost = 40000,
+			title = "Skimmer",
 			isDev = true,
 		}
 		for k, v in overrides or {} do
