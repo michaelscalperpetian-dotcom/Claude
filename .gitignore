@@ -2,6 +2,7 @@
 *.rbxl
 *.rbxlx
 !build/RaiseADino.rbxlx
+!still-lake/build/StillLake.rbxlx
 *.rbxl.lock
 *.rbxlx.lock
 

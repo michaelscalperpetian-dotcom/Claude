@@ -1,0 +1,121 @@
+{
+  "name": "StillLake",
+  "tree": {
+    "$className": "DataModel",
+    "ReplicatedStorage": {
+      "Shared": {
+        "$path": "src/shared"
+      }
+    },
+    "ServerScriptService": {
+      "Server": {
+        "$path": "src/server"
+      }
+    },
+    "StarterPlayer": {
+      "$properties": {
+        "CameraMaxZoomDistance": 60,
+        "CharacterWalkSpeed": 16
+      },
+      "StarterPlayerScripts": {
+        "Client": {
+          "$path": "src/client"
+        }
+      }
+    },
+    "Workspace": {
+      "$properties": {
+        "StreamingEnabled": false
+      },
+      "PressPlay": {
+        "$className": "Part",
+        "$properties": {
+          "Anchored": true,
+          "Position": [0, 0, 0],
+          "Size": [24, 1, 24],
+          "Color": [0.33, 0.67, 0.8]
+        },
+        "Sign": {
+          "$className": "BillboardGui",
+          "$properties": {
+            "Size": { "UDim2": [[0, 520], [0, 160]] },
+            "StudsOffset": [0, 8, 0],
+            "AlwaysOnTop": true
+          },
+          "Text": {
+            "$className": "TextLabel",
+            "$properties": {
+              "Size": { "UDim2": [[1, 0], [1, 0]] },
+              "BackgroundTransparency": 1,
+              "TextScaled": true,
+              "Text": "Still Lake\nPress Play (F5): the lake builds itself when the game starts!",
+              "TextColor3": [1, 1, 1],
+              "TextStrokeTransparency": 0
+            }
+          }
+        }
+      }
+    },
+    "Lighting": {
+      "$properties": {
+        "Technology": "ShadowMap",
+        "ClockTime": 16.5,
+        "GeographicLatitude": 35,
+        "Brightness": 2.4,
+        "Ambient": [0.42, 0.4, 0.46],
+        "OutdoorAmbient": [0.56, 0.54, 0.6],
+        "ColorShift_Top": [1, 0.92, 0.8],
+        "ColorShift_Bottom": [0, 0, 0],
+        "EnvironmentDiffuseScale": 0.6,
+        "EnvironmentSpecularScale": 0.5,
+        "GlobalShadows": true,
+        "ShadowSoftness": 0.3,
+        "ExposureCompensation": 0.1
+      },
+      "Sky": {
+        "$className": "Sky",
+        "$properties": {
+          "SunAngularSize": 18,
+          "MoonAngularSize": 14,
+          "StarCount": 4000,
+          "CelestialBodiesShown": true
+        }
+      },
+      "Atmosphere": {
+        "$className": "Atmosphere",
+        "$properties": {
+          "Density": 0.32,
+          "Offset": 0.15,
+          "Color": [0.86, 0.84, 0.88],
+          "Decay": [0.6, 0.62, 0.78],
+          "Glare": 0.3,
+          "Haze": 1.4
+        }
+      },
+      "Bloom": {
+        "$className": "BloomEffect",
+        "$properties": {
+          "Intensity": 0.7,
+          "Size": 28,
+          "Threshold": 1.3
+        }
+      },
+      "ColorCorrection": {
+        "$className": "ColorCorrectionEffect",
+        "$properties": {
+          "Brightness": 0.02,
+          "Contrast": 0.06,
+          "Saturation": 0.12,
+          "TintColor": [1.0, 0.97, 0.93]
+        }
+      },
+      "SunRays": {
+        "$className": "SunRaysEffect",
+        "$properties": {
+          "Intensity": 0.06,
+          "Spread": 0.7
+        }
+      }
+    }
+  }
+}
