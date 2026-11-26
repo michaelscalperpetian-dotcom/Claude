@@ -239,7 +239,7 @@ describe("Lake", function()
 		local origin = Vector3.new(0, 3, -90)
 		local entry, reach = Lake.entry(origin, Vector3.new(0, 0, 1))
 		ok(entry, "entry")
-		eq(reach, Lake.DOCK_LEAD)
+		eq(reach, 0, "already over the water")
 		near(entry.Z, -90 + Lake.DOCK_LEAD, 1e-6)
 		-- facing back toward the beach leaves little open water
 		ok(Lake.openWater(entry, Vector3.new(0, 0, -1)) < 25, "short way back")
@@ -270,9 +270,20 @@ describe("Lake", function()
 			local entry, reach = Lake.entry(stand, direction)
 			ok(entry, "lands")
 			ok(not Lake.underDock(entry), "clear of the dock")
+			eq(reach, 0, "standing over the water")
 			-- sideways it clears the planks at once; forward it flies past the end
-			ok(reach <= 100 - Lake.DOCK_INNER + 1, `close in front ({reach})`)
+			local flight = (entry - Vector3.new(stand.X, 0, stand.Z)).Magnitude
+			ok(flight <= 100 - Lake.DOCK_INNER + 1, `close in front ({flight})`)
 		end
+		-- from the land end of a dock, along it: the stone sails past the planks
+		local landEnd = along * (Lake.DOCK_OUTER - 6) + Vector3.new(0, 3, 0)
+		local entry, reach = Lake.entry(landEnd, -along)
+		ok(entry and not Lake.underDock(entry), "clear of the dock")
+		near(reach, Lake.DOCK_OUTER - 6 - Lake.EDGE, 1e-4, "reach is to the water")
+		-- beside a dock on the beach, throwing across it: clear too
+		local beside = along * (Lake.EDGE + 4) + across * 8 + Vector3.new(0, 3, 0)
+		local across1 = Lake.entry(beside, (-across * 2 - along).Unit)
+		ok(across1 == nil or not Lake.underDock(across1), "never under the planks")
 		local back = Lake.entry(along * (Lake.DOCK_INNER + 2) + Vector3.new(0, 3, 0), along)
 		ok(
 			back == nil or Lake.openWater(back, along) < Lake.MIN_OPEN_WATER,

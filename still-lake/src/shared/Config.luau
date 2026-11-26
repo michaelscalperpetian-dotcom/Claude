@@ -29,6 +29,10 @@ local Config = {
 	-- Leaderboards
 	LEADERBOARD_REFRESH = 120,
 
+	-- Calm background music: Roblox audio asset ids (numbers) to play in a
+	-- loop, e.g. tracks from the Creator Store's music library. Empty = quiet.
+	MUSIC_TRACKS = {} :: { number },
+
 	-- People who see the test tools in live games (Studio always shows them).
 	DEV_USER_IDS = {} :: { number },
 }

@@ -79,29 +79,39 @@ function Lake.underDock(position: Vector3, margin: number?): boolean
 	return false
 end
 
+Lake.MAX_DOCK_CLEARANCE = 30 -- a stone flies at most this far to get clear of a dock
+
 -- Where a stone thrown from `origin` along flat unit `direction` first touches
--- the water, and how far that is from the thrower. Nil if it never would.
+-- the water, and how far the thrower is from the water that way (0 when
+-- already standing over it, on a dock). Nil if it never would.
+--
+-- The stone always lands clear of the docks: from on (or beside) a dock it
+-- flies on until it is past the planks. Thrown back along a dock it never
+-- gets clear, so that doesn't count.
 function Lake.entry(origin: Vector3, direction: Vector3): (Vector3?, number)
-	local fromCentre = Lake.distanceFromCentre(origin)
-	if fromCentre < Lake.EDGE then
-		-- already over the water (on a dock): it lands in front of you, clear
-		-- of the planks. Thrown back along the dock it may never get clear.
-		local start = Vector3.new(origin.X, 0, origin.Z)
-		local lead = Lake.DOCK_LEAD
-		while Lake.underDock(start + direction * lead, 0.5) do
-			lead += 0.5
-			if lead > 30 then
-				return nil, math.huge
-			end
+	local start = Vector3.new(origin.X, 0, origin.Z)
+	local reach: number
+	local lead: number
+	if Lake.distanceFromCentre(origin) < Lake.EDGE then
+		reach = 0
+		lead = Lake.DOCK_LEAD
+	else
+		local near, far = crossings(origin.X, origin.Z, direction.X, direction.Z, Lake.EDGE)
+		if near == nil or far == nil or far <= 0 then
+			return nil, math.huge
 		end
-		return start + direction * lead, lead
+		reach = math.max(near, 0)
+		lead = reach
 	end
-	local near, far = crossings(origin.X, origin.Z, direction.X, direction.Z, Lake.EDGE)
-	if near == nil or far == nil or far <= 0 then
-		return nil, math.huge
+	local cleared = 0
+	while Lake.underDock(start + direction * lead, 0.5) do
+		lead += 0.5
+		cleared += 0.5
+		if cleared > Lake.MAX_DOCK_CLEARANCE then
+			return nil, math.huge
+		end
 	end
-	local t = math.max(near, 0)
-	return Vector3.new(origin.X + direction.X * t, 0, origin.Z + direction.Z * t), t
+	return start + direction * lead, reach
 end
 
 -- Open water ahead of a point on the lake along flat unit `direction`.
