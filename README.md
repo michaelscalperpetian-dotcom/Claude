@@ -1,7 +1,5 @@
 # Raise a Dino
 
-> **New: [Skip a Rock](skip-a-rock/README.md)**, a separate skipping simulator on a seaside boardwalk facing an endless ocean, lives in [`skip-a-rock/`](skip-a-rock). Download [`skip-a-rock/build/SkipARock.rbxlx`](skip-a-rock/build/SkipARock.rbxlx), open it in Roblox Studio and press Play.
-
 A Roblox game where you hatch dinosaur eggs, raise baby dinos into giants that keep growing while you're offline, catch rare mutations during storms, and guard your nest from egg thieves at night.
 
 The research and business plan behind it is in [docs/game-plan.md](docs/game-plan.md).

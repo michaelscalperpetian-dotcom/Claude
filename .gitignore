@@ -2,7 +2,6 @@
 *.rbxl
 *.rbxlx
 !build/RaiseADino.rbxlx
-!skip-a-rock/build/SkipARock.rbxlx
 *.rbxl.lock
 *.rbxlx.lock
 
