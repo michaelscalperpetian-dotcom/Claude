@@ -8,6 +8,7 @@
 --   * the result of each of your throws once the stone stops
 --   * a big Throw button on touch screens
 
+local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
@@ -42,6 +43,7 @@ type Refs = {
 	resultLine: TextLabel,
 	flash: TextLabel,
 	throwButton: TextButton?,
+	waking: Frame,
 }
 
 local refs: Refs? = nil
@@ -320,6 +322,22 @@ local function build()
 		throwButton = button
 	end
 
+	local waking = UI.glass({
+		Name = "Waking",
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.5),
+		Size = UDim2.fromOffset(380, 56),
+		Parent = canvas,
+	})
+	UI.text({
+		text = "The lake is waking up…",
+		size = UDim2.new(1, -24, 1, -14),
+		position = UDim2.fromScale(0.5, 0.5),
+		anchor = Vector2.new(0.5, 0.5),
+		maxTextSize = 26,
+		parent = waking,
+	})
+
 	refs = {
 		meter = meter,
 		needle = needle,
@@ -334,6 +352,7 @@ local function build()
 		resultLine = resultLine,
 		flash = flash,
 		throwButton = throwButton,
+		waking = waking,
 	}
 end
 
@@ -360,6 +379,8 @@ local function frame()
 	end
 	ThrowInput.update()
 	local state = ThrowInput.state
+	-- before the first spawn (the valley is still being shaped)
+	r.waking.Visible = Players.LocalPlayer.Character == nil
 	local near = state.charging or state.status ~= "far"
 	r.meter.Visible = near
 	if r.throwButton then

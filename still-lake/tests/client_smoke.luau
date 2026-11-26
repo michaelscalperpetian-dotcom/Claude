@@ -349,7 +349,7 @@ describe("Stones in flight", function()
 		ok(string.find(result.Line.Text, "New best!", 1, true), result.Line.Text)
 		local ripplesUsed = 0
 		for _, part in fx:GetChildren() do
-			if part.Name == "Ripple" and part.Size.Y > 0.5 then
+			if part.Name == "Ripple" and part.Size.X > 0.6 then
 				ripplesUsed += 1
 			end
 		end
@@ -515,7 +515,7 @@ describe("Night", function()
 		C.Ambience.update()
 		eq(light.Enabled, false)
 		eq(flies.Enabled, false)
-		eq(window.Material, roblox.Enum.Material.SmoothPlastic)
+		eq(window.Material, roblox.Enum.Material.Glass, "glass by day")
 	end)
 end)
 

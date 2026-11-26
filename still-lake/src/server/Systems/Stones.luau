@@ -8,11 +8,11 @@ local Workspace = game:GetService("Workspace")
 
 local Config = require(ReplicatedStorage.Shared.Config)
 local Lake = require(ReplicatedStorage.Shared.Lake)
+local Land = require(ReplicatedStorage.Shared.Land)
 local Net = require(ReplicatedStorage.Shared.Net)
 local StoneData = require(ReplicatedStorage.Shared.Data.StoneData)
 local StoneModel = require(ReplicatedStorage.Shared.StoneModel)
 local Notify = require(script.Parent.Parent.Lib.Notify)
-local Scenery = require(script.Parent.Parent.Lib.Scenery)
 local Data = require(script.Parent.Data)
 local Progress = require(script.Parent.Progress)
 local Sessions = require(script.Parent.Sessions)
@@ -22,7 +22,7 @@ local Stones = {}
 
 Stones.HELD_NAME = "HeldStone"
 Stones.PICKUP_RANGE = 10 -- a little more than the prompt's, for lag
-Stones.INNER = Config.LAKE_RADIUS + 2.5 -- glints wash up between these radii
+Stones.INNER = Land.SHORE + 1.5 -- glints wash up on the beach between these radii
 Stones.OUTER = Config.LAKE_RADIUS + Config.SHORE_WIDTH - 2
 Stones.SPACING = 10 -- glints are at least this far apart
 
@@ -130,7 +130,7 @@ local function findSpot(): Vector3?
 			end
 		end
 		if clear then
-			return Vector3.new(p.X, Scenery.BEACH_TOP + 0.25, p.Z)
+			return Land.at(p.X, p.Z, 0.3)
 		end
 	end
 	return nil

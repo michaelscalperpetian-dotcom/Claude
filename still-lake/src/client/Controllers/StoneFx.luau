@@ -12,6 +12,7 @@ local TweenService = game:GetService("TweenService")
 local Workspace = game:GetService("Workspace")
 
 local Lake = require(ReplicatedStorage.Shared.Lake)
+local Land = require(ReplicatedStorage.Shared.Land)
 local Net = require(ReplicatedStorage.Shared.Net)
 local StoneModel = require(ReplicatedStorage.Shared.StoneModel)
 local Types = require(ReplicatedStorage.Shared.Types)
@@ -20,7 +21,7 @@ local ClientState = require(script.Parent.ClientState)
 
 local StoneFx = {}
 
-StoneFx.BEACH_HEIGHT = 0.35 -- the far beach's surface (Scenery.BEACH_TOP)
+StoneFx.SLIDE = 5 -- how far a stone skitters up the far beach
 StoneFx.MAX_RIPPLES = 60
 StoneFx.MAX_FLIGHTS = 12 -- older stones are skipped to the end if more fly at once
 
@@ -53,19 +54,43 @@ local RIPPLE_GROW = TweenInfo.new(1.4, Enum.EasingStyle.Quad, Enum.EasingDirecti
 
 -- ===== Water effects =====
 
+-- A ripple is a thin ring drawn on an invisible flat part: a round frame
+-- with only its outline showing. Growing the part grows the ring, while the
+-- line stays the same thin width.
+local RIPPLE_PIXELS = 24 -- per stud
+local RIPPLE_LINE = 4 -- pixels
+
 local function newRipple(parent: Instance): Part
 	local part = Instance.new("Part")
 	part.Name = "Ripple"
-	part.Shape = Enum.PartType.Cylinder
 	part.Anchored = true
 	part.CanCollide = false
 	part.CanTouch = false
 	part.CanQuery = false
 	part.CastShadow = false
-	part.Material = Enum.Material.SmoothPlastic
-	part.Color = Color3.fromRGB(236, 250, 255)
 	part.Transparency = 1
-	part.Size = Vector3.new(0.04, 0.5, 0.5)
+	part.Size = Vector3.new(0.5, 0.05, 0.5)
+	local gui = Instance.new("SurfaceGui")
+	gui.Name = "Ring"
+	gui.Face = Enum.NormalId.Top
+	gui.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
+	gui.PixelsPerStud = RIPPLE_PIXELS
+	gui.LightInfluence = 0.7
+	gui.Parent = part
+	local ring = Instance.new("Frame")
+	ring.Name = "Circle"
+	ring.BackgroundTransparency = 1
+	ring.Size = UDim2.fromScale(1, 1)
+	ring.Parent = gui
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0.5, 0)
+	corner.Parent = ring
+	local line = Instance.new("UIStroke")
+	line.Name = "Line"
+	line.Color = Color3.fromRGB(236, 250, 255)
+	line.Thickness = RIPPLE_LINE
+	line.Transparency = 1
+	line.Parent = ring
 	part.Parent = parent
 	return part
 end
@@ -77,13 +102,17 @@ function StoneFx.ripple(position: Vector3, size: number)
 		return
 	end
 	nextRipple = nextRipple % #ripples + 1
-	part.CFrame = CFrame.new(position.X, 0.03, position.Z) * CFrame.Angles(0, 0, math.rad(90))
-	part.Size = Vector3.new(0.04, 0.4, 0.4)
-	part.Transparency = 0.35
-	TweenService:Create(part, RIPPLE_GROW, {
-		Size = Vector3.new(0.04, size, size),
-		Transparency = 1,
-	}):Play()
+	local gui = part:FindFirstChild("Ring")
+	local circle = gui and gui:FindFirstChild("Circle")
+	local line = circle and circle:FindFirstChild("Line")
+	if not line or not line:IsA("UIStroke") then
+		return
+	end
+	part.CFrame = CFrame.new(position.X, 0.08, position.Z)
+	part.Size = Vector3.new(0.5, 0.05, 0.5)
+	line.Transparency = 0.15
+	TweenService:Create(part, RIPPLE_GROW, { Size = Vector3.new(size, 0.05, size) }):Play()
+	TweenService:Create(line, RIPPLE_GROW, { Transparency = 1 }):Play()
 end
 
 function StoneFx.splash(position: Vector3, amount: number)
@@ -174,10 +203,10 @@ function StoneFx.plan(event: Types.ThrowEvent): { Segment }
 	end
 	if event.verdict == "shore" then
 		-- skitter up onto the far beach
-		local rest = Lake.along(point, event.direction, 3.5)
+		local rest = Lake.along(point, event.direction, StoneFx.SLIDE)
 		table.insert(segments, {
 			from = point,
-			to = Vector3.new(rest.X, StoneFx.BEACH_HEIGHT + 0.15, rest.Z),
+			to = Land.at(rest.X, rest.Z, 0.15),
 			height = 0.3,
 			duration = 0.35,
 			touch = true,
@@ -282,6 +311,21 @@ function StoneFx.play(event: Types.ThrowEvent)
 		end
 	end
 	local stone = StoneModel.build(event.stone, 0.8)
+	-- a faint streak behind the stone as it flies
+	local top = Instance.new("Attachment")
+	top.Position = Vector3.new(0, 0.12, 0)
+	top.Parent = stone
+	local bottom = Instance.new("Attachment")
+	bottom.Position = Vector3.new(0, -0.12, 0)
+	bottom.Parent = stone
+	local trail = Instance.new("Trail")
+	trail.Attachment0 = top
+	trail.Attachment1 = bottom
+	trail.Lifetime = 0.22
+	trail.FaceCamera = true
+	trail.Color = ColorSequence.new(Color3.new(1, 1, 1))
+	trail.Transparency = NumberSequence.new(0.55, 1)
+	trail.Parent = stone
 	stone.CFrame = CFrame.new(event.origin)
 	stone.Parent = parent
 	local flight: Flight = {

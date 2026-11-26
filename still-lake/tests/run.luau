@@ -13,6 +13,7 @@ local GoalData = Loader.load("src/shared/Data/GoalData")
 local Skip = Loader.load("src/shared/Skip")
 local Lake = Loader.load("src/shared/Lake")
 local DayCycle = Loader.load("src/shared/DayCycle")
+local Land = Loader.load("src/shared/Land")
 
 local Vector3 = roblox.Vector3
 
@@ -299,6 +300,64 @@ describe("Lake", function()
 		eq(Lake.flatten(Vector3.new(0 / 0, 0, 1)), nil, "NaN")
 		eq(Lake.flatten(Vector3.new(math.huge, 0, 1)), nil, "infinite")
 		eq(Lake.flatten(Vector3.new(-math.huge, 0, math.huge)), nil, "both infinite")
+	end)
+end)
+
+describe("Land", function()
+	local function around(r: number, fn: (number, number, number) -> ())
+		for i = 0, 71 do
+			local a = i / 72 * 2 * math.pi
+			local x, z = math.sin(a) * r, math.cos(a) * r
+			fn(x, z, Land.height(x, z))
+		end
+	end
+	it("the stones' first touch is always on water at least half a voxel deep", function()
+		-- terrain voxels are 4 studs: the one from -4 to 0 must be mostly water
+		for _, r in { Lake.EDGE, Lake.EDGE - 3, Land.SHELF, Land.BANK - 0.5 } do
+			around(r, function(_, _, h)
+				ok(h < -2, `ground at radius {r} is {h}`)
+			end)
+		end
+	end)
+	it("the shore is dry where people stand, and the beach rises gently", function()
+		local last = -math.huge
+		for r = Land.SHORE, Config.LAKE_RADIUS + Config.SHORE_WIDTH, 0.5 do
+			local h = Land.height(0, r)
+			ok(h > 0.5, `beach at {r} is {h}`)
+			ok(h >= last, "never dips")
+			last = h
+		end
+	end)
+	it("the lake is deep in the middle", function()
+		ok(Land.height(0, 0) < -12, "deep")
+		ok(Land.height(0, 0) > Land.BOTTOM + 4, "above the bottom of the terrain")
+	end)
+	it("the ground round the lake is gentle where the buildings stand", function()
+		for r = 130, 180, 5 do
+			around(r, function(x, z)
+				ok(Land.slope(x, z) < 0.15, `slope at {r}`)
+			end)
+		end
+	end)
+	it("mountains ring the valley with no gap to see out of", function()
+		for _, r in { 600, 650, 690 } do
+			around(r, function(_, _, h)
+				ok(h > 50, `mountain at {r} only {h}`)
+			end)
+		end
+		local peak = -math.huge
+		around(520, function(_, _, h)
+			peak = math.max(peak, h)
+		end)
+		ok(peak > 150, `tallest peak {peak}`)
+	end)
+	it("materials: sand by the water, grass on the meadow, snow on the peaks", function()
+		eq(Land.material(0, 112, Land.height(0, 112), 0), "Sand")
+		local meadow = Land.material(0, 160, Land.height(0, 160), 0)
+		ok(meadow == "Grass" or meadow == "LeafyGrass", meadow)
+		eq(Land.material(0, Land.PATH_RADIUS, 1.3, 0), "Ground", "the path")
+		eq(Land.material(0, 600, 230, 0.2), "Snow")
+		eq(Land.material(0, 600, 60, 1.5), "Rock", "cliffs")
 	end)
 end)
 

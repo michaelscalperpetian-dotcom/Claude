@@ -20,6 +20,9 @@ local ServerEnv = {}
 -- start() functions that only do setup (the others loop forever).
 local SETUP_STARTS = { "Lifecycle", "Stones" }
 
+-- Terrain writes, kept for the tests and the scene exporter.
+local terrainWrites = {}
+
 export type Options = {
 	configure: ((Config: any) -> ())?,
 	now: number?,
@@ -105,6 +108,28 @@ function ServerEnv.new(options: Options?)
 	eventStub("ProximityPrompt", "Triggered")
 	eventStub("Player", "CharacterAdded")
 	eventStub("Player", "CharacterAppearanceLoaded")
+	eventStub("Humanoid", "Died")
+	env.terrainWrites = terrainWrites
+	roblox.implementMethod(
+		"Terrain",
+		"WriteVoxels",
+		function(_, region, resolution, materials, occupancies)
+			table.insert(terrainWrites, {
+				region = region,
+				resolution = resolution,
+				materials = materials,
+				occupancies = occupancies,
+			})
+		end
+	)
+	-- spawning makes a fresh character, like the engine would
+	roblox.implementMethod("Player", "LoadCharacterAsync", function(player)
+		if player.Character then
+			player.Character:Destroy()
+		end
+		local character = env.makeCharacter(player)
+		player.CharacterAdded:Fire(character)
+	end)
 	function env.signal(instance, eventName)
 		return instance[eventName]
 	end
@@ -245,6 +270,7 @@ function ServerEnv.new(options: Options?)
 			S[name].init()
 		end
 	end
+	S.World.buildTerrain()
 	for _, name in SETUP_STARTS do
 		S[name].start()
 	end
@@ -284,7 +310,6 @@ function ServerEnv.new(options: Options?)
 		player.DisplayName = name
 		player.UserId = nextUserId
 		player.Parent = playersFolder
-		env.makeCharacter(player)
 		table.insert(playerList, player)
 		return player
 	end

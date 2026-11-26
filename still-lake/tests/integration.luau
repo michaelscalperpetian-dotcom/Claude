@@ -21,6 +21,8 @@ local StoneData = Loader.load("src/shared/Data/StoneData")
 local GoalData = Loader.load("src/shared/Data/GoalData")
 local Tags = Loader.load("src/shared/Tags")
 local Scenery = Loader.load("src/server/Lib/Scenery")
+local Ground = Loader.load("src/server/Lib/Ground")
+local Enum = roblox.Enum
 
 local passed, failed = 0, 0
 local group = ""
@@ -113,9 +115,7 @@ describe("World", function()
 		ok(root, "StillLake folder")
 		for _, name in
 			{
-				"Land",
 				"Fences",
-				"Horizon",
 				"Docks",
 				"Cabin",
 				"Campfire",
@@ -130,6 +130,43 @@ describe("World", function()
 		end
 		eq(#root.Docks:GetChildren(), 3, "docks")
 		ok(env.workspace:FindFirstChild("Glints"), "glint folder")
+	end)
+	it("shapes the whole valley out of terrain, chunk by chunk", function()
+		local chunks = Ground.chunks()
+		eq(#env.terrainWrites, #chunks, "one write per chunk")
+		for _, write in env.terrainWrites do
+			eq(write.resolution, 4)
+			local size = write.region.Size / 4
+			eq(#write.materials, size.X, "x columns")
+			eq(#write.materials[1], size.Y, "layers")
+			eq(#write.materials[1][1], size.Z, "z columns")
+			eq(#write.occupancies[1][1], size.Z, "occupancy too")
+		end
+		local grass = env.workspace.Terrain:GetMaterialColor(Enum.Material.Grass)
+		local wanted = Ground.COLORS[1].color
+		ok(Ground.COLORS[1].material == Enum.Material.Grass, "first colour is grass")
+		ok(math.abs(grass.G - wanted.G) < 0.01, "grass colour set")
+		eq(env.workspace.Terrain.Decoration, true, "swaying grass")
+		ok(env.workspace.Terrain:FindFirstChildOfClass("Clouds"), "clouds")
+	end)
+	it("stones always land on terrain water, all the way round", function()
+		-- the voxel at the stones' first touch (just inside the edge), in the
+		-- layer from -4 to 0, must be water
+		for _, angle in { 0.3, 1.9, 3.4, 5.1 } do
+			local x, z = math.sin(angle) * Lake.EDGE, math.cos(angle) * Lake.EDGE
+			local found = false
+			for _, write in env.terrainWrites do
+				local min = write.region.CFrame.Position - write.region.Size / 2
+				local i = math.floor((x - min.X) / 4) + 1
+				local k = math.floor((z - min.Z) / 4) + 1
+				local j = math.floor((-2 - min.Y) / 4) + 1
+				if i >= 1 and k >= 1 and i <= #write.materials and k <= #write.materials[1][1] then
+					eq(write.materials[i][j][k], Enum.Material.Water, `water at {angle}`)
+					found = true
+				end
+			end
+			ok(found, "voxel found")
+		end
 	end)
 	it("stays within a sensible part budget", function()
 		local parts = 0
@@ -175,7 +212,11 @@ describe("World", function()
 		local steps = 1440
 		for i = 0, steps - 1 do
 			local angle = i / steps * 2 * math.pi
-			local point = Vector3.new(math.sin(angle) * (R + 1), 3, math.cos(angle) * (R + 1))
+			local point = Vector3.new(
+				math.sin(angle) * Scenery.SHORE_WALL,
+				3,
+				math.cos(angle) * Scenery.SHORE_WALL
+			)
 			if not walled(point, 0.3) and not Lake.underDock(point, 0) then
 				table.insert(gaps, string.format("%.1f°", math.deg(angle)))
 			end
@@ -187,7 +228,7 @@ describe("World", function()
 		for _, angle in Lake.DOCK_ANGLES do
 			local along = Vector3.new(math.sin(angle), 0, math.cos(angle))
 			local across = Vector3.new(math.cos(angle), 0, -math.sin(angle))
-			for d = Lake.DOCK_INNER, R + 2, 0.5 do
+			for d = Lake.DOCK_INNER, Scenery.SHORE_WALL + 1, 0.5 do
 				for _, side in { -1, 1 } do
 					local point = along * d + across * side * (half + 0.25) + Vector3.new(0, 3, 0)
 					ok(walled(point, 0.05), `side wall at {d} ({math.deg(angle)}°)`)
@@ -564,6 +605,18 @@ end)
 -- ===== Safety nets and leaving =====
 
 describe("Safety nets", function()
+	it("people on the docks and the beach are left alone", function()
+		local angle = Lake.DOCK_ANGLES[1]
+		env.moveTo(
+			alice,
+			Vector3.new(math.sin(angle) * 95, Lake.DOCK_TOP + 3, math.cos(angle) * 95)
+		)
+		eq(S.World.rescue(alice), false, "on a dock")
+		env.moveTo(alice, onShore(0.4, Config.SHORE_WIDTH / 2))
+		eq(S.World.rescue(alice), false, "on the beach")
+		env.moveTo(alice, Vector3.new(0, 1, 60))
+		eq(S.World.rescue(alice), true, "swimming in the lake")
+	end)
 	it("anyone who ends up in the lake is put back by the spawn", function()
 		env.moveTo(alice, Vector3.new(0, -6, 0))
 		eq(S.World.rescue(alice), true, "rescued")
@@ -602,6 +655,4 @@ describe("Leaving", function()
 end)
 
 print(`{passed} passed, {failed} failed`)
-if failed > 0 then
-	process.exit(1)
-end
+process.exit(if failed > 0 then 1 else 0)

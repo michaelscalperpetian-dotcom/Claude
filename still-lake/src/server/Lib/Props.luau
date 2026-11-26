@@ -1,7 +1,9 @@
 --!strict
--- Soft, chunky props built from parts: rounded shapes, 2-3 shades per
--- material. Each builder takes a ground position, a size multiplier and a
--- random generator (so layouts are repeatable).
+-- Natural props built from parts: trees, bushes, ferns, flowers and rocks.
+-- Real materials (bark, leaves, rock) instead of plain plastic, two or three
+-- shades each, and a little randomness so nothing looks stamped. Each
+-- builder takes a ground position, a size multiplier and a random generator
+-- (so layouts are repeatable).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -14,8 +16,10 @@ local Props = {}
 
 type Gen = Rng.Generator
 
-local LEAF = { decor = true, collide = false }
-local SMALL = { decor = true, collide = false, shadow = false }
+local BARK: Build.Options = { name = "Trunk", material = Enum.Material.Wood }
+local LEAF: Build.Options = { decor = true, collide = false, material = Enum.Material.LeafyGrass }
+local SMALL: Build.Options = { decor = true, collide = false, shadow = false }
+local ROCK: Build.Options = { decor = true, material = Enum.Material.Rock }
 
 local function between(gen: Gen, a: number, b: number): number
 	return a + (b - a) * gen.next()
@@ -29,6 +33,12 @@ local function horizontal(angle: number): Vector3
 	return Vector3.new(math.sin(angle), 0, math.cos(angle))
 end
 
+-- A colour nudged a little lighter or darker.
+local function vary(gen: Gen, c: Color3, amount: number): Color3
+	local t = (gen.next() - 0.5) * 2 * amount
+	return if t > 0 then c:Lerp(Color3.new(1, 1, 1), t) else c:Lerp(Color3.new(0, 0, 0), -t)
+end
+
 -- Leafy round tree: a short trunk under a cluster of soft blobs.
 function Props.tree(base: Vector3, s: number, gen: Gen, parent: Instance): Model
 	local m = Build.model("Tree", parent)
@@ -36,9 +46,8 @@ function Props.tree(base: Vector3, s: number, gen: Gen, parent: Instance): Model
 	local lean = horizontal(gen.next() * math.pi * 2) * between(gen, 0.3, 1.2) * s
 	local mid = base + Vector3.new(0, h * 0.5, 0) + lean * 0.3
 	local top = base + Vector3.new(0, h, 0) + lean
-	Build.ellipsoid(Vector3.new(3.4, 1.4, 3.4) * s, CFrame.new(base), Palette.woodDark, m, LEAF)
-	Build.rod(base - Vector3.new(0, 0.5, 0), mid, 2.1 * s, Palette.wood, m, { name = "Trunk" })
-	Build.rod(mid, top, 1.6 * s, Palette.wood, m, { name = "Trunk" })
+	Build.rod(base - Vector3.new(0, 1, 0), mid, 2 * s, Palette.bark, m, BARK)
+	Build.rod(mid, top, 1.5 * s, Palette.bark, m, BARK)
 
 	local yaw = CFrame.Angles(0, gen.next() * math.pi * 2, 0)
 	local c = top + Vector3.new(0, 1.6 * s, 0)
@@ -51,54 +60,53 @@ function Props.tree(base: Vector3, s: number, gen: Gen, parent: Instance): Model
 			LEAF
 		)
 	end
-	blob(Vector3.new(10.5, 8.5, 10.5), Vector3.zero, Palette.leaf)
-	blob(Vector3.new(7, 6, 7), Vector3.new(4.2, -1.4, 1.2), Palette.leafDark)
-	blob(Vector3.new(6.5, 5.5, 6.5), Vector3.new(-3.8, -1, -2), Palette.leafDark)
-	blob(Vector3.new(6.5, 5.2, 6.5), Vector3.new(0.8, 3.3, -0.6), Palette.leafLight)
-	if gen.next() < 0.3 then
-		-- a few fruits
-		for i = 1, 3 do
-			local a = i * 2.1 + gen.next()
-			local p = c
-				+ Vector3.new(math.sin(a) * 4.6, between(gen, -2.2, 0.5), math.cos(a) * 4.6) * s
-			Build.ball(
-				0.9 * s,
-				p,
-				if gen.next() < 0.5 then Palette.red else Palette.orange,
-				m,
-				SMALL
-			)
-		end
-	end
+	local leaf = vary(gen, Palette.leaf, 0.12)
+	blob(Vector3.new(10.5, 8, 10.5), Vector3.zero, leaf)
+	blob(Vector3.new(7, 5.6, 7), Vector3.new(4.2, -1.4, 1.2), vary(gen, Palette.leafDark, 0.1))
+	blob(Vector3.new(6.5, 5.2, 6.5), Vector3.new(-3.8, -1, -2), vary(gen, Palette.leafDark, 0.1))
+	blob(Vector3.new(6.5, 5, 6.5), Vector3.new(0.8, 3.1, -0.6), vary(gen, Palette.leafLight, 0.1))
 	return m
 end
 
--- Tiered pine tree.
+-- A tall pine: a slim trunk through five drooping tiers of needles,
+-- narrowing to a point.
 function Props.pine(base: Vector3, s: number, gen: Gen, parent: Instance): Model
 	local m = Build.model("Pine", parent)
+	local height = 17 * s
 	Build.rod(
-		base - Vector3.new(0, 0.5, 0),
-		base + Vector3.new(0, 4 * s, 0),
-		1.5 * s,
-		Palette.woodDark,
-		m
+		base - Vector3.new(0, 1, 0),
+		base + Vector3.new(0, height * 0.8, 0),
+		1.1 * s,
+		Palette.bark,
+		m,
+		BARK
 	)
-	local tiers = { { 9, 5, 4.6 }, { 7.2, 4.6, 7.6 }, { 5.4, 4.2, 10.3 }, { 3.2, 3.4, 12.6 } }
-	-- each tier drifts a little so no two pines look stamped
-	local drift = horizontal(gen.next() * math.pi * 2) * 0.35 * s
-	for i, t in tiers do
-		local color = if i % 2 == 1 then Palette.pine else Palette.pineDark
-		if i == #tiers then
-			color = Palette.leaf
-		end
+	local lean = horizontal(gen.next() * math.pi * 2) * 0.25 * s
+	local shade = vary(gen, Palette.pine, 0.12)
+	local dark = vary(gen, Palette.pineDark, 0.1)
+	local tiers = 5
+	for i = 1, tiers do
+		local t = (i - 1) / (tiers - 1) -- 0 at the bottom tier, 1 at the top
+		local width = (8.6 - 6.4 * t) * s
+		local tall = (3.6 - 0.9 * t) * s
+		local y = (3.2 + t * 11.2) * s
 		Build.ellipsoid(
-			Vector3.new(t[1], t[2], t[1]) * s,
-			CFrame.new(base + Vector3.new(0, t[3] * s, 0) + drift * (i - 1)),
-			color,
+			Vector3.new(width, tall, width * between(gen, 0.9, 1)),
+			CFrame.new(base + Vector3.new(0, y, 0) + lean * t)
+				* CFrame.Angles(0, gen.next() * math.pi, 0),
+			if i % 2 == 1 then shade else dark,
 			m,
 			LEAF
 		)
 	end
+	-- the pointed tip
+	Build.ellipsoid(
+		Vector3.new(1.4, 3.2, 1.4) * s,
+		CFrame.new(base + Vector3.new(0, 16 * s, 0) + lean),
+		shade,
+		m,
+		LEAF
+	)
 	return m
 end
 
@@ -136,10 +144,10 @@ function Props.bush(base: Vector3, s: number, gen: Gen, parent: Instance): Model
 			LEAF
 		)
 	end
-	blob(Vector3.new(5, 4, 5), Vector3.new(0, 1.5, 0), Palette.leaf)
-	blob(Vector3.new(3.6, 3, 3.6), Vector3.new(2.3, 1, 0.8), Palette.leafDark)
-	blob(Vector3.new(3.4, 2.8, 3.4), Vector3.new(-2.1, 0.9, -0.9), Palette.leafDark)
-	blob(Vector3.new(3, 2.6, 3), Vector3.new(0.4, 2.8, -0.3), Palette.leafLight)
+	blob(Vector3.new(5, 3.6, 5), Vector3.new(0, 1.3, 0), vary(gen, Palette.leaf, 0.12))
+	blob(Vector3.new(3.6, 2.8, 3.6), Vector3.new(2.3, 0.9, 0.8), Palette.leafDark)
+	blob(Vector3.new(3.4, 2.6, 3.4), Vector3.new(-2.1, 0.8, -0.9), Palette.leafDark)
+	blob(Vector3.new(3, 2.4, 3), Vector3.new(0.4, 2.4, -0.3), Palette.leafLight)
 	if gen.next() < 0.45 then
 		local berry = if gen.next() < 0.5 then Palette.pink else Palette.red
 		for i = 1, 4 do
@@ -158,7 +166,6 @@ end
 -- A little patch of flowers.
 function Props.flowers(base: Vector3, s: number, gen: Gen, parent: Instance): Model
 	local m = Build.model("Flowers", parent)
-	Build.ellipsoid(Vector3.new(4.4, 0.7, 4.4) * s, CFrame.new(base), Palette.grassDark, m, SMALL)
 	local color = pick(gen, Palette.FLOWERS)
 	for i = 1, 5 do
 		local a = i * 1.26 + gen.next() * 0.5
@@ -175,53 +182,32 @@ function Props.flowers(base: Vector3, s: number, gen: Gen, parent: Instance): Mo
 	return m
 end
 
--- A mossy boulder.
+-- A weathered boulder, half sunk in the ground, sometimes with moss on top.
 function Props.rock(base: Vector3, s: number, gen: Gen, parent: Instance): Model
 	local m = Build.model("Rock", parent)
-	local yaw = CFrame.Angles(0, gen.next() * math.pi * 2, 0)
+	local yaw = CFrame.Angles(gen.next() * 0.3, gen.next() * math.pi * 2, gen.next() * 0.3)
+	local stone = vary(gen, Palette.rock, 0.1)
 	Build.ellipsoid(
-		Vector3.new(4.4, 2.8, 3.6) * s,
-		CFrame.new(base + Vector3.new(0, 0.7 * s, 0)) * yaw,
-		Palette.rock,
+		Vector3.new(5, 3.2, 4) * s,
+		CFrame.new(base + Vector3.new(0, 0.5 * s, 0)) * yaw,
+		stone,
 		m,
-		{ decor = true }
+		ROCK
 	)
 	Build.ellipsoid(
-		Vector3.new(2.6, 2, 2.4) * s,
-		CFrame.new(base + yaw:VectorToWorldSpace(Vector3.new(2, 0.4, 0.9) * s)) * yaw,
+		Vector3.new(2.8, 2, 2.6) * s,
+		CFrame.new(base + yaw:VectorToWorldSpace(Vector3.new(2.2, 0, 1) * s)) * yaw,
 		Palette.rockDark,
 		m,
-		{ decor = true, collide = false }
+		ROCK
 	)
-	Build.ellipsoid(
-		Vector3.new(2.6, 1, 2.2) * s,
-		CFrame.new(base + Vector3.new(-0.3, 1.8, -0.2) * s) * yaw,
-		Palette.rockLight,
-		m,
-		SMALL
-	)
-	return m
-end
-
--- A soft cloud.
-function Props.cloud(center: Vector3, s: number, gen: Gen, parent: Instance): Model
-	local m = Build.model("Cloud", parent)
-	local options = { decor = true, collide = false, shadow = false }
-	local yaw = CFrame.Angles(0, gen.next() * math.pi * 2, 0)
-	local puffs = {
-		{ Vector3.new(26, 13, 18), Vector3.new(0, 0, 0) },
-		{ Vector3.new(18, 12, 15), Vector3.new(-12, -1.5, 2) },
-		{ Vector3.new(17, 11, 14), Vector3.new(12, -2, -1) },
-		{ Vector3.new(15, 12, 13), Vector3.new(3, 4.5, 1) },
-		{ Vector3.new(30, 6, 20), Vector3.new(0, -4, 0) },
-	}
-	for _, puff in puffs do
+	if gen.next() < 0.5 then
 		Build.ellipsoid(
-			puff[1] * s,
-			CFrame.new(center + yaw:VectorToWorldSpace(puff[2] * s)) * yaw,
-			Palette.white,
+			Vector3.new(3, 0.8, 2.4) * s,
+			CFrame.new(base + Vector3.new(-0.2, 1.95, -0.1) * s) * yaw,
+			Palette.moss,
 			m,
-			options
+			{ decor = true, collide = false, shadow = false, material = Enum.Material.LeafyGrass }
 		)
 	end
 	return m

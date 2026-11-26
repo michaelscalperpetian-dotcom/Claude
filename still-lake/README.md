@@ -15,7 +15,7 @@ No timers, no shop, no pressure. Just you, a lake, and the next good throw.
 3. Open it: double-click the file, or in Studio use **File → Open from File**.
 4. Press **▶ Play** (F5). The lake builds itself when the game starts.
 
-In Studio's edit view you'll only see a "Press Play" sign: the lake, docks, cabin and forest are all built by code at start-up.
+In Studio's edit view you'll only see a "Press Play" sign: the whole valley (terrain, lake, mountains, docks, cabin and forest) is built by code at start-up. It takes a few seconds; you'll see "The lake is waking up…" until you spawn.
 
 > Progress doesn't save in Studio until you publish the game and turn on API access (see below). Until then you'll see a warning in Output; that's expected, and the leaderboards show the players in your test server instead.
 
@@ -77,29 +77,32 @@ The game is quiet by default, with only water sounds. To add calm music, put Rob
 
 ## For developers
 
-The game is written in strict Luau and synced with [Rojo](https://rojo.space/). Everything (the world included) is code; there are no hand-made parts or uploaded assets, and every sound ships with Roblox.
+The game is written in strict Luau and synced with [Rojo](https://rojo.space/). Everything (the world included) is code; there are no hand-made parts or uploaded assets, and every sound ships with Roblox. The valley is real Roblox terrain (smooth voxels, terrain water with waves and reflections, swaying grass and volumetric clouds) written from a heightmap when the server starts; the buildings, docks and forest are parts with real materials on top.
 
 ```
 src/shared/      Rules and data both sides use
   Skip.luau        How a throw goes: the power needle, skips, hop lengths
   Lake.luau        The lake's shape, the docks, where a throw first touches
+  Land.luau        The valley's heightmap and which terrain material goes where
   Data/            The 12 stones and the journal goals
   DayCycle.luau    The day and night clock
 src/server/
   Systems/         Saving, sessions, throws, glints, progress, leaderboards, day/night, test tools
-  Lib/Scenery.luau Builds the lake, docks, cabin, campfire, forest and mountains
+  Lib/Ground.luau  Writes the terrain (lake bowl, beach, meadow, mountains, water, clouds)
+  Lib/Scenery.luau Builds the docks, cabin, campfire, lanterns, forest and signs on top
 src/client/
   Controllers/     Throw input, HUD and power meter, stone flights and ripples,
                    journal, messages, night ambience, sound, test panel
 tests/           Lune tests that run the real code in fake Roblox servers and clients
-tools/           Scene and UI exporters for the repo's preview renderers
+tools/           Scene and UI exporters, and a terrain preview renderer
 ```
 
 How it fits together:
 
 - **The server decides every throw.** The client only says when you started winding up and when you let go (with your hold time and the way you're facing). The server checks you're near the water and facing it, that the hold time matches its own clock, and the cooldown. It then works out every skip, saves the result and tells every player, so everyone sees the same stone.
 - **Every client draws every throw** from that one message: the arc to the water, each hop, the ripples, splashes and plips.
-- **The world is walled** with invisible walls along the shoreline and around the docks, so nobody walks into the lake. The camera passes through them. Anyone who somehow ends up in the water is put back by the spawn.
+- **The world is walled** with invisible walls along the top of the bank and around the docks, so nobody walks into the lake. The camera passes through them. Anyone who somehow ends up in the water is put back by the spawn.
+- **The lake has a sandy shelf and a short bank** rather than a gentle slope, because terrain voxels are 4 studs and hold either sand or water. This way every spot where a stone can touch down is real water (a test checks it all the way round).
 
 Commands (run inside `still-lake/`; install the toolchain from the repo root with `rokit install`):
 

@@ -7,10 +7,9 @@ local function rgb(r: number, g: number, b: number): Color3
 end
 
 local Palette = {
-	-- Water, from the shallows out to the deep middle
-	shallows = rgb(126, 206, 214),
-	water = rgb(84, 172, 204),
-	deep = rgb(56, 132, 178),
+	-- Water: terrain water by day and by night, ripples
+	lakeDay = rgb(46, 122, 136),
+	lakeNight = rgb(20, 40, 66),
 	ripple = rgb(232, 250, 255),
 
 	-- Shore and land
@@ -28,16 +27,24 @@ local Palette = {
 	leafLight = rgb(138, 196, 98),
 	leaf = rgb(102, 170, 84),
 	leafDark = rgb(72, 138, 76),
-	pine = rgb(66, 130, 92),
-	pineDark = rgb(48, 104, 80),
+	pine = rgb(60, 106, 70),
+	pineDark = rgb(44, 84, 60),
 	reed = rgb(150, 162, 92),
+	reedDark = rgb(116, 132, 74),
 	cattail = rgb(120, 82, 56),
 	lily = rgb(92, 168, 96),
 
-	-- Wood and stone
-	woodLight = rgb(198, 150, 104),
-	wood = rgb(166, 118, 78),
-	woodDark = rgb(122, 84, 58),
+	-- Wood and stone (lighter than they look: wood textures darken them)
+	woodLight = rgb(206, 164, 116),
+	wood = rgb(178, 132, 90),
+	woodDark = rgb(128, 92, 64),
+	bark = rgb(116, 86, 64),
+	logs = rgb(160, 112, 72),
+	weathered = rgb(166, 150, 128),
+	rope = rgb(200, 178, 132),
+	iron = rgb(58, 56, 60),
+	brass = rgb(214, 170, 82),
+	window = rgb(164, 206, 226),
 	rockLight = rgb(176, 174, 182),
 	rock = rgb(146, 144, 156),
 	rockDark = rgb(112, 110, 124),
@@ -48,7 +55,8 @@ local Palette = {
 	-- Warm accents
 	lantern = rgb(255, 204, 120),
 	fire = rgb(255, 150, 60),
-	roof = rgb(176, 86, 72),
+	ember = rgb(255, 110, 40),
+	roof = rgb(150, 74, 62),
 	cream = rgb(255, 246, 228),
 	white = rgb(255, 255, 255),
 

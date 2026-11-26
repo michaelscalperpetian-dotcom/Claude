@@ -3,11 +3,11 @@
     <Properties>
       <string name="Name">Lighting</string>
       <Color3 name="Ambient">
-        <R>0.42</R>
-        <G>0.4</G>
-        <B>0.46</B>
+        <R>0.36</R>
+        <G>0.36</G>
+        <B>0.42</B>
       </Color3>
-      <float name="Brightness">2.4</float>
+      <float name="Brightness">2.6</float>
       <float name="ClockTime">16.5</float>
       <Color3 name="ColorShift_Bottom">
         <R>0</R>
@@ -16,59 +16,59 @@
       </Color3>
       <Color3 name="ColorShift_Top">
         <R>1</R>
-        <G>0.92</G>
-        <B>0.8</B>
+        <G>0.9</G>
+        <B>0.76</B>
       </Color3>
-      <float name="EnvironmentDiffuseScale">0.6</float>
-      <float name="EnvironmentSpecularScale">0.5</float>
-      <float name="ExposureCompensation">0.1</float>
-      <float name="GeographicLatitude">35</float>
+      <float name="EnvironmentDiffuseScale">1</float>
+      <float name="EnvironmentSpecularScale">1</float>
+      <float name="ExposureCompensation">0.15</float>
+      <float name="GeographicLatitude">38</float>
       <bool name="GlobalShadows">true</bool>
       <Color3 name="OutdoorAmbient">
-        <R>0.56</R>
-        <G>0.54</G>
-        <B>0.6</B>
+        <R>0.5</R>
+        <G>0.5</G>
+        <B>0.56</B>
       </Color3>
-      <float name="ShadowSoftness">0.3</float>
-      <token name="Technology">3</token>
+      <float name="ShadowSoftness">0.18</float>
+      <token name="Technology">4</token>
     </Properties>
     <Item class="Atmosphere" referent="1">
       <Properties>
         <string name="Name">Atmosphere</string>
         <Color3 name="Color">
-          <R>0.86</R>
-          <G>0.84</G>
-          <B>0.88</B>
+          <R>0.82</R>
+          <G>0.8</G>
+          <B>0.86</B>
         </Color3>
         <Color3 name="Decay">
-          <R>0.6</R>
-          <G>0.62</G>
-          <B>0.78</B>
+          <R>0.42</R>
+          <G>0.46</G>
+          <B>0.56</B>
         </Color3>
-        <float name="Density">0.32</float>
-        <float name="Glare">0.3</float>
-        <float name="Haze">1.4</float>
-        <float name="Offset">0.15</float>
+        <float name="Density">0.3</float>
+        <float name="Glare">0.45</float>
+        <float name="Haze">1.6</float>
+        <float name="Offset">0.25</float>
       </Properties>
     </Item>
     <Item class="BloomEffect" referent="2">
       <Properties>
         <string name="Name">Bloom</string>
-        <float name="Intensity">0.7</float>
-        <float name="Size">28</float>
-        <float name="Threshold">1.3</float>
+        <float name="Intensity">0.55</float>
+        <float name="Size">30</float>
+        <float name="Threshold">1.6</float>
       </Properties>
     </Item>
     <Item class="ColorCorrectionEffect" referent="3">
       <Properties>
         <string name="Name">ColorCorrection</string>
-        <float name="Brightness">0.02</float>
-        <float name="Contrast">0.06</float>
-        <float name="Saturation">0.12</float>
+        <float name="Brightness">0.01</float>
+        <float name="Contrast">0.09</float>
+        <float name="Saturation">0.08</float>
         <Color3 name="TintColor">
           <R>1</R>
           <G>0.97</G>
-          <B>0.93</B>
+          <B>0.94</B>
         </Color3>
       </Properties>
     </Item>
@@ -76,16 +76,16 @@
       <Properties>
         <string name="Name">Sky</string>
         <bool name="CelestialBodiesShown">true</bool>
-        <float name="MoonAngularSize">14</float>
-        <int name="StarCount">4000</int>
-        <float name="SunAngularSize">18</float>
+        <float name="MoonAngularSize">11</float>
+        <int name="StarCount">5000</int>
+        <float name="SunAngularSize">14</float>
       </Properties>
     </Item>
     <Item class="SunRaysEffect" referent="5">
       <Properties>
         <string name="Name">SunRays</string>
-        <float name="Intensity">0.06</float>
-        <float name="Spread">0.7</float>
+        <float name="Intensity">0.05</float>
+        <float name="Spread">0.8</float>
       </Properties>
     </Item>
   </Item>
@@ -748,6 +748,161 @@ return Lake
       </Item>
       <Item class="ModuleScript" referent="14">
         <Properties>
+          <string name="Name">Land</string>
+          <string name="Source"><![CDATA[--!strict
+-- The shape of the valley, as a height for every point on the map: a round
+-- lake bowl with a sandy shelf, a gentle beach, a meadow that starts to roll
+-- further out, and a ring of ridged, snow-capped mountains all round. Also
+-- which terrain material belongs where. Pure maths (no instances), so the
+-- server can build the terrain from it, everything can be placed on the
+-- ground, and the tests can check it.
+--
+-- The water surface is Y = 0. Distances are from the lake's centre.
+
+local Config = require(script.Parent.Config)
+
+local Land = {}
+
+local R = Config.LAKE_RADIUS
+local BEACH_OUT = Config.LAKE_RADIUS + Config.SHORE_WIDTH
+
+Land.WATER_LEVEL = 0
+Land.SIZE = 704 -- the terrain covers -SIZE..SIZE on both axes
+Land.BOTTOM = -24 -- solid ground goes no deeper than this
+Land.PATH_RADIUS = BEACH_OUT + 8 -- a dirt path round the lake
+Land.PATH_WIDTH = 5
+Land.SHELF = R - 10 -- the lake floor flattens into a sandy shelf from here...
+Land.BANK = R + 1 -- ...which ends at a short bank up to the beach...
+Land.SHORE = R + 3 -- ...whose top is the water's edge (players walk from here)
+Land.DEEPEST = -16
+Land.MOUNTAINS_FROM = 350 -- the foothills start rising here...
+Land.MOUNTAINS_FULL = 570 -- ...and the mountains are full height from here out
+
+export type Material =
+	"Water"
+	| "Sand"
+	| "Mud"
+	| "Grass"
+	| "LeafyGrass"
+	| "Ground"
+	| "Rock"
+	| "Slate"
+	| "Snow"
+
+local function clamp01(t: number): number
+	return math.clamp(t, 0, 1)
+end
+
+local function smooth(t: number): number
+	local x = clamp01(t)
+	return x * x * (3 - 2 * x)
+end
+
+local function lerp(a: number, b: number, t: number): number
+	return a + (b - a) * t
+end
+
+-- Layered noise, roughly -0.5..0.5.
+local function fbm(x: number, z: number, scale: number, octaves: number, seed: number): number
+	local total, amplitude, frequency, norm = 0, 1, 1 / scale, 0
+	for i = 1, octaves do
+		total += math.noise(x * frequency, z * frequency, seed + i * 17.31) * amplitude
+		norm += amplitude
+		amplitude *= 0.5
+		frequency *= 2
+	end
+	return total / norm
+end
+Land.fbm = fbm
+
+-- The ground's height under the meadow (no mountains), r = distance out.
+local function meadow(x: number, z: number, r: number): number
+	local base = 1.1 + (r - BEACH_OUT) * 0.012
+	-- flat by the lake (where the cabin, campfire and boards stand), rolling further out
+	local roll = 3.5 * smooth((r - 170) / 150)
+	return base + fbm(x, z, 90, 3, 1.7) * 2 * roll
+end
+
+-- Height of the ground's surface at (x, z).
+function Land.height(x: number, z: number): number
+	local r = math.sqrt(x * x + z * z)
+	if r < Land.SHELF then
+		-- the bowl: deepest in the middle, with a gently lumpy floor
+		local t = smooth(r / Land.SHELF)
+		return lerp(Land.DEEPEST, -3, t) + fbm(x, z, 30, 2, 4.2) * 1.2 * (1 - t)
+	elseif r < Land.BANK then
+		-- a sandy shelf, kept more than half a voxel under the surface so
+		-- terrain water covers it right up to the bank (and the stones'
+		-- first touch, at Lake.EDGE, is always on water)
+		return lerp(-3, -2.6, (r - Land.SHELF) / (Land.BANK - Land.SHELF))
+	elseif r < Land.SHORE then
+		return lerp(-2.6, 0.6, (r - Land.BANK) / (Land.SHORE - Land.BANK))
+	elseif r < BEACH_OUT then
+		return lerp(0.6, 1.1, (r - Land.SHORE) / (BEACH_OUT - Land.SHORE))
+	end
+	local h = meadow(x, z, r)
+	local rise = smooth((r - Land.MOUNTAINS_FROM) / (Land.MOUNTAINS_FULL - Land.MOUNTAINS_FROM))
+	if rise > 0 then
+		-- ridged noise gives sharp crests and valleys between the peaks
+		-- (clamped: noise can stray a little past ±0.5, and a negative
+		-- ridge to a fractional power would be NaN)
+		local ridge = math.clamp(1 - math.abs(fbm(x, z, 170, 4, 9.1)) * 2, 0, 1)
+		-- some stretches of the ring are lower saddles, some tall massifs
+		local massif = 0.6 + 0.8 * math.clamp(fbm(x, z, 420, 2, 2.2) + 0.5, 0, 1)
+		local mountain = (45 + 175 * ridge ^ 1.8) * massif + 35 * fbm(x, z, 55, 3, 3.3)
+		-- and the ground keeps climbing toward the edge of the map
+		mountain += math.max(r - 560, 0) * 0.12
+		h += rise * math.max(mountain, 55)
+	end
+	return h
+end
+
+-- How steep the ground is at (x, z) (rise over run).
+function Land.slope(x: number, z: number): number
+	local d = 2
+	local dx = Land.height(x + d, z) - Land.height(x - d, z)
+	local dz = Land.height(x, z + d) - Land.height(x, z - d)
+	return math.sqrt(dx * dx + dz * dz) / (2 * d)
+end
+
+-- Which terrain material covers the ground at (x, z), given its height and slope.
+function Land.material(x: number, z: number, height: number, slope: number): Material
+	local r = math.sqrt(x * x + z * z)
+	if r < Land.BANK then
+		return if height < -6 then "Mud" else "Sand"
+	elseif r < BEACH_OUT - 1 then
+		return "Sand"
+	end
+	if r < 220 and math.abs(r - Land.PATH_RADIUS) < Land.PATH_WIDTH / 2 then
+		return "Ground"
+	end
+	local jitter = fbm(x, z, 40, 2, 6.6)
+	if height > 165 + jitter * 40 then
+		return "Snow"
+	elseif slope > 1.3 then
+		return if height > 90 then "Slate" else "Rock"
+	elseif slope > 0.95 or height > 125 + jitter * 30 then
+		return "Rock"
+	elseif height > 70 + jitter * 40 and slope > 0.55 then
+		return "Ground"
+	end
+	if jitter > 0.17 then
+		return "LeafyGrass"
+	end
+	return "Grass"
+end
+
+-- A point on the ground (handy for placing things).
+function Land.at(x: number, z: number, lift: number?): Vector3
+	return Vector3.new(x, Land.height(x, z) + (lift or 0), z)
+end
+
+return Land
+]]></string>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="15">
+        <Properties>
           <string name="Name">Net</string>
           <string name="Source"><![CDATA[--!strict
 -- Every remote in the game, created by the server in one folder from one list.
@@ -870,7 +1025,7 @@ return Net
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="15">
+      <Item class="ModuleScript" referent="16">
         <Properties>
           <string name="Name">Palette</string>
           <string name="Source"><![CDATA[--!strict
@@ -882,10 +1037,9 @@ local function rgb(r: number, g: number, b: number): Color3
 end
 
 local Palette = {
-	-- Water, from the shallows out to the deep middle
-	shallows = rgb(126, 206, 214),
-	water = rgb(84, 172, 204),
-	deep = rgb(56, 132, 178),
+	-- Water: terrain water by day and by night, ripples
+	lakeDay = rgb(46, 122, 136),
+	lakeNight = rgb(20, 40, 66),
 	ripple = rgb(232, 250, 255),
 
 	-- Shore and land
@@ -903,16 +1057,24 @@ local Palette = {
 	leafLight = rgb(138, 196, 98),
 	leaf = rgb(102, 170, 84),
 	leafDark = rgb(72, 138, 76),
-	pine = rgb(66, 130, 92),
-	pineDark = rgb(48, 104, 80),
+	pine = rgb(60, 106, 70),
+	pineDark = rgb(44, 84, 60),
 	reed = rgb(150, 162, 92),
+	reedDark = rgb(116, 132, 74),
 	cattail = rgb(120, 82, 56),
 	lily = rgb(92, 168, 96),
 
-	-- Wood and stone
-	woodLight = rgb(198, 150, 104),
-	wood = rgb(166, 118, 78),
-	woodDark = rgb(122, 84, 58),
+	-- Wood and stone (lighter than they look: wood textures darken them)
+	woodLight = rgb(206, 164, 116),
+	wood = rgb(178, 132, 90),
+	woodDark = rgb(128, 92, 64),
+	bark = rgb(116, 86, 64),
+	logs = rgb(160, 112, 72),
+	weathered = rgb(166, 150, 128),
+	rope = rgb(200, 178, 132),
+	iron = rgb(58, 56, 60),
+	brass = rgb(214, 170, 82),
+	window = rgb(164, 206, 226),
 	rockLight = rgb(176, 174, 182),
 	rock = rgb(146, 144, 156),
 	rockDark = rgb(112, 110, 124),
@@ -923,7 +1085,8 @@ local Palette = {
 	-- Warm accents
 	lantern = rgb(255, 204, 120),
 	fire = rgb(255, 150, 60),
-	roof = rgb(176, 86, 72),
+	ember = rgb(255, 110, 40),
+	roof = rgb(150, 74, 62),
 	cream = rgb(255, 246, 228),
 	white = rgb(255, 255, 255),
 
@@ -942,7 +1105,7 @@ return Palette
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="16">
+      <Item class="ModuleScript" referent="17">
         <Properties>
           <string name="Name">Skip</string>
           <string name="Source"><![CDATA[--!strict
@@ -1079,7 +1242,7 @@ return Skip
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="17">
+      <Item class="ModuleScript" referent="18">
         <Properties>
           <string name="Name">StoneModel</string>
           <string name="Source"><![CDATA[--!strict
@@ -1147,7 +1310,7 @@ return StoneModel
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="18">
+      <Item class="ModuleScript" referent="19">
         <Properties>
           <string name="Name">Tags</string>
           <string name="Source"><![CDATA[--!strict
@@ -1162,7 +1325,7 @@ return {
 ]]></string>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="19">
+      <Item class="ModuleScript" referent="20">
         <Properties>
           <string name="Name">Types</string>
           <string name="Source"><![CDATA[--!strict
@@ -1223,11 +1386,11 @@ return nil
 ]]></string>
         </Properties>
       </Item>
-      <Item class="Folder" referent="20">
+      <Item class="Folder" referent="21">
         <Properties>
           <string name="Name">Util</string>
         </Properties>
-        <Item class="ModuleScript" referent="21">
+        <Item class="ModuleScript" referent="22">
           <Properties>
             <string name="Name">Clock</string>
             <string name="Source"><![CDATA[--!strict
@@ -1244,7 +1407,7 @@ return Clock
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="22">
+        <Item class="ModuleScript" referent="23">
           <Properties>
             <string name="Name">Frames</string>
             <string name="Source"><![CDATA[--!strict
@@ -1291,7 +1454,7 @@ return Frames
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="23">
+        <Item class="ModuleScript" referent="24">
           <Properties>
             <string name="Name">Rng</string>
             <string name="Source"><![CDATA[--!strict
@@ -1352,7 +1515,7 @@ return Rng
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="24">
+        <Item class="ModuleScript" referent="25">
           <Properties>
             <string name="Name">Signal</string>
             <string name="Source"><![CDATA[--!strict
@@ -1400,11 +1563,11 @@ return Signal
       </Item>
     </Item>
   </Item>
-  <Item class="ServerScriptService" referent="25">
+  <Item class="ServerScriptService" referent="26">
     <Properties>
       <string name="Name">ServerScriptService</string>
     </Properties>
-    <Item class="Script" referent="26">
+    <Item class="Script" referent="27">
       <Properties>
         <string name="Name">Server</string>
         <token name="RunContext">0</token>
@@ -1453,11 +1616,11 @@ end
 print("[StillLake] server started")
 ]]></string>
       </Properties>
-      <Item class="Folder" referent="27">
+      <Item class="Folder" referent="28">
         <Properties>
           <string name="Name">Lib</string>
         </Properties>
-        <Item class="ModuleScript" referent="28">
+        <Item class="ModuleScript" referent="29">
           <Properties>
             <string name="Name">Access</string>
             <string name="Source"><![CDATA[--!strict
@@ -1485,7 +1648,7 @@ return Access
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="29">
+        <Item class="ModuleScript" referent="30">
           <Properties>
             <string name="Name">BoardData</string>
             <string name="Source"><![CDATA[--!strict
@@ -1523,7 +1686,7 @@ return BoardData
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="30">
+        <Item class="ModuleScript" referent="31">
           <Properties>
             <string name="Name">Boards</string>
             <string name="Source"><![CDATA[--!strict
@@ -1563,7 +1726,7 @@ function Boards.build(
 			base * CFrame.new(side * 4.6, 6.5, 0.6),
 			Palette.woodDark,
 			model,
-			{ name = "Post", shadow = false }
+			{ name = "Post", shadow = false, material = Enum.Material.Wood }
 		)
 	end
 	local face = Build.block(
@@ -1579,7 +1742,7 @@ function Boards.build(
 		base * CFrame.new(0, 13.1, 0.3),
 		Palette.roof,
 		model,
-		{ name = "Cap", decor = true, shadow = false }
+		{ name = "Cap", decor = true, shadow = false, material = Enum.Material.RoofShingles }
 	)
 
 	local gui = Instance.new("SurfaceGui")
@@ -1637,7 +1800,7 @@ return Boards
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="31">
+        <Item class="ModuleScript" referent="32">
           <Properties>
             <string name="Name">Build</string>
             <string name="Source"><![CDATA[--!strict
@@ -1859,7 +2022,183 @@ return Build
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="32">
+        <Item class="ModuleScript" referent="33">
+          <Properties>
+            <string name="Name">Ground</string>
+            <string name="Source"><![CDATA[--!strict
+-- Turns the valley in Land into real Roblox terrain: smooth voxels for the
+-- lake bowl, beach, meadow and mountains, terrain water in the lake (with
+-- gentle waves and reflections), swaying grass, soft material colours and
+-- drifting clouds. Built in chunks, nearest the lake first, pausing between
+-- chunks so the server never stalls.
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local Land = require(ReplicatedStorage.Shared.Land)
+local Palette = require(ReplicatedStorage.Shared.Palette)
+
+local Ground = {}
+
+Ground.VOXEL = 4
+Ground.CHUNK = 64 -- studs per side of each block of terrain written at once
+Ground.BUDGET = 0.025 -- seconds of work between pauses
+
+local MATERIALS: { [Land.Material]: Enum.Material } = {
+	Water = Enum.Material.Water,
+	Sand = Enum.Material.Sand,
+	Mud = Enum.Material.Mud,
+	Grass = Enum.Material.Grass,
+	LeafyGrass = Enum.Material.LeafyGrass,
+	Ground = Enum.Material.Ground,
+	Rock = Enum.Material.Rock,
+	Slate = Enum.Material.Slate,
+	Snow = Enum.Material.Snow,
+}
+
+-- Soft, slightly warm colours for each material (Roblox's defaults are harsh).
+export type Tint = { material: Enum.Material, color: Color3 }
+Ground.COLORS = {
+	{ material = Enum.Material.Grass, color = Color3.fromRGB(108, 150, 76) },
+	{ material = Enum.Material.LeafyGrass, color = Color3.fromRGB(92, 134, 66) },
+	{ material = Enum.Material.Sand, color = Color3.fromRGB(214, 196, 156) },
+	{ material = Enum.Material.Mud, color = Color3.fromRGB(96, 84, 66) },
+	{ material = Enum.Material.Ground, color = Color3.fromRGB(142, 116, 84) },
+	{ material = Enum.Material.Rock, color = Color3.fromRGB(124, 122, 128) },
+	{ material = Enum.Material.Slate, color = Color3.fromRGB(100, 104, 112) },
+	{ material = Enum.Material.Snow, color = Color3.fromRGB(240, 244, 252) },
+} :: { Tint }
+
+local function floorTo(value: number, step: number): number
+	return math.floor(value / step) * step
+end
+
+local function ceilTo(value: number, step: number): number
+	return math.ceil(value / step) * step
+end
+
+-- The water, grass and colours (no voxels).
+function Ground.style(terrain: Terrain)
+	terrain.WaterColor = Palette.lakeDay
+	terrain.WaterTransparency = 0.55
+	terrain.WaterReflectance = 0.6
+	terrain.WaterWaveSize = 0.06
+	terrain.WaterWaveSpeed = 5
+	-- grass blades that sway in the wind (cosmetic: never let it stop the build)
+	pcall(function()
+		terrain.Decoration = true
+	end)
+	for _, tint in Ground.COLORS do
+		terrain:SetMaterialColor(tint.material, tint.color)
+	end
+	if not terrain:FindFirstChildOfClass("Clouds") then
+		local clouds = Instance.new("Clouds")
+		clouds.Cover = 0.52
+		clouds.Density = 0.55
+		clouds.Color = Color3.fromRGB(255, 252, 246)
+		clouds.Parent = terrain
+	end
+end
+
+-- Every chunk's lower corner, nearest the lake first.
+function Ground.chunks(): { Vector2 }
+	local list: { Vector2 } = {}
+	for x = -Land.SIZE, Land.SIZE - Ground.CHUNK, Ground.CHUNK do
+		for z = -Land.SIZE, Land.SIZE - Ground.CHUNK, Ground.CHUNK do
+			table.insert(list, Vector2.new(x, z))
+		end
+	end
+	table.sort(list, function(a, b)
+		local c = Ground.CHUNK / 2
+		return (a + Vector2.new(c, c)).Magnitude < (b + Vector2.new(c, c)).Magnitude
+	end)
+	return list
+end
+
+export type Voxels = {
+	region: Region3,
+	materials: { { { Enum.Material } } },
+	occupancies: { { { number } } },
+}
+
+-- The voxels for one chunk with its lower corner at (x0, z0).
+function Ground.chunk(x0: number, z0: number): Voxels
+	local v = Ground.VOXEL
+	local columns = Ground.CHUNK // v
+	local heights: { { number } } = {}
+	local kinds: { { Enum.Material } } = {}
+	local low, high = math.huge, -math.huge
+	for i = 1, columns do
+		heights[i] = {}
+		kinds[i] = {}
+		for k = 1, columns do
+			local x = x0 + (i - 0.5) * v
+			local z = z0 + (k - 0.5) * v
+			local h = Land.height(x, z)
+			heights[i][k] = h
+			kinds[i][k] = MATERIALS[Land.material(x, z, h, Land.slope(x, z))]
+			low = math.min(low, h)
+			high = math.max(high, h)
+		end
+	end
+	-- solid ground a dozen studs deep under the surface is plenty; below
+	-- the lake it reaches down to the bottom
+	local bottom = math.max(floorTo(low - 12, v), Land.BOTTOM)
+	local top = ceilTo(math.max(high, Land.WATER_LEVEL) + v, v)
+	local layers = (top - bottom) // v
+	local materials: { { { Enum.Material } } } = {}
+	local occupancies: { { { number } } } = {}
+	for i = 1, columns do
+		materials[i] = {}
+		occupancies[i] = {}
+		for j = 1, layers do
+			local mats = {}
+			local occs = {}
+			local y0 = bottom + (j - 1) * v
+			for k = 1, columns do
+				local h = heights[i][k]
+				local fill = math.clamp((h - y0) / v, 0, 1)
+				if y0 + v <= Land.WATER_LEVEL and fill < 0.5 then
+					-- under the lake's surface: water fills what the ground doesn't
+					mats[k] = Enum.Material.Water
+					occs[k] = 1
+				elseif fill > 0 then
+					mats[k] = kinds[i][k]
+					occs[k] = fill
+				else
+					mats[k] = Enum.Material.Air
+					occs[k] = 0
+				end
+			end
+			materials[i][j] = mats
+			occupancies[i][j] = occs
+		end
+	end
+	local region = Region3.new(
+		Vector3.new(x0, bottom, z0),
+		Vector3.new(x0 + Ground.CHUNK, top, z0 + Ground.CHUNK)
+	)
+	return { region = region:ExpandToGrid(v), materials = materials, occupancies = occupancies }
+end
+
+-- Builds all of it. Yields (call from its own thread).
+function Ground.build(terrain: Terrain)
+	Ground.style(terrain)
+	local started = os.clock()
+	for _, corner in Ground.chunks() do
+		local voxels = Ground.chunk(corner.X, corner.Y)
+		terrain:WriteVoxels(voxels.region, Ground.VOXEL, voxels.materials, voxels.occupancies)
+		if os.clock() - started > Ground.BUDGET then
+			task.wait()
+			started = os.clock()
+		end
+	end
+end
+
+return Ground
+]]></string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="34">
           <Properties>
             <string name="Name">Notify</string>
             <string name="Source"><![CDATA[--!strict
@@ -1885,13 +2224,15 @@ return Notify
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="33">
+        <Item class="ModuleScript" referent="35">
           <Properties>
             <string name="Name">Props</string>
             <string name="Source"><![CDATA[--!strict
--- Soft, chunky props built from parts: rounded shapes, 2-3 shades per
--- material. Each builder takes a ground position, a size multiplier and a
--- random generator (so layouts are repeatable).
+-- Natural props built from parts: trees, bushes, ferns, flowers and rocks.
+-- Real materials (bark, leaves, rock) instead of plain plastic, two or three
+-- shades each, and a little randomness so nothing looks stamped. Each
+-- builder takes a ground position, a size multiplier and a random generator
+-- (so layouts are repeatable).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -1904,8 +2245,10 @@ local Props = {}
 
 type Gen = Rng.Generator
 
-local LEAF = { decor = true, collide = false }
-local SMALL = { decor = true, collide = false, shadow = false }
+local BARK: Build.Options = { name = "Trunk", material = Enum.Material.Wood }
+local LEAF: Build.Options = { decor = true, collide = false, material = Enum.Material.LeafyGrass }
+local SMALL: Build.Options = { decor = true, collide = false, shadow = false }
+local ROCK: Build.Options = { decor = true, material = Enum.Material.Rock }
 
 local function between(gen: Gen, a: number, b: number): number
 	return a + (b - a) * gen.next()
@@ -1919,6 +2262,12 @@ local function horizontal(angle: number): Vector3
 	return Vector3.new(math.sin(angle), 0, math.cos(angle))
 end
 
+-- A colour nudged a little lighter or darker.
+local function vary(gen: Gen, c: Color3, amount: number): Color3
+	local t = (gen.next() - 0.5) * 2 * amount
+	return if t > 0 then c:Lerp(Color3.new(1, 1, 1), t) else c:Lerp(Color3.new(0, 0, 0), -t)
+end
+
 -- Leafy round tree: a short trunk under a cluster of soft blobs.
 function Props.tree(base: Vector3, s: number, gen: Gen, parent: Instance): Model
 	local m = Build.model("Tree", parent)
@@ -1926,9 +2275,8 @@ function Props.tree(base: Vector3, s: number, gen: Gen, parent: Instance): Model
 	local lean = horizontal(gen.next() * math.pi * 2) * between(gen, 0.3, 1.2) * s
 	local mid = base + Vector3.new(0, h * 0.5, 0) + lean * 0.3
 	local top = base + Vector3.new(0, h, 0) + lean
-	Build.ellipsoid(Vector3.new(3.4, 1.4, 3.4) * s, CFrame.new(base), Palette.woodDark, m, LEAF)
-	Build.rod(base - Vector3.new(0, 0.5, 0), mid, 2.1 * s, Palette.wood, m, { name = "Trunk" })
-	Build.rod(mid, top, 1.6 * s, Palette.wood, m, { name = "Trunk" })
+	Build.rod(base - Vector3.new(0, 1, 0), mid, 2 * s, Palette.bark, m, BARK)
+	Build.rod(mid, top, 1.5 * s, Palette.bark, m, BARK)
 
 	local yaw = CFrame.Angles(0, gen.next() * math.pi * 2, 0)
 	local c = top + Vector3.new(0, 1.6 * s, 0)
@@ -1941,54 +2289,53 @@ function Props.tree(base: Vector3, s: number, gen: Gen, parent: Instance): Model
 			LEAF
 		)
 	end
-	blob(Vector3.new(10.5, 8.5, 10.5), Vector3.zero, Palette.leaf)
-	blob(Vector3.new(7, 6, 7), Vector3.new(4.2, -1.4, 1.2), Palette.leafDark)
-	blob(Vector3.new(6.5, 5.5, 6.5), Vector3.new(-3.8, -1, -2), Palette.leafDark)
-	blob(Vector3.new(6.5, 5.2, 6.5), Vector3.new(0.8, 3.3, -0.6), Palette.leafLight)
-	if gen.next() < 0.3 then
-		-- a few fruits
-		for i = 1, 3 do
-			local a = i * 2.1 + gen.next()
-			local p = c
-				+ Vector3.new(math.sin(a) * 4.6, between(gen, -2.2, 0.5), math.cos(a) * 4.6) * s
-			Build.ball(
-				0.9 * s,
-				p,
-				if gen.next() < 0.5 then Palette.red else Palette.orange,
-				m,
-				SMALL
-			)
-		end
-	end
+	local leaf = vary(gen, Palette.leaf, 0.12)
+	blob(Vector3.new(10.5, 8, 10.5), Vector3.zero, leaf)
+	blob(Vector3.new(7, 5.6, 7), Vector3.new(4.2, -1.4, 1.2), vary(gen, Palette.leafDark, 0.1))
+	blob(Vector3.new(6.5, 5.2, 6.5), Vector3.new(-3.8, -1, -2), vary(gen, Palette.leafDark, 0.1))
+	blob(Vector3.new(6.5, 5, 6.5), Vector3.new(0.8, 3.1, -0.6), vary(gen, Palette.leafLight, 0.1))
 	return m
 end
 
--- Tiered pine tree.
+-- A tall pine: a slim trunk through five drooping tiers of needles,
+-- narrowing to a point.
 function Props.pine(base: Vector3, s: number, gen: Gen, parent: Instance): Model
 	local m = Build.model("Pine", parent)
+	local height = 17 * s
 	Build.rod(
-		base - Vector3.new(0, 0.5, 0),
-		base + Vector3.new(0, 4 * s, 0),
-		1.5 * s,
-		Palette.woodDark,
-		m
+		base - Vector3.new(0, 1, 0),
+		base + Vector3.new(0, height * 0.8, 0),
+		1.1 * s,
+		Palette.bark,
+		m,
+		BARK
 	)
-	local tiers = { { 9, 5, 4.6 }, { 7.2, 4.6, 7.6 }, { 5.4, 4.2, 10.3 }, { 3.2, 3.4, 12.6 } }
-	-- each tier drifts a little so no two pines look stamped
-	local drift = horizontal(gen.next() * math.pi * 2) * 0.35 * s
-	for i, t in tiers do
-		local color = if i % 2 == 1 then Palette.pine else Palette.pineDark
-		if i == #tiers then
-			color = Palette.leaf
-		end
+	local lean = horizontal(gen.next() * math.pi * 2) * 0.25 * s
+	local shade = vary(gen, Palette.pine, 0.12)
+	local dark = vary(gen, Palette.pineDark, 0.1)
+	local tiers = 5
+	for i = 1, tiers do
+		local t = (i - 1) / (tiers - 1) -- 0 at the bottom tier, 1 at the top
+		local width = (8.6 - 6.4 * t) * s
+		local tall = (3.6 - 0.9 * t) * s
+		local y = (3.2 + t * 11.2) * s
 		Build.ellipsoid(
-			Vector3.new(t[1], t[2], t[1]) * s,
-			CFrame.new(base + Vector3.new(0, t[3] * s, 0) + drift * (i - 1)),
-			color,
+			Vector3.new(width, tall, width * between(gen, 0.9, 1)),
+			CFrame.new(base + Vector3.new(0, y, 0) + lean * t)
+				* CFrame.Angles(0, gen.next() * math.pi, 0),
+			if i % 2 == 1 then shade else dark,
 			m,
 			LEAF
 		)
 	end
+	-- the pointed tip
+	Build.ellipsoid(
+		Vector3.new(1.4, 3.2, 1.4) * s,
+		CFrame.new(base + Vector3.new(0, 16 * s, 0) + lean),
+		shade,
+		m,
+		LEAF
+	)
 	return m
 end
 
@@ -2026,10 +2373,10 @@ function Props.bush(base: Vector3, s: number, gen: Gen, parent: Instance): Model
 			LEAF
 		)
 	end
-	blob(Vector3.new(5, 4, 5), Vector3.new(0, 1.5, 0), Palette.leaf)
-	blob(Vector3.new(3.6, 3, 3.6), Vector3.new(2.3, 1, 0.8), Palette.leafDark)
-	blob(Vector3.new(3.4, 2.8, 3.4), Vector3.new(-2.1, 0.9, -0.9), Palette.leafDark)
-	blob(Vector3.new(3, 2.6, 3), Vector3.new(0.4, 2.8, -0.3), Palette.leafLight)
+	blob(Vector3.new(5, 3.6, 5), Vector3.new(0, 1.3, 0), vary(gen, Palette.leaf, 0.12))
+	blob(Vector3.new(3.6, 2.8, 3.6), Vector3.new(2.3, 0.9, 0.8), Palette.leafDark)
+	blob(Vector3.new(3.4, 2.6, 3.4), Vector3.new(-2.1, 0.8, -0.9), Palette.leafDark)
+	blob(Vector3.new(3, 2.4, 3), Vector3.new(0.4, 2.4, -0.3), Palette.leafLight)
 	if gen.next() < 0.45 then
 		local berry = if gen.next() < 0.5 then Palette.pink else Palette.red
 		for i = 1, 4 do
@@ -2048,7 +2395,6 @@ end
 -- A little patch of flowers.
 function Props.flowers(base: Vector3, s: number, gen: Gen, parent: Instance): Model
 	local m = Build.model("Flowers", parent)
-	Build.ellipsoid(Vector3.new(4.4, 0.7, 4.4) * s, CFrame.new(base), Palette.grassDark, m, SMALL)
 	local color = pick(gen, Palette.FLOWERS)
 	for i = 1, 5 do
 		local a = i * 1.26 + gen.next() * 0.5
@@ -2065,53 +2411,32 @@ function Props.flowers(base: Vector3, s: number, gen: Gen, parent: Instance): Mo
 	return m
 end
 
--- A mossy boulder.
+-- A weathered boulder, half sunk in the ground, sometimes with moss on top.
 function Props.rock(base: Vector3, s: number, gen: Gen, parent: Instance): Model
 	local m = Build.model("Rock", parent)
-	local yaw = CFrame.Angles(0, gen.next() * math.pi * 2, 0)
+	local yaw = CFrame.Angles(gen.next() * 0.3, gen.next() * math.pi * 2, gen.next() * 0.3)
+	local stone = vary(gen, Palette.rock, 0.1)
 	Build.ellipsoid(
-		Vector3.new(4.4, 2.8, 3.6) * s,
-		CFrame.new(base + Vector3.new(0, 0.7 * s, 0)) * yaw,
-		Palette.rock,
+		Vector3.new(5, 3.2, 4) * s,
+		CFrame.new(base + Vector3.new(0, 0.5 * s, 0)) * yaw,
+		stone,
 		m,
-		{ decor = true }
+		ROCK
 	)
 	Build.ellipsoid(
-		Vector3.new(2.6, 2, 2.4) * s,
-		CFrame.new(base + yaw:VectorToWorldSpace(Vector3.new(2, 0.4, 0.9) * s)) * yaw,
+		Vector3.new(2.8, 2, 2.6) * s,
+		CFrame.new(base + yaw:VectorToWorldSpace(Vector3.new(2.2, 0, 1) * s)) * yaw,
 		Palette.rockDark,
 		m,
-		{ decor = true, collide = false }
+		ROCK
 	)
-	Build.ellipsoid(
-		Vector3.new(2.6, 1, 2.2) * s,
-		CFrame.new(base + Vector3.new(-0.3, 1.8, -0.2) * s) * yaw,
-		Palette.rockLight,
-		m,
-		SMALL
-	)
-	return m
-end
-
--- A soft cloud.
-function Props.cloud(center: Vector3, s: number, gen: Gen, parent: Instance): Model
-	local m = Build.model("Cloud", parent)
-	local options = { decor = true, collide = false, shadow = false }
-	local yaw = CFrame.Angles(0, gen.next() * math.pi * 2, 0)
-	local puffs = {
-		{ Vector3.new(26, 13, 18), Vector3.new(0, 0, 0) },
-		{ Vector3.new(18, 12, 15), Vector3.new(-12, -1.5, 2) },
-		{ Vector3.new(17, 11, 14), Vector3.new(12, -2, -1) },
-		{ Vector3.new(15, 12, 13), Vector3.new(3, 4.5, 1) },
-		{ Vector3.new(30, 6, 20), Vector3.new(0, -4, 0) },
-	}
-	for _, puff in puffs do
+	if gen.next() < 0.5 then
 		Build.ellipsoid(
-			puff[1] * s,
-			CFrame.new(center + yaw:VectorToWorldSpace(puff[2] * s)) * yaw,
-			Palette.white,
+			Vector3.new(3, 0.8, 2.4) * s,
+			CFrame.new(base + Vector3.new(-0.2, 1.95, -0.1) * s) * yaw,
+			Palette.moss,
 			m,
-			options
+			{ decor = true, collide = false, shadow = false, material = Enum.Material.LeafyGrass }
 		)
 	end
 	return m
@@ -2121,24 +2446,25 @@ return Props
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="34">
+        <Item class="ModuleScript" referent="36">
           <Properties>
             <string name="Name">Scenery</string>
             <string name="Source"><![CDATA[--!strict
--- Builds Still Lake from parts when the server starts: a round lake with
--- sandy shallows and a pebble beach, three wooden docks, a cabin, a campfire
--- with log seats, a lantern-lit path, reeds and lily pads, forest, snowy
--- mountains on the horizon and fireflies for the night. Decorations come from
--- a fixed random seed, so every server looks the same.
+-- Everything built from parts on top of the terrain (see Ground for the
+-- valley itself): three wooden docks, a log cabin with a porch, a campfire
+-- with log seats, lanterns along the path, reeds and lily pads, a pine
+-- forest climbing toward the mountains, the welcome sign, the leaderboards
+-- and the invisible walls that keep everyone out of the lake. Decorations
+-- come from fixed random seeds, so every server looks the same.
 --
--- Heights: water surface Y = 0, beach top BEACH_TOP, grass top GRASS_TOP.
--- Angles: 0 points along +Z, like Build.polar.
+-- Everything stands on Land.height(x, z). Angles: 0 points along +Z.
 
 local CollectionService = game:GetService("CollectionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Config = require(ReplicatedStorage.Shared.Config)
 local Lake = require(ReplicatedStorage.Shared.Lake)
+local Land = require(ReplicatedStorage.Shared.Land)
 local Palette = require(ReplicatedStorage.Shared.Palette)
 local Rng = require(ReplicatedStorage.Shared.Util.Rng)
 local Tags = require(ReplicatedStorage.Shared.Tags)
@@ -2153,15 +2479,9 @@ local TAU = 2 * math.pi
 local R = Config.LAKE_RADIUS
 local BEACH_OUT = R + Config.SHORE_WIDTH
 
-Scenery.BEACH_TOP = 0.35
-Scenery.GRASS_TOP = 0.8
-Scenery.DOCK_TOP = Lake.DOCK_TOP
-Scenery.DOCK_INNER = Lake.DOCK_INNER
-Scenery.DOCK_OUTER = Lake.DOCK_OUTER
-Scenery.DOCK_WIDTH = Lake.DOCK_WIDTH
-Scenery.DOCK_ANGLES = Lake.DOCK_ANGLES
 Scenery.WALL_HEIGHT = 12 -- invisible walls: taller than anyone can jump
-Scenery.PATH_RADIUS = BEACH_OUT + 8
+Scenery.SHORE_WALL = Land.SHORE -- the wall along the water's edge
+Scenery.PATH_RADIUS = Land.PATH_RADIUS
 Scenery.PLAY_RADIUS = 340 -- an invisible fence keeps everyone this close
 Scenery.CABIN_ANGLE = math.rad(200)
 Scenery.CABIN_RADIUS = 162
@@ -2180,8 +2500,21 @@ export type Built = {
 
 type Spot = { position: Vector3, radius: number }
 
-local function polar(angle: number, radius: number, y: number?): Vector3
-	return Build.polar(angle, radius, y)
+local WOOD: Build.Options = { material = Enum.Material.Wood }
+local PLANKS: Build.Options = { material = Enum.Material.WoodPlanks }
+
+local function with(options: Build.Options, extra: Build.Options): Build.Options
+	local merged: Build.Options = table.clone(options)
+	for key, value in extra :: any do
+		(merged :: any)[key] = value
+	end
+	return merged
+end
+
+-- A point on the ground at `angle` and `radius` from the lake's centre.
+local function ground(angle: number, radius: number, lift: number?): Vector3
+	local p = Build.polar(angle, radius)
+	return Land.at(p.X, p.Z, lift)
 end
 
 -- Faces the centre of the lake from `position` (its -Z looks at the water).
@@ -2195,102 +2528,19 @@ local function angleGap(a: number, b: number): number
 end
 
 local function nearDock(angle: number, radius: number, margin: number): boolean
-	for _, dockAngle in Scenery.DOCK_ANGLES do
-		if angleGap(angle, dockAngle) * radius < Scenery.DOCK_WIDTH / 2 + margin then
+	for _, dockAngle in Lake.DOCK_ANGLES do
+		if angleGap(angle, dockAngle) * radius < Lake.DOCK_WIDTH / 2 + margin then
 			return true
 		end
 	end
 	return false
 end
 
--- ===== Ground and water =====
+-- ===== Invisible walls =====
+-- One along the water's edge and around each dock so nobody walks or jumps
+-- into the lake, one round the edge of the play area. They ignore raycasts,
+-- so the camera never bumps into them.
 
-local function buildGround(root: Instance)
-	local land = Build.model("Land", root)
-	-- lakebed under everything (only the part under the water shows)
-	Build.disc(2 * 480, 2, CFrame.new(0, -9, 0), Color3.fromRGB(38, 82, 110), land, {
-		name = "Lakebed",
-		shadow = false,
-	})
-	-- sandy shallows near the shore, seen through the water
-	Build.ring(CFrame.new(0, -1.6, 0), R - 9, 18, 1.2, 96, Palette.sand, land, {
-		name = "Shallows",
-		decor = true,
-		shadow = false,
-	})
-	Build.ring(CFrame.new(0, -3.4, 0), R - 26, 18, 1.2, 96, Palette.pebbleDark, land, {
-		name = "Shelf",
-		decor = true,
-		shadow = false,
-	})
-	Build.disc(2 * (R + 1), 0.6, CFrame.new(0, -0.3, 0), Palette.water, land, {
-		name = "Water",
-		transparency = 0.32,
-		reflectance = 0.08,
-		collide = false,
-		decor = true,
-		shadow = false,
-	})
-	-- pebble beach and grass, as rings around the lake
-	Build.ring(
-		CFrame.new(0, Scenery.BEACH_TOP - 0.75, 0),
-		R + Config.SHORE_WIDTH / 2,
-		Config.SHORE_WIDTH,
-		1.5,
-		120,
-		Palette.pebble,
-		land,
-		{ name = "Beach", shadow = false }
-	)
-	local grassY = Scenery.GRASS_TOP - 1
-	Build.ring(CFrame.new(0, grassY, 0), BEACH_OUT + 27, 54, 2, 120, Palette.grass, land, {
-		name = "Meadow",
-		shadow = false,
-	})
-	Build.ring(CFrame.new(0, grassY, 0), BEACH_OUT + 94, 80, 2, 120, Palette.grass, land, {
-		name = "Meadow",
-		shadow = false,
-	})
-	local midGrass = Palette.grass:Lerp(Palette.grassDark, 0.45)
-	Build.ring(CFrame.new(0, grassY - 0.05, 0), BEACH_OUT + 184, 100, 2, 140, midGrass, land, {
-		name = "Meadow",
-		shadow = false,
-	})
-	Build.ring(
-		CFrame.new(0, grassY - 0.1, 0),
-		BEACH_OUT + 290,
-		112,
-		2,
-		140,
-		Palette.grassDark,
-		land,
-		{
-			name = "Foothills",
-			shadow = false,
-		}
-	)
-	-- out to the mountains, so there is never a gap at the horizon
-	Build.ring(CFrame.new(0, grassY - 0.15, 0), 590, 244, 2, 160, Palette.moss, land, {
-		name = "Foothills",
-		shadow = false,
-		decor = true,
-	})
-	-- the walking path around the lake
-	Build.ring(
-		CFrame.new(0, Scenery.GRASS_TOP - 0.45, 0),
-		Scenery.PATH_RADIUS,
-		4.5,
-		1,
-		120,
-		Palette.path,
-		land,
-		{ name = "Path", shadow = false, decor = true }
-	)
-end
-
--- Invisible walls: one along the water's edge and around each dock so
--- nobody walks or jumps into the lake, one at the edge of the play area.
--- They ignore raycasts, so the camera never bumps into them.
 local FENCE: Build.Options = { name = "Fence", transparency = 1, shadow = false }
 
 local function wall(size: Vector3, cframe: CFrame, parent: Instance)
@@ -2302,8 +2552,7 @@ end
 local function buildFences(root: Instance)
 	local fences = Build.model("Fences", root)
 	local h = Scenery.WALL_HEIGHT
-	local radius = R + 1
-	-- the shoreline, in short straight pieces; the docks cut gaps in it
+	local radius = Scenery.SHORE_WALL
 	local segments = 180
 	local step = TAU / segments
 	local length = 2 * radius * math.tan(step / 2) + 0.1
@@ -2312,17 +2561,18 @@ local function buildFences(root: Instance)
 		if not nearDock(angle, radius, length / 2) then
 			wall(
 				Vector3.new(length, h, 0.5),
-				CFrame.lookAt(polar(angle, radius, h / 2 - 1), Vector3.new(0, h / 2 - 1, 0)),
+				CFrame.lookAt(Build.polar(angle, radius, h / 2 - 1), Vector3.new(0, h / 2 - 1, 0)),
 				fences
 			)
 		end
 	end
 	-- each dock: walls down both sides (from the beach out) and across the end,
 	-- plus short pieces along the shore that close the gap beside it
-	local half = Scenery.DOCK_WIDTH / 2
-	for _, angle in Scenery.DOCK_ANGLES do
-		local inner, outerEnd = Scenery.DOCK_INNER, R + 3
-		local frame = CFrame.lookAt(polar(angle, (inner + outerEnd) / 2), polar(angle, inner))
+	local half = Lake.DOCK_WIDTH / 2
+	for _, angle in Lake.DOCK_ANGLES do
+		local inner, outerEnd = Lake.DOCK_INNER, radius + 2
+		local frame =
+			CFrame.lookAt(Build.polar(angle, (inner + outerEnd) / 2), Build.polar(angle, inner))
 		local dockLength = outerEnd - inner
 		for _, side in { -1, 1 } do
 			wall(
@@ -2330,8 +2580,7 @@ local function buildFences(root: Instance)
 				frame * CFrame.new(side * (half + 0.25), h / 2 - 1, 0),
 				fences
 			)
-			-- along the shore from the dock's side to the next shoreline piece
-			local shore = CFrame.lookAt(polar(angle, radius), Vector3.zero)
+			local shore = CFrame.lookAt(Build.polar(angle, radius), Vector3.zero)
 			local span = step * radius + 2.5
 			wall(
 				Vector3.new(span, h, 0.5),
@@ -2340,7 +2589,7 @@ local function buildFences(root: Instance)
 			)
 		end
 		wall(
-			Vector3.new(Scenery.DOCK_WIDTH + 1, h, 0.5),
+			Vector3.new(Lake.DOCK_WIDTH + 1, h, 0.5),
 			frame * CFrame.new(0, h / 2 - 1, -dockLength / 2 - 0.25),
 			fences
 		)
@@ -2361,79 +2610,29 @@ local function buildFences(root: Instance)
 	end
 end
 
--- ===== Mountains and sky =====
-
-local function buildHorizon(root: Instance)
-	local horizon = Build.model("Horizon", root)
-	local gen = Rng.new(31)
-	local options = { decor = true, collide = false, shadow = false }
-	-- each mountain is a stack of soft tiers narrowing to a snowy peak
-	local tiers = {
-		{ w = 1, h = 0.7, y = 0.18 },
-		{ w = 0.6, h = 0.56, y = 0.5 },
-		{ w = 0.3, h = 0.3, y = 0.78 },
-	}
-	local count = 16
-	for i = 0, count - 1 do
-		local angle = i * (TAU / count) + (gen.next() - 0.5) * 0.25
-		local width = 190 + gen.next() * 90
-		local height = 95 + gen.next() * 70
-		local radius = 440 + gen.next() * 50
-		local base = polar(angle, radius, 0)
-		local rock = if i % 2 == 0 then Palette.mountain else Palette.mountainDark
-		local turn = CFrame.Angles(0, angle + gen.next(), 0)
-		for t, tier in tiers do
-			local snowy = t == #tiers and height > 115
-			Build.ellipsoid(
-				Vector3.new(width * tier.w, height * tier.h, width * tier.w * 0.85),
-				CFrame.new(base + Vector3.new(0, height * tier.y, 0)) * turn,
-				if snowy then Palette.snow else rock,
-				horizon,
-				options
-			)
-		end
-		-- a dark green foothill in front of every other mountain
-		if i % 2 == 1 then
-			local hill = polar(angle + 0.1, radius - 80, 4)
-			Build.ellipsoid(
-				Vector3.new(120, 52, 86),
-				CFrame.new(hill) * CFrame.Angles(0, angle, 0),
-				Palette.pineDark,
-				horizon,
-				options
-			)
-		end
-	end
-	for i = 0, 9 do
-		local angle = i * (TAU / 10) + gen.next() * 0.4
-		Props.cloud(
-			polar(angle, 180 + gen.next() * 220, 120 + gen.next() * 50),
-			0.9 + gen.next() * 0.6,
-			gen,
-			horizon
-		)
-	end
-end
-
--- ===== Docks =====
+-- ===== Lanterns =====
 
 local function lantern(position: Vector3, parent: Instance, height: number?)
 	local h = height or 6
 	local m = Build.model("Lantern", parent)
 	local dark = Palette.woodDark
-	Build.block(Vector3.new(0.7, h, 0.7), CFrame.new(position + Vector3.new(0, h / 2, 0)), dark, m)
 	Build.block(
-		Vector3.new(1.8, 0.35, 0.7),
+		Vector3.new(0.6, h + 1, 0.6),
+		CFrame.new(position + Vector3.new(0, (h - 1) / 2, 0)),
+		dark,
+		m,
+		with(WOOD, { name = "Post" })
+	)
+	Build.block(
+		Vector3.new(1.7, 0.3, 0.5),
 		CFrame.new(position + Vector3.new(0.55, h - 0.2, 0)),
 		dark,
 		m,
-		{
-			decor = true,
-		}
+		with(WOOD, { decor = true })
 	)
 	local glass = Build.block(
-		Vector3.new(0.9, 1.1, 0.9),
-		CFrame.new(position + Vector3.new(1.1, h - 1, 0)),
+		Vector3.new(0.8, 1, 0.8),
+		CFrame.new(position + Vector3.new(1.1, h - 0.95, 0)),
 		Palette.lantern,
 		m,
 		{
@@ -2444,152 +2643,242 @@ local function lantern(position: Vector3, parent: Instance, height: number?)
 			shadow = false,
 		}
 	)
-	Build.block(
-		Vector3.new(1.1, 0.25, 1.1),
-		CFrame.new(position + Vector3.new(1.1, h - 0.35, 0)),
-		dark,
-		m,
-		{
-			decor = true,
-			collide = false,
-		}
-	)
+	for _, y in { h - 0.38, h - 1.52 } do
+		Build.block(
+			Vector3.new(1.05, 0.18, 1.05),
+			CFrame.new(position + Vector3.new(1.1, y, 0)),
+			Palette.iron,
+			m,
+			{ decor = true, collide = false, material = Enum.Material.Metal }
+		)
+	end
 	local light = Instance.new("PointLight")
 	light.Color = Palette.lantern
 	light.Range = 18
-	light.Brightness = 1.4
-	light.Shadows = false
+	light.Brightness = 1.6
+	light.Shadows = true
 	light.Enabled = false
 	light.Parent = glass
 	CollectionService:AddTag(light, Tags.NIGHT_LIGHT)
 end
 
+-- ===== Docks =====
+
 local function buildDock(angle: number, index: number, parent: Instance)
 	local dock = Build.model("Dock" .. index, parent)
-	local inner, outer = Scenery.DOCK_INNER, Scenery.DOCK_OUTER
+	local inner, outer = Lake.DOCK_INNER, Lake.DOCK_OUTER
 	local length = outer - inner
-	local deckY = Scenery.DOCK_TOP - 0.25
+	local deckY = Lake.DOCK_TOP - 0.25
 	-- local -Z points along the dock toward the lake
-	local frame =
-		CFrame.lookAt(polar(angle, (inner + outer) / 2, deckY), polar(angle, inner, deckY))
+	local frame = CFrame.lookAt(
+		Build.polar(angle, (inner + outer) / 2, deckY),
+		Build.polar(angle, inner, deckY)
+	)
+	local gen = Rng.new(40 + index)
 	local planks = math.floor(length / 1.25)
 	for i = 0, planks - 1 do
 		local z = length / 2 - 0.62 - i * 1.25
 		Build.block(
-			Vector3.new(Scenery.DOCK_WIDTH, 0.5, 1.12),
-			frame * CFrame.new(0, 0, z),
-			if i % 3 == 0 then Palette.woodLight else Palette.wood,
+			Vector3.new(Lake.DOCK_WIDTH, 0.5, 1.14),
+			frame * CFrame.new(0, (gen.next() - 0.5) * 0.04, z),
+			if i % 3 == 0
+				then Palette.woodLight
+				elseif i % 3 == 1 then Palette.wood
+				else Palette.weathered,
 			dock,
-			{ name = "Plank", shadow = false }
+			with(PLANKS, { name = "Plank", shadow = false })
 		)
 	end
 	for _, side in { -1, 1 } do
 		Build.block(
-			Vector3.new(0.5, 0.6, length),
-			frame * CFrame.new(side * (Scenery.DOCK_WIDTH / 2 - 0.25), -0.5, 0),
+			Vector3.new(0.5, 0.7, length),
+			frame * CFrame.new(side * (Lake.DOCK_WIDTH / 2 - 0.25), -0.55, 0),
 			Palette.woodDark,
 			dock,
-			{ decor = true, shadow = false }
+			with(WOOD, { decor = true, shadow = false })
 		)
-		-- posts down into the lake (only where the dock is over the water)
+		-- posts down into the lake bed (only where the dock is over the water)
 		for z = -length / 2 + 1, length / 2, 6 do
-			local top = frame * CFrame.new(side * (Scenery.DOCK_WIDTH / 2 - 0.3), 0, z)
-			if (Vector3.new(top.Position.X, 0, top.Position.Z)).Magnitude < R + 2 then
+			local top = (frame * CFrame.new(side * (Lake.DOCK_WIDTH / 2 - 0.3), 0.55, z)).Position
+			local floor = Land.height(top.X, top.Z)
+			if floor < 0.3 then
 				Build.rod(
-					top.Position,
-					top.Position - Vector3.new(0, 9, 0),
-					0.8,
+					top,
+					Vector3.new(top.X, floor - 1.5, top.Z),
+					0.9,
 					Palette.woodDark,
 					dock,
-					{ decor = true, shadow = false }
+					with(WOOD, {
+						decor = true,
+						shadow = false,
+					})
 				)
 			end
 		end
 	end
-	-- a lantern on the end and a crate of stones
+	-- a lantern on the end, a crate and a coil of rope
 	lantern(
-		(frame * CFrame.new(Scenery.DOCK_WIDTH / 2 - 0.4, 0.25, -length / 2 + 1)).Position,
+		(frame * CFrame.new(Lake.DOCK_WIDTH / 2 - 0.4, 0.25, -length / 2 + 1)).Position,
 		dock,
 		5.5
 	)
 	Build.block(
 		Vector3.new(1.6, 1.2, 1.6),
 		frame
-			* CFrame.new(-Scenery.DOCK_WIDTH / 2 + 1.1, 0.85, -length / 2 + 4)
+			* CFrame.new(-Lake.DOCK_WIDTH / 2 + 1.1, 0.85, -length / 2 + 4)
 			* CFrame.Angles(0, 0.3, 0),
 		Palette.woodLight,
 		dock,
-		{ name = "Crate", decor = true }
+		with(PLANKS, { name = "Crate", decor = true })
+	)
+	Build.disc(
+		1.5,
+		0.35,
+		frame * CFrame.new(-Lake.DOCK_WIDTH / 2 + 1.2, 0.42, -length / 2 + 6.2),
+		Palette.rope,
+		dock,
+		{ name = "Rope", decor = true, collide = false, material = Enum.Material.Fabric }
 	)
 end
 
 -- ===== Cabin and campfire =====
 
 local function window(cf: CFrame, parent: Instance)
-	local glass =
-		Build.block(Vector3.new(2.6, 2.2, 0.3), cf, Color3.fromRGB(150, 196, 220), parent, {
-			name = "Window",
-			decor = true,
-			shadow = false,
-		})
-	CollectionService:AddTag(glass, Tags.WINDOW)
-	Build.block(Vector3.new(3, 0.3, 0.45), cf * CFrame.new(0, -1.25, 0.05), Palette.cream, parent, {
+	local glass = Build.block(Vector3.new(2.6, 2.2, 0.3), cf, Palette.window, parent, {
+		name = "Window",
+		material = Enum.Material.Glass,
+		transparency = 0.2,
 		decor = true,
 		shadow = false,
 	})
+	CollectionService:AddTag(glass, Tags.WINDOW)
+	-- frame and sill
+	for _, x in { -1.4, 1.4 } do
+		Build.block(
+			Vector3.new(0.25, 2.5, 0.4),
+			cf * CFrame.new(x, 0, 0),
+			Palette.cream,
+			parent,
+			with(WOOD, {
+				decor = true,
+				shadow = false,
+			})
+		)
+	end
+	Build.block(
+		Vector3.new(3.2, 0.25, 0.5),
+		cf * CFrame.new(0, 1.25, 0),
+		Palette.cream,
+		parent,
+		with(WOOD, {
+			decor = true,
+			shadow = false,
+		})
+	)
+	Build.block(
+		Vector3.new(3.4, 0.3, 0.7),
+		cf * CFrame.new(0, -1.3, 0.05),
+		Palette.cream,
+		parent,
+		with(WOOD, {
+			decor = true,
+			shadow = false,
+		})
+	)
 end
 
 local function buildCabin(root: Instance)
 	local cabin = Build.model("Cabin", root)
-	local base = polar(Scenery.CABIN_ANGLE, Scenery.CABIN_RADIUS, Scenery.GRASS_TOP)
+	local base = ground(Scenery.CABIN_ANGLE, Scenery.CABIN_RADIUS)
 	local f = facingLake(base) -- front faces the lake
 	local w, d, h = 16, 12, 7
-	Build.block(Vector3.new(w + 6, 1, d + 8), f * CFrame.new(0, 0.3, -2), Palette.woodDark, cabin, {
-		name = "Floor",
-	})
-	-- log walls (front wall has a door gap)
+	-- a deep stone footing so the floor never floats on the meadow
+	Build.block(
+		Vector3.new(w + 6.4, 3, d + 8.4),
+		f * CFrame.new(0, -1.15, -2),
+		Palette.rock,
+		cabin,
+		{
+			name = "Footing",
+			material = Enum.Material.Cobblestone,
+		}
+	)
+	Build.block(
+		Vector3.new(w + 6, 0.5, d + 8),
+		f * CFrame.new(0, 0.6, -2),
+		Palette.wood,
+		cabin,
+		with(PLANKS, {
+			name = "Floor",
+		})
+	)
+	local wallY = h / 2 + 0.85
+	-- log walls (the front wall has a door)
 	for _, side in { -1, 1 } do
 		Build.block(
 			Vector3.new(0.9, h, d),
-			f * CFrame.new(side * w / 2, h / 2 + 0.8, 2),
-			Palette.wood,
-			cabin
+			f * CFrame.new(side * w / 2, wallY, 2),
+			Palette.logs,
+			cabin,
+			WOOD
 		)
 	end
 	Build.block(
 		Vector3.new(w, h, 0.9),
-		f * CFrame.new(0, h / 2 + 0.8, 2 + d / 2),
-		Palette.wood,
-		cabin
+		f * CFrame.new(0, wallY, 2 + d / 2),
+		Palette.logs,
+		cabin,
+		WOOD
 	)
 	for _, side in { -1, 1 } do
 		Build.block(
 			Vector3.new(w / 2 - 1.6, h, 0.9),
-			f * CFrame.new(side * (w / 4 + 0.8), h / 2 + 0.8, 2 - d / 2),
-			Palette.wood,
-			cabin
+			f * CFrame.new(side * (w / 4 + 0.8), wallY, 2 - d / 2),
+			Palette.logs,
+			cabin,
+			WOOD
 		)
 	end
 	Build.block(
 		Vector3.new(3.2, 1.6, 0.9),
-		f * CFrame.new(0, h + 0.8 - 0.8, 2 - d / 2),
-		Palette.wood,
-		cabin
+		f * CFrame.new(0, h + 0.05, 2 - d / 2),
+		Palette.logs,
+		cabin,
+		WOOD
 	)
-	window(f * CFrame.new(-w / 4 - 0.8, 4.4, 2 - d / 2 - 0.5), cabin)
-	window(f * CFrame.new(w / 4 + 0.8, 4.4, 2 - d / 2 - 0.5), cabin)
-	-- dark doorway so the door gap doesn't look hollow
+	-- round log ends at the corners
+	for _, sx in { -1, 1 } do
+		for _, sz in { -1, 1 } do
+			local corner = f * CFrame.new(sx * w / 2, 0, 2 + sz * d / 2)
+			Build.rod(
+				corner.Position + Vector3.new(0, 0.85, 0),
+				corner.Position + Vector3.new(0, h + 0.85, 0),
+				1.3,
+				Palette.woodDark,
+				cabin,
+				WOOD
+			)
+		end
+	end
+	window(f * CFrame.new(-w / 4 - 0.8, 4.6, 2 - d / 2 - 0.5), cabin)
+	window(f * CFrame.new(w / 4 + 0.8, 4.6, 2 - d / 2 - 0.5), cabin)
+	window(f * CFrame.new(w / 2 + 0.5, 4.6, 2) * CFrame.Angles(0, math.pi / 2, 0), cabin)
+	-- the door, with a little brass knob
+	local door = f * CFrame.new(0, 3.55, 2 - d / 2 + 0.1)
 	Build.block(
-		Vector3.new(3.2, 5.4, 0.3),
-		f * CFrame.new(0, 3.5, 2 - d / 2 + 1.4),
+		Vector3.new(3.2, 5.4, 0.4),
+		door,
 		Palette.woodDark,
 		cabin,
-		{
-			decor = true,
-		}
+		with(PLANKS, { name = "Door" })
 	)
-	-- roof: two slopes and a ridge
-	local roofY = h + 0.8
+	Build.ball(0.35, (door * CFrame.new(1.1, -0.2, -0.3)).Position, Palette.brass, cabin, {
+		decor = true,
+		collide = false,
+		material = Enum.Material.Metal,
+	})
+	-- roof: two shingled slopes and a ridge beam
+	local roofY = h + 0.85
 	for _, side in { -1, 1 } do
 		Build.wedge(
 			Vector3.new(d + 3, 5, w / 2 + 1.5),
@@ -2599,7 +2888,7 @@ local function buildCabin(root: Instance)
 				* CFrame.Angles(0, -side * math.pi / 2, 0),
 			Palette.roof,
 			cabin,
-			{ name = "Roof" }
+			{ name = "Roof", material = Enum.Material.RoofShingles }
 		)
 	end
 	Build.block(
@@ -2607,58 +2896,63 @@ local function buildCabin(root: Instance)
 		f * CFrame.new(0, roofY + 5.2, 2),
 		Palette.woodDark,
 		cabin,
-		{
+		with(WOOD, {
 			decor = true,
-		}
+		})
 	)
-	-- chimney with a wisp of smoke
+	-- stone chimney with a wisp of smoke
 	local chimney = Build.block(
-		Vector3.new(2, 6, 2),
-		f * CFrame.new(w / 4 + 1, roofY + 4, 5),
+		Vector3.new(2.2, 7, 2.2),
+		f * CFrame.new(w / 4 + 1, roofY + 3.5, 5),
 		Palette.rock,
 		cabin,
-		{ name = "Chimney" }
+		{
+			name = "Chimney",
+			material = Enum.Material.Cobblestone,
+		}
 	)
 	local smoke = Instance.new("ParticleEmitter")
-	smoke.Color = ColorSequence.new(Color3.fromRGB(230, 230, 236))
+	smoke.Color = ColorSequence.new(Color3.fromRGB(226, 226, 232))
 	smoke.Transparency = NumberSequence.new({
-		NumberSequenceKeypoint.new(0, 0.5),
+		NumberSequenceKeypoint.new(0, 0.55),
 		NumberSequenceKeypoint.new(1, 1),
 	})
 	smoke.Size = NumberSequence.new({
 		NumberSequenceKeypoint.new(0, 1.2),
-		NumberSequenceKeypoint.new(1, 4),
+		NumberSequenceKeypoint.new(1, 5),
 	})
-	smoke.Lifetime = NumberRange.new(4, 6)
+	smoke.Lifetime = NumberRange.new(5, 8)
 	smoke.Rate = 3
 	smoke.Speed = NumberRange.new(2, 3)
-	smoke.SpreadAngle = Vector2.new(12, 12)
-	smoke.Acceleration = Vector3.new(1, 0.4, 0)
+	smoke.SpreadAngle = Vector2.new(10, 10)
+	smoke.Acceleration = Vector3.new(1, 0.3, 0)
 	smoke.EmissionDirection = Enum.NormalId.Top
 	smoke.Parent = chimney
-	-- porch: roof posts and two seats facing the lake
+	-- porch: posts, a little roof and two chairs facing the lake
 	for _, side in { -1, 1 } do
 		Build.block(
 			Vector3.new(0.6, h, 0.6),
-			f * CFrame.new(side * (w / 2 + 2), h / 2 + 0.8, -d / 2 - 2.5),
+			f * CFrame.new(side * (w / 2 + 2), h / 2 + 0.85, -d / 2 - 2.5),
 			Palette.woodDark,
-			cabin
+			cabin,
+			WOOD
 		)
 	end
 	Build.block(
 		Vector3.new(w + 6, 0.5, 6.6),
-		f * CFrame.new(0, h + 0.6, -d / 2 - 1.75) * CFrame.Angles(math.rad(-12), 0, 0),
+		f * CFrame.new(0, h + 0.65, -d / 2 - 1.75) * CFrame.Angles(math.rad(-12), 0, 0),
 		Palette.roof,
 		cabin,
-		{ decor = true }
+		{ decor = true, material = Enum.Material.RoofShingles }
 	)
 	for _, side in { -1, 1 } do
-		local seatCf = f * CFrame.new(side * 4.5, 1.9, -d / 2 - 1.4)
+		local seatCf = f * CFrame.new(side * 4.5, 1.95, -d / 2 - 1.4)
 		Build.block(
 			Vector3.new(1.8, 0.8, 1.8),
 			seatCf * CFrame.new(0, -0.7, 0),
 			Palette.woodDark,
-			cabin
+			cabin,
+			WOOD
 		)
 		local seat = Instance.new("Seat")
 		seat.Name = "PorchChair"
@@ -2666,7 +2960,7 @@ local function buildCabin(root: Instance)
 		seat.Size = Vector3.new(2.2, 0.6, 2.2)
 		seat.CFrame = seatCf
 		seat.Color = Palette.woodLight
-		seat.Material = Enum.Material.SmoothPlastic
+		seat.Material = Enum.Material.WoodPlanks
 		seat.TopSurface = Enum.SurfaceType.Smooth
 		seat.BottomSurface = Enum.SurfaceType.Smooth
 		seat.Parent = cabin
@@ -2675,113 +2969,139 @@ local function buildCabin(root: Instance)
 			seatCf * CFrame.new(0, 1.2, 1.1),
 			Palette.woodLight,
 			cabin,
-			{
+			with(PLANKS, {
 				decor = true,
-			}
+			})
+		)
+	end
+	-- a stack of firewood along the side wall (three logs, two on top)
+	for i = 0, 4 do
+		local row = if i < 3 then 0 else 1
+		local slot = if row == 0 then i else i - 3 + 0.5
+		local log = f * CFrame.new(-w / 2 - 1 - slot * 0.85, 1.3 + row * 0.75, 2)
+		Build.rod(
+			log.Position + f.LookVector * 1.2,
+			log.Position - f.LookVector * 1.2,
+			0.85,
+			Palette.bark,
+			cabin,
+			with(WOOD, { decor = true })
 		)
 	end
 end
 
 local function buildCampfire(root: Instance)
 	local camp = Build.model("Campfire", root)
-	local center = polar(Scenery.CAMPFIRE_ANGLE, Scenery.CAMPFIRE_RADIUS, Scenery.GRASS_TOP)
-	for i = 0, 7 do
-		local a = i * (TAU / 8)
+	local center = ground(Scenery.CAMPFIRE_ANGLE, Scenery.CAMPFIRE_RADIUS)
+	local gen = Rng.new(77)
+	for i = 0, 9 do
+		local a = i * (TAU / 10)
 		Build.ellipsoid(
-			Vector3.new(1.6, 1, 1.4),
-			CFrame.new(center + Vector3.new(math.sin(a) * 2.3, 0.3, math.cos(a) * 2.3)),
+			Vector3.new(1.5, 0.9, 1.3) * (0.9 + gen.next() * 0.3),
+			CFrame.new(center + Vector3.new(math.sin(a) * 2.3, 0.25, math.cos(a) * 2.3))
+				* CFrame.Angles(0, a, 0),
 			if i % 2 == 0 then Palette.rock else Palette.rockDark,
 			camp,
-			{ decor = true }
+			{ decor = true, material = Enum.Material.Rock }
 		)
 	end
-	for i = 0, 2 do
-		local a = i * (TAU / 3)
+	for i = 0, 3 do
+		local a = i * (TAU / 4) + 0.4
 		local dir = Vector3.new(math.sin(a), 0, math.cos(a))
 		Build.rod(
-			center + dir * 1.6 + Vector3.new(0, 0.2, 0),
-			center - dir * 0.3 + Vector3.new(0, 1.2, 0),
+			center + dir * 1.7 + Vector3.new(0, 0.2, 0),
+			center - dir * 0.2 + Vector3.new(0, 1.3, 0),
 			0.5,
-			Palette.woodDark,
+			Palette.bark,
 			camp,
-			{ decor = true, collide = false }
+			with(WOOD, { decor = true, collide = false })
 		)
 	end
-	local flame = Build.ellipsoid(
-		Vector3.new(1.6, 2.4, 1.6),
-		CFrame.new(center + Vector3.new(0, 1.4, 0)),
-		Palette.fire,
-		camp,
-		{
-			name = "Flame",
+	local embers =
+		Build.disc(2.6, 0.2, CFrame.new(center + Vector3.new(0, 0.2, 0)), Palette.ember, camp, {
+			name = "Embers",
 			material = Enum.Material.Neon,
 			decor = true,
 			collide = false,
 			shadow = false,
-		}
-	)
-	Build.ellipsoid(
-		Vector3.new(0.9, 1.5, 0.9),
-		CFrame.new(center + Vector3.new(0, 1.5, 0)),
-		Palette.yellow,
-		camp,
-		{ material = Enum.Material.Neon, decor = true, collide = false, shadow = false }
-	)
+		})
 	local fire = Instance.new("Fire")
-	fire.Size = 4
-	fire.Heat = 6
+	fire.Size = 5
+	fire.Heat = 7
 	fire.Color = Palette.fire
 	fire.SecondaryColor = Palette.yellow
-	fire.Parent = flame
+	fire.Parent = embers
+	local sparks = Instance.new("ParticleEmitter")
+	sparks.Name = "Sparks"
+	sparks.Color = ColorSequence.new(Palette.yellow, Palette.fire)
+	sparks.LightEmission = 1
+	sparks.Rate = 4
+	sparks.Lifetime = NumberRange.new(1, 2)
+	sparks.Speed = NumberRange.new(3, 6)
+	sparks.SpreadAngle = Vector2.new(25, 25)
+	sparks.EmissionDirection = Enum.NormalId.Top
+	sparks.Size = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.15),
+		NumberSequenceKeypoint.new(1, 0),
+	})
+	sparks.Parent = embers
 	local glow = Instance.new("PointLight")
 	glow.Color = Palette.fire
-	glow.Range = 20
-	glow.Brightness = 1.8
-	glow.Shadows = false
-	glow.Parent = flame
+	glow.Range = 22
+	glow.Brightness = 2
+	glow.Shadows = true
+	glow.Parent = embers
 	-- three log benches you can sit on, facing the fire
 	for i = 0, 2 do
 		local a = i * (TAU / 3) + math.rad(30)
-		local spot = center + Vector3.new(math.sin(a) * 6.5, 0, math.cos(a) * 6.5)
-		local cf = CFrame.lookAt(spot, center) -- -Z faces the fire
+		local spot = Land.at(center.X + math.sin(a) * 6.5, center.Z + math.cos(a) * 6.5)
+		local cf = CFrame.lookAt(spot, Vector3.new(center.X, spot.Y, center.Z)) -- -Z faces the fire
 		Build.rod(
-			(cf * CFrame.new(-2.2, 0.75, 0)).Position,
-			(cf * CFrame.new(2.2, 0.75, 0)).Position,
+			(cf * CFrame.new(-2.3, 0.7, 0)).Position,
+			(cf * CFrame.new(2.3, 0.7, 0)).Position,
 			1.5,
-			Palette.wood,
+			Palette.bark,
 			camp,
-			{ name = "Log" }
+			with(WOOD, { name = "Log" })
 		)
 		local seat = Instance.new("Seat")
 		seat.Name = "LogSeat"
 		seat.Anchored = true
 		seat.Transparency = 1
 		seat.Size = Vector3.new(2, 0.4, 1.4)
-		seat.CFrame = cf * CFrame.new(0, 1.5, 0) -- sitters face the fire
+		seat.CFrame = cf * CFrame.new(0, 1.45, 0) -- sitters face the fire
 		seat.Parent = camp
 	end
 end
 
 -- ===== Shore details =====
 
-local function reeds(base: Vector3, gen: Rng.Generator, parent: Instance)
+local function reeds(base: Vector3, gen: Rng.Generator, parent: Instance, tall: number)
 	local m = Build.model("Reeds", parent)
-	local options = { decor = true, collide = false, shadow = false }
-	for i = 1, 6 do
+	local options: Build.Options =
+		{ decor = true, collide = false, shadow = false, material = Enum.Material.Grass }
+	for i = 1, 7 do
 		local a = gen.next() * TAU
-		local r = gen.next() * 1.6
-		local foot = base + Vector3.new(math.sin(a) * r, 0, math.cos(a) * r)
-		local height = 2.4 + gen.next() * 2
-		local lean = Vector3.new(gen.next() - 0.5, 0, gen.next() - 0.5) * 0.6
-		local tip = foot + Vector3.new(0, height, 0) + lean
-		Build.rod(foot, tip, 0.16, Palette.reed, m, options)
+		local r = gen.next() * 1.8
+		local foot = Land.at(base.X + math.sin(a) * r, base.Z + math.cos(a) * r, -0.3)
+		local height = tall + gen.next() * 2.2
+		local lean = Vector3.new(gen.next() - 0.5, 0, gen.next() - 0.5) * 0.7
+		local tip = Vector3.new(foot.X, math.max(foot.Y, 0) + height, foot.Z) + lean
+		Build.rod(
+			foot,
+			tip,
+			0.14,
+			if i % 3 == 0 then Palette.reedDark else Palette.reed,
+			m,
+			options
+		)
 		if i % 2 == 0 then
 			Build.ellipsoid(
-				Vector3.new(0.4, 0.9, 0.4),
-				CFrame.new(tip - lean * 0.15 - Vector3.new(0, 0.5, 0)),
+				Vector3.new(0.38, 1, 0.38),
+				CFrame.lookAt(tip - (tip - foot).Unit * 0.9, tip),
 				Palette.cattail,
 				m,
-				options
+				{ decor = true, collide = false, shadow = false }
 			)
 		end
 	end
@@ -2789,28 +3109,36 @@ end
 
 local function lilyPads(center: Vector3, gen: Rng.Generator, parent: Instance)
 	local m = Build.model("LilyPads", parent)
-	local options = { decor = true, collide = false, shadow = false }
+	local options: Build.Options =
+		{ decor = true, collide = false, shadow = false, material = Enum.Material.LeafyGrass }
 	for i = 1, 4 do
 		local a = gen.next() * TAU
 		local r = gen.next() * 3
-		local p = center + Vector3.new(math.sin(a) * r, 0.04, math.cos(a) * r)
+		local p = center + Vector3.new(math.sin(a) * r, 0.05, math.cos(a) * r)
 		local size = 1.6 + gen.next() * 1.2
 		Build.disc(
 			size,
-			0.08,
+			0.06,
 			CFrame.new(p),
 			if i % 2 == 0 then Palette.lily else Palette.leafDark,
 			m,
 			options
 		)
 		if i == 1 and gen.next() < 0.6 then
-			Build.ellipsoid(
-				Vector3.new(0.7, 0.45, 0.7),
-				CFrame.new(p + Vector3.new(0, 0.25, 0)),
-				Palette.pink,
-				m,
-				options
-			)
+			for k = 0, 4 do
+				local petal = k * (TAU / 5)
+				Build.ellipsoid(
+					Vector3.new(0.32, 0.22, 0.6),
+					CFrame.new(
+						p + Vector3.new(math.sin(petal) * 0.22, 0.18, math.cos(petal) * 0.22)
+					)
+						* CFrame.Angles(0, petal, 0)
+						* CFrame.Angles(math.rad(-30), 0, 0),
+					Palette.pink,
+					m,
+					{ decor = true, collide = false, shadow = false }
+				)
+			end
 		end
 	end
 end
@@ -2818,41 +3146,45 @@ end
 local function buildShore(root: Instance)
 	local shore = Build.model("Shore", root)
 	local gen = Rng.new(5)
-	-- pebbles scattered over the beach
+	-- smooth pebbles scattered over the beach
 	local pebbles = { Palette.pebbleLight, Palette.pebble, Palette.pebbleDark, Palette.rockLight }
-	local options = { decor = true, collide = false, shadow = false }
-	for _ = 1, 260 do
+	for _ = 1, 240 do
 		local a = gen.next() * TAU
-		local r = R + 1 + gen.next() * (Config.SHORE_WIDTH - 1.5)
+		local r = Scenery.SHORE_WALL + 0.8 + gen.next() * (BEACH_OUT - Scenery.SHORE_WALL - 1.5)
 		if not nearDock(a, r, 1) then
-			local size = 0.4 + gen.next() * 0.9
+			local size = 0.35 + gen.next() * 0.8
+			local p = ground(a, r, size * 0.1)
 			Build.ellipsoid(
 				Vector3.new(size, size * 0.45, size * (0.7 + gen.next() * 0.4)),
-				CFrame.new(polar(a, r, Scenery.BEACH_TOP)) * CFrame.Angles(0, gen.next() * TAU, 0),
+				CFrame.new(p) * CFrame.Angles(0, gen.next() * TAU, 0),
 				pebbles[gen.int(1, #pebbles)],
 				shore,
-				options
+				{ decor = true, collide = false, shadow = false, material = Enum.Material.Slate }
 			)
 		end
 	end
-	-- reeds at the water's edge and lily pads in the shallows
-	for i = 0, 27 do
-		local a = i * (TAU / 28) + gen.next() * 0.15
-		if not nearDock(a, R, 4) and angleGap(a, Scenery.SPAWN_ANGLE) > 0.12 then
-			reeds(polar(a, R + 1.5 + gen.next() * 1.5, Scenery.BEACH_TOP), gen, shore)
+	-- reeds standing in the shallows and along the top of the bank
+	for i = 0, 31 do
+		local a = i * (TAU / 32) + gen.next() * 0.12
+		if not nearDock(a, R, 5) and angleGap(a, Scenery.SPAWN_ANGLE) > 0.1 then
+			if i % 2 == 0 then
+				reeds(Build.polar(a, R - 2 - gen.next() * 3), gen, shore, 4.2)
+			else
+				reeds(Build.polar(a, Scenery.SHORE_WALL + 0.8 + gen.next() * 1.2), gen, shore, 2.6)
+			end
 		end
 	end
 	for i = 0, 13 do
 		local a = i * (TAU / 14) + 0.11 + gen.next() * 0.2
 		if not nearDock(a, R, 8) then
-			lilyPads(polar(a, R - 6 - gen.next() * 6, 0), gen, shore)
+			lilyPads(Build.polar(a, R - 8 - gen.next() * 7, 0), gen, shore)
 		end
 	end
 	-- lanterns along the path
 	for i = 0, 11 do
 		local a = i * (TAU / 12) + math.rad(7)
 		if not nearDock(a, Scenery.PATH_RADIUS, 4) then
-			lantern(polar(a, Scenery.PATH_RADIUS + 3, Scenery.GRASS_TOP), shore)
+			lantern(ground(a, Scenery.PATH_RADIUS + 3.5, -0.2), shore)
 		end
 	end
 	-- fireflies hovering over the beach (switched on at night by the client)
@@ -2860,7 +3192,7 @@ local function buildShore(root: Instance)
 		local a = i * (TAU / 12) + gen.next() * 0.3
 		local anchor = Build.block(
 			Vector3.new(14, 4, 14),
-			CFrame.new(polar(a, R + 10, 3)),
+			CFrame.new(ground(a, R + 10, 3)),
 			Palette.white,
 			shore,
 			{
@@ -2897,24 +3229,34 @@ local function buildForest(root: Instance)
 	local forest = Build.model("Forest", root)
 	local gen = Rng.new(17)
 	local taken: { Spot } = {
-		{ position = polar(Scenery.CABIN_ANGLE, Scenery.CABIN_RADIUS), radius = 22 },
-		{ position = polar(Scenery.CAMPFIRE_ANGLE, Scenery.CAMPFIRE_RADIUS), radius = 14 },
-		{ position = polar(Scenery.SPAWN_ANGLE, Scenery.SPAWN_RADIUS), radius = 12 },
+		{ position = Build.polar(Scenery.CABIN_ANGLE, Scenery.CABIN_RADIUS), radius = 22 },
+		{ position = Build.polar(Scenery.CAMPFIRE_ANGLE, Scenery.CAMPFIRE_RADIUS), radius = 14 },
+		{ position = Build.polar(Scenery.SPAWN_ANGLE, Scenery.SPAWN_RADIUS), radius = 12 },
 	}
 	for _, angle in Scenery.BOARD_ANGLES do
-		table.insert(taken, { position = polar(angle, Scenery.BOARD_RADIUS), radius = 10 })
+		table.insert(taken, { position = Build.polar(angle, Scenery.BOARD_RADIUS), radius = 10 })
 	end
-	local function free(p: Vector3, radius: number): boolean
+	local function free(p: Vector3, radius: number, maxSlope: number, maxHeight: number): boolean
 		local r = Vector3.new(p.X, 0, p.Z).Magnitude
-		if r < Scenery.PATH_RADIUS + 5 + radius or r > Scenery.PLAY_RADIUS - 4 then
+		if r < Scenery.PATH_RADIUS + 5 + radius then
+			return false
+		end
+		-- nothing straddles the play area's fence
+		if math.abs(r - Scenery.PLAY_RADIUS) < radius + 2 then
 			return false
 		end
 		local a = math.atan2(p.X, p.Z)
-		if nearDock(a, r, 6 + radius) and r < Scenery.DOCK_OUTER + 14 then
+		if nearDock(a, r, 6 + radius) and r < Lake.DOCK_OUTER + 14 then
+			return false
+		end
+		if Land.slope(p.X, p.Z) > maxSlope or Land.height(p.X, p.Z) > maxHeight then
 			return false
 		end
 		for _, spot in taken do
-			if (spot.position - p).Magnitude < spot.radius + radius then
+			if
+				(Vector3.new(spot.position.X, 0, spot.position.Z) - Vector3.new(p.X, 0, p.Z)).Magnitude
+				< spot.radius + radius
+			then
 				return false
 			end
 		end
@@ -2925,40 +3267,48 @@ local function buildForest(root: Instance)
 		radius: number,
 		minR: number,
 		maxR: number,
+		maxSlope: number,
+		maxHeight: number,
 		build: (Vector3) -> ()
 	)
 		local placed, tries = 0, 0
-		while placed < count and tries < count * 50 do
+		while placed < count and tries < count * 60 do
 			tries += 1
 			local a = gen.next() * TAU
 			-- (no square root: denser near the lake than far out)
 			local r = minR + (maxR - minR) * gen.next()
-			local p = polar(a, r, Scenery.GRASS_TOP)
-			if free(p, radius) then
+			local p = Build.polar(a, r)
+			if free(p, radius, maxSlope, maxHeight) then
 				table.insert(taken, { position = p, radius = radius })
-				build(p)
+				build(Land.at(p.X, p.Z, -0.3))
 				placed += 1
 			end
 		end
 	end
-	-- tall pines crowd round the lake, thinning out toward the mountains
-	place(150, 6, 146, 330, function(p)
-		Props.pine(p, 1.3 + gen.next() * 0.9, gen, forest)
+	-- tall pines crowd round the lake and climb the foothills
+	place(170, 6, 146, 335, 0.5, 40, function(p)
+		Props.pine(p, 1.2 + gen.next() * 0.9, gen, forest)
 	end)
-	place(40, 7, 140, 300, function(p)
+	place(220, 7, 345, 560, 0.65, 55, function(p)
+		Props.pine(p, 1.5 + gen.next() * 1.1, gen, forest)
+	end)
+	place(40, 7, 140, 300, 0.4, 40, function(p)
 		Props.tree(p, 1.05 + gen.next() * 0.45, gen, forest)
 	end)
-	place(40, 3, 136, 300, function(p)
-		Props.bush(p, 0.7 + gen.next() * 0.4, gen, forest)
+	place(50, 3, 136, 320, 0.5, 40, function(p)
+		Props.bush(p, 0.7 + gen.next() * 0.5, gen, forest)
 	end)
-	place(34, 2.5, 134, 260, function(p)
+	place(30, 2.5, 136, 260, 0.4, 40, function(p)
 		Props.flowers(p, 0.9 + gen.next() * 0.3, gen, forest)
 	end)
-	place(26, 3, 134, 300, function(p)
-		Props.fern(p, 0.8 + gen.next() * 0.4, gen, forest)
+	place(30, 3, 136, 320, 0.5, 40, function(p)
+		Props.fern(p, 0.8 + gen.next() * 0.5, gen, forest)
 	end)
-	place(18, 4, 140, 320, function(p)
-		Props.rock(p, 0.8 + gen.next() * 0.8, gen, forest)
+	place(24, 4, 140, 330, 0.6, 40, function(p)
+		Props.rock(p, 0.8 + gen.next() * 0.9, gen, forest)
+	end)
+	place(24, 7, 350, 520, 1, 70, function(p)
+		Props.rock(p, 1.8 + gen.next() * 1.6, gen, forest)
 	end)
 end
 
@@ -2966,15 +3316,16 @@ end
 
 local function buildSign(root: Instance)
 	-- just in front of the spawn, between it and the beach, facing the spawn
-	local base = polar(Scenery.SPAWN_ANGLE + 0.075, BEACH_OUT + 2.5, Scenery.GRASS_TOP)
+	local base = ground(Scenery.SPAWN_ANGLE + 0.075, BEACH_OUT + 2.5)
 	local f = facingLake(base) * CFrame.Angles(0, math.pi, 0)
 	local sign = Build.model("WelcomeSign", root)
 	for _, side in { -1, 1 } do
 		Build.block(
-			Vector3.new(0.6, 5, 0.6),
-			f * CFrame.new(side * 3.2, 2.5, 0),
+			Vector3.new(0.6, 6, 0.6),
+			f * CFrame.new(side * 3.2, 2.2, 0),
 			Palette.woodDark,
-			sign
+			sign,
+			WOOD
 		)
 	end
 	local board = Build.block(
@@ -2982,13 +3333,17 @@ local function buildSign(root: Instance)
 		f * CFrame.new(0, 4.2, 0),
 		Palette.woodLight,
 		sign,
-		{
+		with(PLANKS, {
 			name = "Board",
-		}
+		})
 	)
+	Build.block(Vector3.new(8.4, 0.35, 0.9), f * CFrame.new(0, 6.05, 0.05), Palette.roof, sign, {
+		decor = true,
+		material = Enum.Material.RoofShingles,
+	})
 	local gui = Instance.new("SurfaceGui")
 	gui.Face = Enum.NormalId.Front
-	gui.LightInfluence = 0.4
+	gui.LightInfluence = 0.6
 	gui.PixelsPerStud = 40
 	gui.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
 	gui.Parent = board
@@ -2999,7 +3354,7 @@ local function buildSign(root: Instance)
 	title.Font = Enum.Font.FredokaOne
 	title.Text = "Still Lake"
 	title.TextScaled = true
-	title.TextColor3 = Color3.fromRGB(70, 48, 36)
+	title.TextColor3 = Color3.fromRGB(64, 42, 30)
 	title.Parent = gui
 	local line = title:Clone()
 	line.Font = Enum.Font.BuilderSansMedium
@@ -3013,7 +3368,7 @@ local function buildBoards(root: Instance): { [string]: SurfaceGui }
 	local guis: { [string]: SurfaceGui } = {}
 	local boards = Build.model("Leaderboards", root)
 	for i, board in BoardData.BOARDS do
-		local base = polar(Scenery.BOARD_ANGLES[i], Scenery.BOARD_RADIUS, Scenery.GRASS_TOP)
+		local base = ground(Scenery.BOARD_ANGLES[i], Scenery.BOARD_RADIUS, -0.2)
 		guis[board.key] =
 			Boards.build(board.key, board.title, board.color, facingLake(base), boards)
 	end
@@ -3025,11 +3380,9 @@ end
 function Scenery.build(parent: Instance): Built
 	local root = Instance.new("Folder")
 	root.Name = "StillLake"
-	buildGround(root)
 	buildFences(root)
-	buildHorizon(root)
 	local docks = Build.model("Docks", root)
-	for i, angle in Scenery.DOCK_ANGLES do
+	for i, angle in Lake.DOCK_ANGLES do
 		buildDock(angle, i, docks)
 	end
 	buildCabin(root)
@@ -3039,7 +3392,7 @@ function Scenery.build(parent: Instance): Built
 	buildSign(root)
 	local boards = buildBoards(root)
 
-	local spawnPosition = polar(Scenery.SPAWN_ANGLE, Scenery.SPAWN_RADIUS, Scenery.GRASS_TOP)
+	local spawnPosition = ground(Scenery.SPAWN_ANGLE, Scenery.SPAWN_RADIUS)
 	local spawn = Instance.new("SpawnLocation")
 	spawn.Name = "Spawn"
 	spawn.Anchored = true
@@ -3065,11 +3418,11 @@ return Scenery
           </Properties>
         </Item>
       </Item>
-      <Item class="Folder" referent="35">
+      <Item class="Folder" referent="37">
         <Properties>
           <string name="Name">Systems</string>
         </Properties>
-        <Item class="ModuleScript" referent="36">
+        <Item class="ModuleScript" referent="38">
           <Properties>
             <string name="Name">Cheats</string>
             <string name="Source"><![CDATA[--!strict
@@ -3149,7 +3502,7 @@ return Cheats
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="37">
+        <Item class="ModuleScript" referent="39">
           <Properties>
             <string name="Name">Data</string>
             <string name="Source"><![CDATA[--!strict
@@ -3507,7 +3860,7 @@ return Data
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="38">
+        <Item class="ModuleScript" referent="40">
           <Properties>
             <string name="Name">DayNight</string>
             <string name="Source"><![CDATA[--!strict
@@ -3536,22 +3889,23 @@ type Look = {
 	atmosphere: Color3,
 }
 
+-- (keep DAY in step with Lighting in default.project.json)
 local DAY: Look = {
-	brightness = 2.4,
-	ambient = Color3.new(0.42, 0.4, 0.46),
-	outdoor = Color3.new(0.56, 0.54, 0.6),
-	shiftTop = Color3.new(1, 0.92, 0.8),
-	haze = 1.4,
-	atmosphere = Color3.new(0.86, 0.84, 0.88),
+	brightness = 2.6,
+	ambient = Color3.new(0.36, 0.36, 0.42),
+	outdoor = Color3.new(0.5, 0.5, 0.56),
+	shiftTop = Color3.new(1, 0.9, 0.76),
+	haze = 1.6,
+	atmosphere = Color3.new(0.82, 0.8, 0.86),
 }
 
 local NIGHT: Look = {
-	brightness = 1.2,
-	ambient = Color3.new(0.2, 0.22, 0.34),
-	outdoor = Color3.new(0.3, 0.33, 0.5),
-	shiftTop = Color3.new(0.6, 0.7, 1),
-	haze = 2,
-	atmosphere = Color3.new(0.36, 0.4, 0.58),
+	brightness = 1.1,
+	ambient = Color3.new(0.16, 0.18, 0.3),
+	outdoor = Color3.new(0.26, 0.3, 0.48),
+	shiftTop = Color3.new(0.55, 0.65, 1),
+	haze = 2.2,
+	atmosphere = Color3.new(0.3, 0.34, 0.52),
 }
 
 local offset = 0 -- seconds added to the server clock (testing)
@@ -3603,7 +3957,7 @@ return DayNight
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="39">
+        <Item class="ModuleScript" referent="41">
           <Properties>
             <string name="Name">Leaderboards</string>
             <string name="Source"><![CDATA[--!strict
@@ -3841,27 +4195,61 @@ return Leaderboards
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="40">
+        <Item class="ModuleScript" referent="42">
           <Properties>
             <string name="Name">Lifecycle</string>
             <string name="Source"><![CDATA[--!strict
 -- Join and leave, in the right order:
---   join:  session -> load the save -> ready (leaderstats, title, held stone)
+--   join:  session -> load the save -> wait for the terrain -> spawn ->
+--          ready (leaderstats, title, held stone)
 --   leave: everyone else forgets the player -> final save + release the lock
+-- Characters are spawned here (not automatically), so nobody drops into the
+-- valley before its ground exists, and respawned a moment after falling.
 
 local Players = game:GetService("Players")
 
 local Data = require(script.Parent.Data)
 local Sessions = require(script.Parent.Sessions)
 local State = require(script.Parent.State)
+local World = require(script.Parent.World)
 
 local Lifecycle = {}
 
+Lifecycle.RESPAWN_SECONDS = 3
+
+local function spawn(player: Player)
+	local ok, err = pcall(function()
+		player:LoadCharacterAsync()
+	end)
+	if not ok then
+		warn(`[Lifecycle] couldn't spawn {player.Name}: {err}`)
+	end
+end
+
+local function onCharacter(player: Player, character: Model)
+	local humanoid = character:WaitForChild("Humanoid", 10)
+	if not humanoid or not humanoid:IsA("Humanoid") then
+		return
+	end
+	humanoid.Died:Connect(function()
+		task.delay(Lifecycle.RESPAWN_SECONDS, function()
+			if player.Parent ~= nil and Sessions.get(player) and player.Character == character then
+				spawn(player)
+			end
+		end)
+	end)
+end
+
 local function onJoin(player: Player)
 	local session = Sessions.create(player)
+	player.CharacterAdded:Connect(function(character)
+		onCharacter(player, character)
+	end)
 	local profile = Data.load(player)
-	if player.Parent == nil or Sessions.get(player) ~= session then
-		-- left while loading
+	local function left(): boolean
+		return player.Parent == nil or Sessions.get(player) ~= session
+	end
+	if left() then
 		Data.release(player)
 		Sessions.remove(player)
 		return
@@ -3869,6 +4257,16 @@ local function onJoin(player: Player)
 	if not profile then
 		Sessions.remove(player)
 		player:Kick("We couldn't load your stones right now. Please rejoin in a moment!")
+		return
+	end
+	while not World.isReady() and not left() do
+		task.wait(0.2)
+	end
+	if left() then
+		return
+	end
+	spawn(player)
+	if left() then
 		return
 	end
 	session.ready = true
@@ -3890,6 +4288,10 @@ local function onLeave(player: Player)
 	Sessions.remove(player)
 end
 
+function Lifecycle.init()
+	Players.CharacterAutoLoads = false
+end
+
 function Lifecycle.start()
 	Players.PlayerAdded:Connect(onJoin)
 	Players.PlayerRemoving:Connect(onLeave)
@@ -3902,7 +4304,7 @@ return Lifecycle
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="41">
+        <Item class="ModuleScript" referent="43">
           <Properties>
             <string name="Name">Progress</string>
             <string name="Source"><![CDATA[--!strict
@@ -4097,7 +4499,7 @@ return Progress
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="42">
+        <Item class="ModuleScript" referent="44">
           <Properties>
             <string name="Name">Sessions</string>
             <string name="Source"><![CDATA[--!strict
@@ -4165,7 +4567,7 @@ return Sessions
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="43">
+        <Item class="ModuleScript" referent="45">
           <Properties>
             <string name="Name">State</string>
             <string name="Source"><![CDATA[--!strict
@@ -4256,7 +4658,7 @@ return State
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="44">
+        <Item class="ModuleScript" referent="46">
           <Properties>
             <string name="Name">Stones</string>
             <string name="Source"><![CDATA[--!strict
@@ -4269,11 +4671,11 @@ local Workspace = game:GetService("Workspace")
 
 local Config = require(ReplicatedStorage.Shared.Config)
 local Lake = require(ReplicatedStorage.Shared.Lake)
+local Land = require(ReplicatedStorage.Shared.Land)
 local Net = require(ReplicatedStorage.Shared.Net)
 local StoneData = require(ReplicatedStorage.Shared.Data.StoneData)
 local StoneModel = require(ReplicatedStorage.Shared.StoneModel)
 local Notify = require(script.Parent.Parent.Lib.Notify)
-local Scenery = require(script.Parent.Parent.Lib.Scenery)
 local Data = require(script.Parent.Data)
 local Progress = require(script.Parent.Progress)
 local Sessions = require(script.Parent.Sessions)
@@ -4283,7 +4685,7 @@ local Stones = {}
 
 Stones.HELD_NAME = "HeldStone"
 Stones.PICKUP_RANGE = 10 -- a little more than the prompt's, for lag
-Stones.INNER = Config.LAKE_RADIUS + 2.5 -- glints wash up between these radii
+Stones.INNER = Land.SHORE + 1.5 -- glints wash up on the beach between these radii
 Stones.OUTER = Config.LAKE_RADIUS + Config.SHORE_WIDTH - 2
 Stones.SPACING = 10 -- glints are at least this far apart
 
@@ -4391,7 +4793,7 @@ local function findSpot(): Vector3?
 			end
 		end
 		if clear then
-			return Vector3.new(p.X, Scenery.BEACH_TOP + 0.25, p.Z)
+			return Land.at(p.X, p.Z, 0.3)
 		end
 	end
 	return nil
@@ -4559,7 +4961,7 @@ return Stones
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="45">
+        <Item class="ModuleScript" referent="47">
           <Properties>
             <string name="Name">Throws</string>
             <string name="Source"><![CDATA[--!strict
@@ -4747,32 +5149,51 @@ return Throws
 ]]></string>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="46">
+        <Item class="ModuleScript" referent="48">
           <Properties>
             <string name="Name">World</string>
             <string name="Source"><![CDATA[--!strict
--- Builds the lake when the server starts and keeps everyone on dry land: a
--- player who somehow ends up in the water or past the edge of the world is
--- put back on the beach by the spawn.
+-- Builds the lake when the server starts: the parts first (instantly), then
+-- the terrain valley in the background, nearest the lake first. Players
+-- spawn once it's ready (see Lifecycle). It also keeps everyone on dry land:
+-- a player who somehow ends up in the water or past the edge of the world
+-- is put back by the spawn.
 
 local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 
+local Lake = require(ReplicatedStorage.Shared.Lake)
+local Signal = require(ReplicatedStorage.Shared.Util.Signal)
+local Ground = require(script.Parent.Parent.Lib.Ground)
 local Scenery = require(script.Parent.Parent.Lib.Scenery)
 
 local World = {}
 
-World.LOWEST = -4 -- feet below this means they're in the lake
+World.Ready = Signal.new() :: Signal.Signal<()>
+World.IN_WATER_BELOW = 1.6 -- a root part this low inside the shore wall is swimming
 
 local built: Scenery.Built? = nil
+local ready = false
 
 function World.get(): Scenery.Built
 	assert(built, "World not built yet")
 	return built
 end
 
+function World.isReady(): boolean
+	return ready
+end
+
 function World.spawnCFrame(): CFrame
 	return World.get().spawn.CFrame + Vector3.new(0, 3.5, 0)
+end
+
+-- Is a character's root part at `p` in the lake (not on a dock)?
+function World.inWater(p: Vector3): boolean
+	return Lake.distanceFromCentre(p) < Scenery.SHORE_WALL
+		and p.Y < World.IN_WATER_BELOW
+		and not Lake.underDock(p, 1)
 end
 
 -- Put a character back by the spawn if it's in the water or out of bounds.
@@ -4783,13 +5204,20 @@ function World.rescue(player: Player): boolean
 		return false
 	end
 	local p = root.CFrame.Position
-	local far = Vector3.new(p.X, 0, p.Z).Magnitude > Scenery.PLAY_RADIUS + 20
-	if p.Y >= World.LOWEST and not far then
+	local far = Lake.distanceFromCentre(p) > Scenery.PLAY_RADIUS + 20 or p.Y < -30
+	if not far and not World.inWater(p) then
 		return false
 	end
 	root.AssemblyLinearVelocity = Vector3.zero
 	character:PivotTo(World.spawnCFrame())
 	return true
+end
+
+-- Writes the terrain. Yields until done, then lets players in.
+function World.buildTerrain()
+	Ground.build(Workspace.Terrain)
+	ready = true
+	World.Ready:fire()
 end
 
 function World.init()
@@ -4801,10 +5229,13 @@ function World.init()
 end
 
 function World.start()
+	task.spawn(World.buildTerrain)
 	while true do
 		task.wait(1)
-		for _, player in Players:GetPlayers() do
-			World.rescue(player)
+		if ready then
+			for _, player in Players:GetPlayers() do
+				World.rescue(player)
+			end
 		end
 	end
 end
@@ -4816,17 +5247,17 @@ return World
       </Item>
     </Item>
   </Item>
-  <Item class="StarterPlayer" referent="47">
+  <Item class="StarterPlayer" referent="49">
     <Properties>
       <string name="Name">StarterPlayer</string>
       <float name="CameraMaxZoomDistance">60</float>
       <float name="CharacterWalkSpeed">16</float>
     </Properties>
-    <Item class="StarterPlayerScripts" referent="48">
+    <Item class="StarterPlayerScripts" referent="50">
       <Properties>
         <string name="Name">StarterPlayerScripts</string>
       </Properties>
-      <Item class="LocalScript" referent="49">
+      <Item class="LocalScript" referent="51">
         <Properties>
           <string name="Name">Client</string>
           <string name="Source"><![CDATA[--!strict
@@ -4885,11 +5316,11 @@ end
 print("[StillLake] client started")
 ]]></string>
         </Properties>
-        <Item class="Folder" referent="50">
+        <Item class="Folder" referent="52">
           <Properties>
             <string name="Name">Controllers</string>
           </Properties>
-          <Item class="ModuleScript" referent="51">
+          <Item class="ModuleScript" referent="53">
             <Properties>
               <string name="Name">Ambience</string>
               <string name="Source"><![CDATA[--!strict
@@ -4914,21 +5345,9 @@ local Ambience = {}
 
 Ambience.LIGHTS_ON = 0.45 -- darkness at which lanterns come on
 
-local NIGHT_WATER = Color3.fromRGB(34, 62, 104)
-local WINDOW_DAY = Color3.fromRGB(150, 196, 220)
 local WINDOW_NIGHT = Color3.fromRGB(255, 200, 120)
 
 local lit: boolean? = nil
-
-local function water(): BasePart?
-	local root = Workspace:FindFirstChild("StillLake")
-	local land = root and root:FindFirstChild("Land")
-	local part = land and land:FindFirstChild("Water")
-	if part and part:IsA("BasePart") then
-		return part
-	end
-	return nil
-end
 
 local function setLit(on: boolean)
 	if lit == on then
@@ -4951,8 +5370,8 @@ local function setLit(on: boolean)
 	end
 	for _, window in CollectionService:GetTagged(Tags.WINDOW) do
 		if window:IsA("BasePart") then
-			window.Color = if on then WINDOW_NIGHT else WINDOW_DAY
-			window.Material = if on then Enum.Material.Neon else Enum.Material.SmoothPlastic
+			window.Color = if on then WINDOW_NIGHT else Palette.window
+			window.Material = if on then Enum.Material.Neon else Enum.Material.Glass
 		end
 	end
 end
@@ -4960,10 +5379,8 @@ end
 function Ambience.update()
 	local darkness = DayCycle.darkness(Lighting.ClockTime)
 	setLit(darkness >= Ambience.LIGHTS_ON)
-	local part = water()
-	if part then
-		part.Color = Palette.water:Lerp(NIGHT_WATER, darkness)
-	end
+	-- (each client tints its own view of the water)
+	Workspace.Terrain.WaterColor = Palette.lakeDay:Lerp(Palette.lakeNight, darkness)
 end
 
 local function fishRise()
@@ -4997,7 +5414,7 @@ return Ambience
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="52">
+          <Item class="ModuleScript" referent="54">
             <Properties>
               <string name="Name">Audio</string>
               <string name="Source"><![CDATA[--!strict
@@ -5174,7 +5591,7 @@ return Audio
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="53">
+          <Item class="ModuleScript" referent="55">
             <Properties>
               <string name="Name">ClientState</string>
               <string name="Source"><![CDATA[--!strict
@@ -5226,7 +5643,7 @@ return ClientState
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="54">
+          <Item class="ModuleScript" referent="56">
             <Properties>
               <string name="Name">DevPanel</string>
               <string name="Source"><![CDATA[--!strict
@@ -5309,7 +5726,7 @@ return DevPanel
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="55">
+          <Item class="ModuleScript" referent="57">
             <Properties>
               <string name="Name">Hud</string>
               <string name="Source"><![CDATA[--!strict
@@ -5322,6 +5739,7 @@ return DevPanel
 --   * the result of each of your throws once the stone stops
 --   * a big Throw button on touch screens
 
+local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
@@ -5356,6 +5774,7 @@ type Refs = {
 	resultLine: TextLabel,
 	flash: TextLabel,
 	throwButton: TextButton?,
+	waking: Frame,
 }
 
 local refs: Refs? = nil
@@ -5634,6 +6053,22 @@ local function build()
 		throwButton = button
 	end
 
+	local waking = UI.glass({
+		Name = "Waking",
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.5),
+		Size = UDim2.fromOffset(380, 56),
+		Parent = canvas,
+	})
+	UI.text({
+		text = "The lake is waking up…",
+		size = UDim2.new(1, -24, 1, -14),
+		position = UDim2.fromScale(0.5, 0.5),
+		anchor = Vector2.new(0.5, 0.5),
+		maxTextSize = 26,
+		parent = waking,
+	})
+
 	refs = {
 		meter = meter,
 		needle = needle,
@@ -5648,6 +6083,7 @@ local function build()
 		resultLine = resultLine,
 		flash = flash,
 		throwButton = throwButton,
+		waking = waking,
 	}
 end
 
@@ -5674,6 +6110,8 @@ local function frame()
 	end
 	ThrowInput.update()
 	local state = ThrowInput.state
+	-- before the first spawn (the valley is still being shaped)
+	r.waking.Visible = Players.LocalPlayer.Character == nil
 	local near = state.charging or state.status ~= "far"
 	r.meter.Visible = near
 	if r.throwButton then
@@ -5824,7 +6262,7 @@ return Hud
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="56">
+          <Item class="ModuleScript" referent="58">
             <Properties>
               <string name="Name">Journal</string>
               <string name="Source"><![CDATA[--!strict
@@ -6302,7 +6740,7 @@ return Journal
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="57">
+          <Item class="ModuleScript" referent="59">
             <Properties>
               <string name="Name">StoneFx</string>
               <string name="Source"><![CDATA[--!strict
@@ -6319,6 +6757,7 @@ local TweenService = game:GetService("TweenService")
 local Workspace = game:GetService("Workspace")
 
 local Lake = require(ReplicatedStorage.Shared.Lake)
+local Land = require(ReplicatedStorage.Shared.Land)
 local Net = require(ReplicatedStorage.Shared.Net)
 local StoneModel = require(ReplicatedStorage.Shared.StoneModel)
 local Types = require(ReplicatedStorage.Shared.Types)
@@ -6327,7 +6766,7 @@ local ClientState = require(script.Parent.ClientState)
 
 local StoneFx = {}
 
-StoneFx.BEACH_HEIGHT = 0.35 -- the far beach's surface (Scenery.BEACH_TOP)
+StoneFx.SLIDE = 5 -- how far a stone skitters up the far beach
 StoneFx.MAX_RIPPLES = 60
 StoneFx.MAX_FLIGHTS = 12 -- older stones are skipped to the end if more fly at once
 
@@ -6360,19 +6799,43 @@ local RIPPLE_GROW = TweenInfo.new(1.4, Enum.EasingStyle.Quad, Enum.EasingDirecti
 
 -- ===== Water effects =====
 
+-- A ripple is a thin ring drawn on an invisible flat part: a round frame
+-- with only its outline showing. Growing the part grows the ring, while the
+-- line stays the same thin width.
+local RIPPLE_PIXELS = 24 -- per stud
+local RIPPLE_LINE = 4 -- pixels
+
 local function newRipple(parent: Instance): Part
 	local part = Instance.new("Part")
 	part.Name = "Ripple"
-	part.Shape = Enum.PartType.Cylinder
 	part.Anchored = true
 	part.CanCollide = false
 	part.CanTouch = false
 	part.CanQuery = false
 	part.CastShadow = false
-	part.Material = Enum.Material.SmoothPlastic
-	part.Color = Color3.fromRGB(236, 250, 255)
 	part.Transparency = 1
-	part.Size = Vector3.new(0.04, 0.5, 0.5)
+	part.Size = Vector3.new(0.5, 0.05, 0.5)
+	local gui = Instance.new("SurfaceGui")
+	gui.Name = "Ring"
+	gui.Face = Enum.NormalId.Top
+	gui.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
+	gui.PixelsPerStud = RIPPLE_PIXELS
+	gui.LightInfluence = 0.7
+	gui.Parent = part
+	local ring = Instance.new("Frame")
+	ring.Name = "Circle"
+	ring.BackgroundTransparency = 1
+	ring.Size = UDim2.fromScale(1, 1)
+	ring.Parent = gui
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0.5, 0)
+	corner.Parent = ring
+	local line = Instance.new("UIStroke")
+	line.Name = "Line"
+	line.Color = Color3.fromRGB(236, 250, 255)
+	line.Thickness = RIPPLE_LINE
+	line.Transparency = 1
+	line.Parent = ring
 	part.Parent = parent
 	return part
 end
@@ -6384,13 +6847,17 @@ function StoneFx.ripple(position: Vector3, size: number)
 		return
 	end
 	nextRipple = nextRipple % #ripples + 1
-	part.CFrame = CFrame.new(position.X, 0.03, position.Z) * CFrame.Angles(0, 0, math.rad(90))
-	part.Size = Vector3.new(0.04, 0.4, 0.4)
-	part.Transparency = 0.35
-	TweenService:Create(part, RIPPLE_GROW, {
-		Size = Vector3.new(0.04, size, size),
-		Transparency = 1,
-	}):Play()
+	local gui = part:FindFirstChild("Ring")
+	local circle = gui and gui:FindFirstChild("Circle")
+	local line = circle and circle:FindFirstChild("Line")
+	if not line or not line:IsA("UIStroke") then
+		return
+	end
+	part.CFrame = CFrame.new(position.X, 0.08, position.Z)
+	part.Size = Vector3.new(0.5, 0.05, 0.5)
+	line.Transparency = 0.15
+	TweenService:Create(part, RIPPLE_GROW, { Size = Vector3.new(size, 0.05, size) }):Play()
+	TweenService:Create(line, RIPPLE_GROW, { Transparency = 1 }):Play()
 end
 
 function StoneFx.splash(position: Vector3, amount: number)
@@ -6481,10 +6948,10 @@ function StoneFx.plan(event: Types.ThrowEvent): { Segment }
 	end
 	if event.verdict == "shore" then
 		-- skitter up onto the far beach
-		local rest = Lake.along(point, event.direction, 3.5)
+		local rest = Lake.along(point, event.direction, StoneFx.SLIDE)
 		table.insert(segments, {
 			from = point,
-			to = Vector3.new(rest.X, StoneFx.BEACH_HEIGHT + 0.15, rest.Z),
+			to = Land.at(rest.X, rest.Z, 0.15),
 			height = 0.3,
 			duration = 0.35,
 			touch = true,
@@ -6589,6 +7056,21 @@ function StoneFx.play(event: Types.ThrowEvent)
 		end
 	end
 	local stone = StoneModel.build(event.stone, 0.8)
+	-- a faint streak behind the stone as it flies
+	local top = Instance.new("Attachment")
+	top.Position = Vector3.new(0, 0.12, 0)
+	top.Parent = stone
+	local bottom = Instance.new("Attachment")
+	bottom.Position = Vector3.new(0, -0.12, 0)
+	bottom.Parent = stone
+	local trail = Instance.new("Trail")
+	trail.Attachment0 = top
+	trail.Attachment1 = bottom
+	trail.Lifetime = 0.22
+	trail.FaceCamera = true
+	trail.Color = ColorSequence.new(Color3.new(1, 1, 1))
+	trail.Transparency = NumberSequence.new(0.55, 1)
+	trail.Parent = stone
 	stone.CFrame = CFrame.new(event.origin)
 	stone.Parent = parent
 	local flight: Flight = {
@@ -6655,7 +7137,7 @@ return StoneFx
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="58">
+          <Item class="ModuleScript" referent="60">
             <Properties>
               <string name="Name">ThrowInput</string>
               <string name="Source"><![CDATA[--!strict
@@ -6899,7 +7381,7 @@ return ThrowInput
 ]]></string>
             </Properties>
           </Item>
-          <Item class="ModuleScript" referent="59">
+          <Item class="ModuleScript" referent="61">
             <Properties>
               <string name="Name">Toasts</string>
               <string name="Source"><![CDATA[--!strict
@@ -7069,11 +7551,11 @@ return Toasts
             </Properties>
           </Item>
         </Item>
-        <Item class="Folder" referent="60">
+        <Item class="Folder" referent="62">
           <Properties>
             <string name="Name">Lib</string>
           </Properties>
-          <Item class="ModuleScript" referent="61">
+          <Item class="ModuleScript" referent="63">
             <Properties>
               <string name="Name">UI</string>
               <string name="Source"><![CDATA[--!strict
@@ -7510,13 +7992,13 @@ return UI
       </Item>
     </Item>
   </Item>
-  <Item class="Workspace" referent="62">
+  <Item class="Workspace" referent="64">
     <Properties>
       <string name="Name">Workspace</string>
       <bool name="NeedsPivotMigration">false</bool>
       <bool name="StreamingEnabled">false</bool>
     </Properties>
-    <Item class="Part" referent="63">
+    <Item class="Part" referent="65">
       <Properties>
         <string name="Name">PressPlay</string>
         <bool name="Anchored">true</bool>
@@ -7532,7 +8014,7 @@ return UI
           <Z>24</Z>
         </Vector3>
       </Properties>
-      <Item class="BillboardGui" referent="64">
+      <Item class="BillboardGui" referent="66">
         <Properties>
           <string name="Name">Sign</string>
           <bool name="AlwaysOnTop">true</bool>
@@ -7548,7 +8030,7 @@ return UI
             <Z>0</Z>
           </Vector3>
         </Properties>
-        <Item class="TextLabel" referent="65">
+        <Item class="TextLabel" referent="67">
           <Properties>
             <string name="Name">Text</string>
             <float name="BackgroundTransparency">1</float>

@@ -96,9 +96,6 @@ function ClientEnv.new(options: Options?)
 	lighting.ClockTime = 14
 	env.workspace = workspaceService
 	env.lighting = lighting
-	local terrain = Instance.new("Folder")
-	terrain.Name = "Terrain"
-	terrain.Parent = workspaceService
 
 	Common.implementEngine(function()
 		return now

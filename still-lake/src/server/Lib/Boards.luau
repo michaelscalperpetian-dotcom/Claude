@@ -35,7 +35,7 @@ function Boards.build(
 			base * CFrame.new(side * 4.6, 6.5, 0.6),
 			Palette.woodDark,
 			model,
-			{ name = "Post", shadow = false }
+			{ name = "Post", shadow = false, material = Enum.Material.Wood }
 		)
 	end
 	local face = Build.block(
@@ -51,7 +51,7 @@ function Boards.build(
 		base * CFrame.new(0, 13.1, 0.3),
 		Palette.roof,
 		model,
-		{ name = "Cap", decor = true, shadow = false }
+		{ name = "Cap", decor = true, shadow = false, material = Enum.Material.RoofShingles }
 	)
 
 	local gui = Instance.new("SurfaceGui")

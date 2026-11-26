@@ -168,6 +168,7 @@ function Common.installGlobals(Loader, game, workspaceService)
 			"ColorSequenceKeypoint",
 			"NumberRange",
 			"Rect",
+			"Region3",
 		}
 	do
 		Loader.globals[name] = (roblox :: any)[name]

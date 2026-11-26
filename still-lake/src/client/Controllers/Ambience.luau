@@ -20,21 +20,9 @@ local Ambience = {}
 
 Ambience.LIGHTS_ON = 0.45 -- darkness at which lanterns come on
 
-local NIGHT_WATER = Color3.fromRGB(34, 62, 104)
-local WINDOW_DAY = Color3.fromRGB(150, 196, 220)
 local WINDOW_NIGHT = Color3.fromRGB(255, 200, 120)
 
 local lit: boolean? = nil
-
-local function water(): BasePart?
-	local root = Workspace:FindFirstChild("StillLake")
-	local land = root and root:FindFirstChild("Land")
-	local part = land and land:FindFirstChild("Water")
-	if part and part:IsA("BasePart") then
-		return part
-	end
-	return nil
-end
 
 local function setLit(on: boolean)
 	if lit == on then
@@ -57,8 +45,8 @@ local function setLit(on: boolean)
 	end
 	for _, window in CollectionService:GetTagged(Tags.WINDOW) do
 		if window:IsA("BasePart") then
-			window.Color = if on then WINDOW_NIGHT else WINDOW_DAY
-			window.Material = if on then Enum.Material.Neon else Enum.Material.SmoothPlastic
+			window.Color = if on then WINDOW_NIGHT else Palette.window
+			window.Material = if on then Enum.Material.Neon else Enum.Material.Glass
 		end
 	end
 end
@@ -66,10 +54,8 @@ end
 function Ambience.update()
 	local darkness = DayCycle.darkness(Lighting.ClockTime)
 	setLit(darkness >= Ambience.LIGHTS_ON)
-	local part = water()
-	if part then
-		part.Color = Palette.water:Lerp(NIGHT_WATER, darkness)
-	end
+	-- (each client tints its own view of the water)
+	Workspace.Terrain.WaterColor = Palette.lakeDay:Lerp(Palette.lakeNight, darkness)
 end
 
 local function fishRise()
