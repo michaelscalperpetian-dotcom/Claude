@@ -263,6 +263,25 @@ describe("Throwing", function()
 		}, true)
 		eq(env.lastSent("BeginCharge"), nil)
 	end)
+	it("a finger that slides off the Throw button still throws when lifted", function()
+		env.frame(1.5)
+		table.clear(env.sent)
+		local finger = {
+			UserInputType = roblox.Enum.UserInputType.Touch,
+			KeyCode = roblox.Enum.KeyCode.Unknown,
+		}
+		C.ThrowInput.press(finger)
+		env.frame(SWEET_HOLD)
+		-- some other finger (the camera) lifting doesn't count
+		env.inputEnded:Fire({
+			UserInputType = roblox.Enum.UserInputType.Touch,
+			KeyCode = roblox.Enum.KeyCode.Unknown,
+		})
+		eq(C.ThrowInput.state.charging, true, "still winding up")
+		env.inputEnded:Fire(finger)
+		ok(env.lastSent("Release"), "thrown")
+		env.frame(1.5)
+	end)
 	it("pressing while facing away flashes the reason", function()
 		env.lookAt(BEACH, BEACH + Vector3.new(0, 0, 10))
 		press()
@@ -461,14 +480,15 @@ describe("Messages", function()
 	end)
 	it("finding a stone shows a card", function()
 		env.listeners.Found("slate", true, 1)
-		local card = find(gui("Toasts"), "Found")
-		eq(card.Visible, true)
+		local card = C.Toasts.latest()
+		eq(card.Name, "Found")
 		eq(card.Title.Text, "New stone: Slate!")
 		env.listeners.Found("slate", false, 3)
-		eq(card.Title.Text, "Another Slate")
-		ok(string.find(card.Line.Text, "3", 1, true), card.Line.Text)
-		env.advance(5)
-		eq(card.Visible, false, "goes away")
+		local again = C.Toasts.latest()
+		eq(again.Title.Text, "Another Slate")
+		ok(string.find(again.Line.Text, "3", 1, true), again.Line.Text)
+		env.advance(6)
+		eq(C.Toasts.latest(), nil, "they go away")
 	end)
 end)
 

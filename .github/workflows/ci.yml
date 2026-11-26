@@ -35,3 +35,34 @@ jobs:
 
       - name: Build place file
         run: rojo build default.project.json -o RaiseADino.rbxlx
+
+  still-lake:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: still-lake
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install toolchain
+        uses: CompeyDev/setup-rokit@v0.1.2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check formatting
+        run: stylua --check src tests
+
+      - name: Lint
+        run: selene src
+
+      - name: Unit tests (skip rules, lake, stones, goals, day cycle)
+        run: lune run tests/run
+
+      - name: Server integration test (full play session)
+        run: lune run tests/integration
+
+      - name: Client smoke test (every controller)
+        run: lune run tests/client_smoke
+
+      - name: Build place file
+        run: rojo build default.project.json -o StillLake.rbxlx

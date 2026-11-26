@@ -48,6 +48,9 @@ ThrowInput.refused = Signal.new() :: Signal.Signal<Status>
 ThrowInput.released = Signal.new() :: Signal.Signal<number>
 
 local savedWalkSpeed: number? = nil
+-- The finger holding the on-screen Throw button: letting it go anywhere on
+-- the screen throws, even if it slid off the button first.
+local holdingTouch: InputObject? = nil
 
 local function parts(): (BasePart?, Humanoid?)
 	local character = Players.LocalPlayer.Character
@@ -131,14 +134,16 @@ local function stopCharging(tellServer: boolean)
 		return
 	end
 	state.charging = false
+	holdingTouch = nil
 	plantFeet(false)
 	if tellServer then
 		Net.send("CancelCharge")
 	end
 end
 
--- Start winding up (if a throw from here would work).
-function ThrowInput.press()
+-- Start winding up (if a throw from here would work). `touch` is the finger
+-- on the Throw button, if that's what pressed.
+function ThrowInput.press(touch: InputObject?)
 	local state = ThrowInput.state
 	if state.charging then
 		return
@@ -156,12 +161,14 @@ function ThrowInput.press()
 	end
 	state.charging = true
 	state.startedAt = os.clock()
+	holdingTouch = touch
 	plantFeet(true)
 	Net.send("BeginCharge")
 end
 
 -- Let go: throw (a quick tap just cancels).
 function ThrowInput.letGo()
+	holdingTouch = nil
 	local state = ThrowInput.state
 	if not state.charging then
 		return
@@ -199,7 +206,7 @@ function ThrowInput.init()
 	end)
 	UserInputService.InputEnded:Connect(function(input: InputObject)
 		-- (let go even over a button, so the throw never gets stuck)
-		if isThrowInput(input) then
+		if isThrowInput(input) or (holdingTouch ~= nil and input == holdingTouch) then
 			ThrowInput.letGo()
 		end
 	end)

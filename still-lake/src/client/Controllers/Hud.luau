@@ -26,6 +26,7 @@ local Hud = {}
 local T = UI.Theme
 local METER_HEIGHT = 250
 local METER_WIDTH = 30
+local METER_X = 260 -- right of the screen's centre (clear of the messages)
 
 type Refs = {
 	meter: Frame,
@@ -75,7 +76,7 @@ local function buildMeter(canvas: Frame): (Frame, Frame, Frame)
 		Name = "PowerMeter",
 		BackgroundTransparency = 1,
 		AnchorPoint = Vector2.new(0, 0.5),
-		Position = UDim2.new(0.5, 150, 0.5, -10),
+		Position = UDim2.new(0.5, METER_X, 0.5, -10),
 		Size = UDim2.fromOffset(METER_WIDTH + 70, METER_HEIGHT),
 		Visible = false,
 		Parent = canvas,
@@ -170,7 +171,7 @@ local function build()
 		name = "Flash",
 		text = "",
 		size = UDim2.fromOffset(220, 40),
-		position = UDim2.new(0.5, 150 + METER_WIDTH / 2, 0.5, -METER_HEIGHT / 2 - 40),
+		position = UDim2.new(0.5, METER_X + METER_WIDTH / 2, 0.5, -METER_HEIGHT / 2 - 40),
 		anchor = Vector2.new(0.5, 0.5),
 		color = T.perfect,
 		maxTextSize = 34,
@@ -253,24 +254,24 @@ local function build()
 		Name = "Result",
 		BackgroundTransparency = 1,
 		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.fromScale(0.5, 0.26),
-		Size = UDim2.fromOffset(460, 110),
+		Position = UDim2.fromScale(0.5, 0.28),
+		Size = UDim2.fromOffset(460, 90),
 		Visible = false,
 		Parent = canvas,
 	}) :: Frame
 	local resultTitle = UI.text({
 		name = "Title",
 		text = "",
-		size = UDim2.new(1, 0, 0, 64),
-		maxTextSize = 58,
+		size = UDim2.new(1, 0, 0, 56),
+		maxTextSize = 52,
 		shadow = true,
 		parent = result,
 	})
 	local resultLine = UI.text({
 		name = "Line",
 		text = "",
-		size = UDim2.new(1, 0, 0, 30),
-		position = UDim2.fromOffset(0, 66),
+		size = UDim2.new(1, 0, 0, 28),
+		position = UDim2.fromOffset(0, 60),
 		font = UI.BodyFont,
 		maxTextSize = 22,
 		shadow = true,
@@ -305,7 +306,7 @@ local function build()
 				input.UserInputType == Enum.UserInputType.Touch
 				or input.UserInputType == Enum.UserInputType.MouseButton1
 			then
-				ThrowInput.press()
+				ThrowInput.press(input)
 			end
 		end)
 		button.InputEnded:Connect(function(input: InputObject)

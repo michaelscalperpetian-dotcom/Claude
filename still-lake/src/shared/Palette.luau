@@ -14,10 +14,11 @@ local Palette = {
 	ripple = rgb(232, 250, 255),
 
 	-- Shore and land
-	pebbleLight = rgb(214, 204, 186),
-	pebble = rgb(190, 178, 160),
-	pebbleDark = rgb(152, 140, 124),
+	pebbleLight = rgb(204, 194, 176),
+	pebble = rgb(178, 166, 148),
+	pebbleDark = rgb(144, 132, 118),
 	sand = rgb(228, 208, 168),
+	path = rgb(196, 168, 124),
 	grassLight = rgb(160, 206, 112),
 	grass = rgb(128, 186, 94),
 	grassDark = rgb(98, 160, 80),

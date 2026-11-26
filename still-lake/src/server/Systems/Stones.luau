@@ -276,6 +276,12 @@ function Stones.init()
 				Stones.updateHeld(player)
 			end
 		end)
+		-- the avatar's own body parts can replace the hands once it loads
+		player.CharacterAppearanceLoaded:Connect(function(character)
+			if Sessions.getReady(player) and player.Character == character then
+				Stones.updateHeld(player)
+			end
+		end)
 		if player.Character then
 			task.spawn(Stones.updateHeld, player)
 		end

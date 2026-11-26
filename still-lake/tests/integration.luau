@@ -571,6 +571,17 @@ describe("Safety nets", function()
 		ok((p - S.World.get().spawn.CFrame.Position).Magnitude < 6, "by the spawn")
 		eq(S.World.rescue(alice), false, "only when needed")
 	end)
+	it("the stone moves to the new hand when the avatar finishes loading", function()
+		local character = alice.Character
+		character.RightHand:Destroy()
+		local hand = roblox.Instance.new("Part")
+		hand.Name = "RightHand"
+		hand.Parent = character
+		env.signal(alice, "CharacterAppearanceLoaded"):Fire(character)
+		local held = character:FindFirstChild("HeldStone")
+		ok(held, "still holding a stone")
+		eq(held:FindFirstChildOfClass("WeldConstraint").Part0, hand, "welded to the new hand")
+	end)
 	it("a character that respawns gets its stone back", function()
 		alice.Character:Destroy()
 		local character = env.makeCharacter(alice)

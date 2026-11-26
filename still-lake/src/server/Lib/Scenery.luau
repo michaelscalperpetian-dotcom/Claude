@@ -125,23 +125,24 @@ local function buildGround(root: Instance)
 		name = "Meadow",
 		shadow = false,
 	})
+	local midGrass = Palette.grass:Lerp(Palette.grassDark, 0.45)
+	Build.ring(CFrame.new(0, grassY - 0.05, 0), BEACH_OUT + 184, 100, 2, 140, midGrass, land, {
+		name = "Meadow",
+		shadow = false,
+	})
 	Build.ring(
-		CFrame.new(0, grassY - 0.05, 0),
-		BEACH_OUT + 184,
-		100,
+		CFrame.new(0, grassY - 0.1, 0),
+		BEACH_OUT + 290,
+		112,
 		2,
 		140,
 		Palette.grassDark,
 		land,
 		{
-			name = "Meadow",
+			name = "Foothills",
 			shadow = false,
 		}
 	)
-	Build.ring(CFrame.new(0, grassY - 0.1, 0), BEACH_OUT + 290, 112, 2, 140, Palette.moss, land, {
-		name = "Foothills",
-		shadow = false,
-	})
 	-- out to the mountains, so there is never a gap at the horizon
 	Build.ring(CFrame.new(0, grassY - 0.15, 0), 590, 244, 2, 160, Palette.moss, land, {
 		name = "Foothills",
@@ -155,7 +156,7 @@ local function buildGround(root: Instance)
 		4.5,
 		1,
 		120,
-		Palette.sand,
+		Palette.path,
 		land,
 		{ name = "Path", shadow = false, decor = true }
 	)
@@ -240,35 +241,36 @@ local function buildHorizon(root: Instance)
 	local horizon = Build.model("Horizon", root)
 	local gen = Rng.new(31)
 	local options = { decor = true, collide = false, shadow = false }
-	local count = 18
+	-- each mountain is a stack of soft tiers narrowing to a snowy peak
+	local tiers = {
+		{ w = 1, h = 0.7, y = 0.18 },
+		{ w = 0.6, h = 0.56, y = 0.5 },
+		{ w = 0.3, h = 0.3, y = 0.78 },
+	}
+	local count = 16
 	for i = 0, count - 1 do
 		local angle = i * (TAU / count) + (gen.next() - 0.5) * 0.25
-		local width = 150 + gen.next() * 90
-		local height = 90 + gen.next() * 90
-		local radius = 430 + gen.next() * 50
-		local base = polar(angle, radius, height * 0.12)
-		local color = if i % 2 == 0 then Palette.mountain else Palette.mountainDark
-		Build.ellipsoid(
-			Vector3.new(width, height, width * 0.8),
-			CFrame.new(base) * CFrame.Angles(0, angle, 0),
-			color,
-			horizon,
-			options
-		)
-		if height > 135 then
+		local width = 190 + gen.next() * 90
+		local height = 95 + gen.next() * 70
+		local radius = 440 + gen.next() * 50
+		local base = polar(angle, radius, 0)
+		local rock = if i % 2 == 0 then Palette.mountain else Palette.mountainDark
+		local turn = CFrame.Angles(0, angle + gen.next(), 0)
+		for t, tier in tiers do
+			local snowy = t == #tiers and height > 115
 			Build.ellipsoid(
-				Vector3.new(width * 0.42, height * 0.3, width * 0.34),
-				CFrame.new(base + Vector3.new(0, height * 0.36, 0)) * CFrame.Angles(0, angle, 0),
-				Palette.snow,
+				Vector3.new(width * tier.w, height * tier.h, width * tier.w * 0.85),
+				CFrame.new(base + Vector3.new(0, height * tier.y, 0)) * turn,
+				if snowy then Palette.snow else rock,
 				horizon,
 				options
 			)
 		end
-		-- a green foothill in front of every other mountain
+		-- a dark green foothill in front of every other mountain
 		if i % 2 == 1 then
-			local hill = polar(angle + 0.1, radius - 70, 4)
+			local hill = polar(angle + 0.1, radius - 80, 4)
 			Build.ellipsoid(
-				Vector3.new(110, 46, 80),
+				Vector3.new(120, 52, 86),
 				CFrame.new(hill) * CFrame.Angles(0, angle, 0),
 				Palette.pineDark,
 				horizon,
@@ -803,7 +805,8 @@ local function buildForest(root: Instance)
 		while placed < count and tries < count * 50 do
 			tries += 1
 			local a = gen.next() * TAU
-			local r = minR + (maxR - minR) * math.sqrt(gen.next())
+			-- (no square root: denser near the lake than far out)
+			local r = minR + (maxR - minR) * gen.next()
 			local p = polar(a, r, Scenery.GRASS_TOP)
 			if free(p, radius) then
 				table.insert(taken, { position = p, radius = radius })
@@ -812,11 +815,12 @@ local function buildForest(root: Instance)
 			end
 		end
 	end
-	place(70, 5, 150, 330, function(p)
-		Props.pine(p, 0.9 + gen.next() * 0.5, gen, forest)
+	-- tall pines crowd round the lake, thinning out toward the mountains
+	place(150, 6, 146, 330, function(p)
+		Props.pine(p, 1.3 + gen.next() * 0.9, gen, forest)
 	end)
-	place(34, 6, 140, 300, function(p)
-		Props.tree(p, 0.85 + gen.next() * 0.35, gen, forest)
+	place(40, 7, 140, 300, function(p)
+		Props.tree(p, 1.05 + gen.next() * 0.45, gen, forest)
 	end)
 	place(40, 3, 136, 300, function(p)
 		Props.bush(p, 0.7 + gen.next() * 0.4, gen, forest)
@@ -836,7 +840,7 @@ end
 
 local function buildSign(root: Instance)
 	-- just in front of the spawn, between it and the beach, facing the spawn
-	local base = polar(Scenery.SPAWN_ANGLE + 0.045, BEACH_OUT + 2.5, Scenery.GRASS_TOP)
+	local base = polar(Scenery.SPAWN_ANGLE + 0.075, BEACH_OUT + 2.5, Scenery.GRASS_TOP)
 	local f = facingLake(base) * CFrame.Angles(0, math.pi, 0)
 	local sign = Build.model("WelcomeSign", root)
 	for _, side in { -1, 1 } do

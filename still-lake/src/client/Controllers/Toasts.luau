@@ -11,7 +11,7 @@ local UI = require(script.Parent.Parent.Lib.UI)
 
 local Toasts = {}
 
-Toasts.MAX = 4
+Toasts.MAX = 3
 Toasts.SECONDS = 3.2
 
 local T = UI.Theme
@@ -22,42 +22,58 @@ local STYLE_COLORS: { [string]: Color3 } = {
 	rare = T.perfect,
 }
 
+-- Messages and found-stone cards share one stack above the hint line,
+-- newest at the bottom.
 local stack: Frame? = nil
-local alive: { [Frame]: boolean } = {} -- toasts on screen
+local alive: { [Frame]: boolean } = {}
 local order: { Frame } = {} -- oldest first
-local toastCount = 0
+local count = 0
 
-local function remove(pill: Frame)
-	if not alive[pill] then
+local function remove(item: Frame)
+	if not alive[item] then
 		return
 	end
-	alive[pill] = nil
-	local index = table.find(order, pill)
+	alive[item] = nil
+	local index = table.find(order, item)
 	if index then
 		table.remove(order, index)
 	end
-	pill:Destroy()
+	item:Destroy()
 end
-local foundCard: Frame? = nil
-local foundToken = 0
 
-function Toasts.show(text: string, style: string?)
-	local parent = stack
-	if not parent then
-		return
-	end
+-- Adds a pill to the stack (pushing out the oldest) and fades it later.
+local function push(item: Frame, seconds: number, labels: { TextLabel })
 	if #order >= Toasts.MAX then
 		remove(order[1])
 	end
-	toastCount += 1
-	local pill = UI.glass({
-		Name = "Toast",
-		Size = UDim2.fromOffset(420, 38),
-		LayoutOrder = toastCount,
-		Parent = parent,
-	})
-	alive[pill] = true
-	table.insert(order, pill)
+	count += 1
+	item.LayoutOrder = count
+	alive[item] = true
+	table.insert(order, item)
+	item.Parent = stack
+	UI.pop(item, 0.9)
+	task.delay(seconds, function()
+		if not alive[item] then
+			return -- pushed out by newer messages already
+		end
+		UI.tween(item, UI.SOFT, { BackgroundTransparency = 1 })
+		for _, label in labels do
+			UI.tween(label, UI.SOFT, { TextTransparency = 1 })
+		end
+		task.delay(0.4, remove, item)
+	end)
+end
+
+-- The newest message or card on screen (nil if none).
+function Toasts.latest(): Frame?
+	return order[#order]
+end
+
+function Toasts.show(text: string, style: string?)
+	if not stack then
+		return
+	end
+	local pill = UI.glass({ Name = "Toast", Size = UDim2.fromOffset(440, 38) })
 	local label = UI.text({
 		text = text,
 		size = UDim2.new(1, -24, 1, -8),
@@ -68,47 +84,54 @@ function Toasts.show(text: string, style: string?)
 		maxTextSize = 19,
 		parent = pill,
 	})
-	UI.pop(pill, 0.9)
+	push(pill, Toasts.SECONDS, { label })
 	if style == "good" or style == "rare" or style == "bad" then
 		Audio.play(style)
 	end
-	task.delay(Toasts.SECONDS, function()
-		if not alive[pill] then
-			return -- pushed out by newer toasts already
-		end
-		UI.tween(pill, UI.SOFT, { BackgroundTransparency = 1 })
-		UI.tween(label, UI.SOFT, { TextTransparency = 1 })
-		task.delay(0.4, remove, pill)
-	end)
 end
 
--- "You found …" card for a stone picked up off the beach.
-function Toasts.found(id: string, isNew: boolean, count: number)
-	local card = foundCard
+-- "New stone: …" card for a stone picked up off the beach.
+function Toasts.found(id: string, isNew: boolean, owned: number)
 	local stone = StoneData.get(id)
-	if not card or not stone then
+	if not stack or not stone then
 		return
 	end
-	foundToken += 1
-	local token = foundToken
 	local rarityColor = UI.rgb(StoneData.rarityInfo(stone.rarity).color)
-	local swatch = card:FindFirstChild("Swatch") :: Frame
-	local title = card:FindFirstChild("Title") :: TextLabel
-	local line = card:FindFirstChild("Line") :: TextLabel
-	swatch.BackgroundColor3 = UI.rgb(stone.color)
-	title.Text = if isNew then `New stone: {stone.name}!` else `Another {stone.name}`
-	line.Text = if isNew
-		then `{stone.rarity} · {stone.blurb}`
-		else `{stone.rarity} · you have {count} now`
-	line.TextColor3 = if isNew then rarityColor else T.white
-	card.Visible = true
-	UI.pop(card, 0.8)
+	local card = UI.glass({ Name = "Found", Size = UDim2.fromOffset(480, 84) })
+	UI.new("Frame", {
+		Name = "Swatch",
+		BackgroundColor3 = UI.rgb(stone.color),
+		BorderSizePixel = 0,
+		AnchorPoint = Vector2.new(0, 0.5),
+		Position = UDim2.new(0, 16, 0.5, 0),
+		Size = UDim2.fromOffset(58, 40),
+		Parent = card,
+	}, { UI.new("UICorner", { CornerRadius = UDim.new(0.5, 0) }), UI.stroke(T.white, 2, 0.4) })
+	local title = UI.text({
+		name = "Title",
+		text = if isNew then `New stone: {stone.name}!` else `Another {stone.name}`,
+		size = UDim2.new(1, -104, 0, 30),
+		position = UDim2.fromOffset(88, 9),
+		align = Enum.TextXAlignment.Left,
+		maxTextSize = 26,
+		parent = card,
+	})
+	local line = UI.text({
+		name = "Line",
+		text = if isNew
+			then `{stone.rarity} · {stone.blurb}`
+			else `{stone.rarity} · you have {owned} now`,
+		size = UDim2.new(1, -104, 0, 34),
+		position = UDim2.fromOffset(88, 42),
+		align = Enum.TextXAlignment.Left,
+		valign = Enum.TextYAlignment.Top,
+		color = if isNew then UI.lighten(rarityColor, 0.25) else T.white,
+		font = UI.BodyFont,
+		maxTextSize = 17,
+		parent = card,
+	})
+	push(card, if isNew then 5 else 2.5, { title, line })
 	Audio.play(if isNew then "rare" else "pickup")
-	task.delay(if isNew then 4.5 else 2.5, function()
-		if token == foundToken then
-			card.Visible = false
-		end
-	end)
 end
 
 function Toasts.init()
@@ -116,55 +139,24 @@ function Toasts.init()
 	stack = UI.new("Frame", {
 		Name = "Stack",
 		BackgroundTransparency = 1,
-		AnchorPoint = Vector2.new(0.5, 0),
-		Position = UDim2.new(0.5, 0, 0, 56),
-		Size = UDim2.fromOffset(440, 180),
-		Parent = canvas,
-	}, { UI.list(Enum.FillDirection.Vertical, 6) }) :: Frame
-
-	local card = UI.glass({
-		Name = "Found",
 		AnchorPoint = Vector2.new(0.5, 1),
 		Position = UDim2.new(0.5, 0, 1, -150),
-		Size = UDim2.fromOffset(460, 76),
-		Visible = false,
+		Size = UDim2.fromOffset(480, 260),
 		Parent = canvas,
-	})
-	UI.new("Frame", {
-		Name = "Swatch",
-		BackgroundColor3 = T.white,
-		BorderSizePixel = 0,
-		AnchorPoint = Vector2.new(0, 0.5),
-		Position = UDim2.new(0, 16, 0.5, 0),
-		Size = UDim2.fromOffset(56, 38),
-		Parent = card,
-	}, { UI.new("UICorner", { CornerRadius = UDim.new(0.5, 0) }), UI.stroke(T.white, 2, 0.4) })
-	UI.text({
-		name = "Title",
-		text = "",
-		size = UDim2.new(1, -100, 0, 30),
-		position = UDim2.fromOffset(86, 8),
-		align = Enum.TextXAlignment.Left,
-		maxTextSize = 24,
-		parent = card,
-	})
-	UI.text({
-		name = "Line",
-		text = "",
-		size = UDim2.new(1, -100, 0, 28),
-		position = UDim2.fromOffset(86, 40),
-		align = Enum.TextXAlignment.Left,
-		font = UI.BodyFont,
-		maxTextSize = 15,
-		parent = card,
-	})
-	foundCard = card
+	}, {
+		UI.list(
+			Enum.FillDirection.Vertical,
+			6,
+			Enum.HorizontalAlignment.Center,
+			Enum.VerticalAlignment.Bottom
+		),
+	}) :: Frame
 
 	Net.listen("Notify", function(text: string, style: string)
 		Toasts.show(text, style)
 	end)
-	Net.listen("Found", function(id: string, isNew: boolean, count: number)
-		Toasts.found(id, isNew, count)
+	Net.listen("Found", function(id: string, isNew: boolean, owned: number)
+		Toasts.found(id, isNew, owned)
 	end)
 end
 

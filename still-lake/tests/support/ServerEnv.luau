@@ -104,6 +104,7 @@ function ServerEnv.new(options: Options?)
 	end
 	eventStub("ProximityPrompt", "Triggered")
 	eventStub("Player", "CharacterAdded")
+	eventStub("Player", "CharacterAppearanceLoaded")
 	function env.signal(instance, eventName)
 		return instance[eventName]
 	end
