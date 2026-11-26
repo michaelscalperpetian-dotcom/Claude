@@ -1,7 +1,7 @@
-# Roblox build artifacts (the release place file in build/ is committed on purpose)
+# Roblox build artifacts
 *.rbxl
 *.rbxlx
-!build/RaiseADino.rbxlx
+
 *.rbxl.lock
 *.rbxlx.lock
 
